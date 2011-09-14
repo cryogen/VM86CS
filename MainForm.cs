@@ -162,7 +162,10 @@ namespace x86CS
 
         private void goButton_Click(object sender, EventArgs e)
         {
+            running = true;
             clockTimer.Start();
+            if (!machine.Running)
+                machine.Start();
         }
     }
 }
