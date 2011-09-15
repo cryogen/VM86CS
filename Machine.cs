@@ -20,6 +20,22 @@ namespace x86CS
         }
     }
 
+    public class CharEventArgs : EventArgs
+    {
+        private char ch;
+
+        public CharEventArgs(char charToWrite)
+        {
+            ch = charToWrite;
+        }
+
+        public char Char
+        {
+            get { return ch; }
+            set { ch = value; }
+        }
+    }
+
     public class IntEventArgs : EventArgs
     {
         private int number;
@@ -44,6 +60,7 @@ namespace x86CS
         private Floppy floppyDrive;
         private bool running = false;
         public event EventHandler<TextEventArgs> WriteText;
+        public event EventHandler<CharEventArgs> WriteChar;
         private Dictionary<int, InteruptHandler> interuptVectors = new Dictionary<int, InteruptHandler>();
 
         public Floppy FloppyDrive
@@ -64,16 +81,35 @@ namespace x86CS
         public Machine()
         {
             floppyDrive = new Floppy();
+
+            interuptVectors.Add(0x10, Int10);
             interuptVectors.Add(0x13, Int13);
+            interuptVectors.Add(0x19, Int19);
+
             cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
         }
 
         void cpu_InteruptFired(object sender, IntEventArgs e)
         {
-            InteruptHandler handler = interuptVectors[e.Number];
+            InteruptHandler handler;
+            
+            if(!interuptVectors.TryGetValue(e.Number, out handler))
+                return;
 
             if (handler != null)
                 handler();
+        }
+
+        private void Int10()
+        {
+            switch (cpu.AH)
+            {
+                case 0x0e:
+                    DoWriteChar((char)cpu.AL);
+                    break;
+                default:
+                    break;
+            }
         }
 
         private void Int13()
@@ -87,15 +123,7 @@ namespace x86CS
             }
         }
 
-        private void DoWriteText(string text)
-        {
-            EventHandler<TextEventArgs> textEvent = WriteText;
-
-            if (textEvent != null)
-                textEvent(this, new TextEventArgs(text));
-        }
-
-        public void Start()
+        private void Int19()
         {
             bool gotBootSector = false;
 
@@ -123,6 +151,27 @@ namespace x86CS
                 cpu.IP = 0x7c00;
                 running = true;
             }
+        }
+
+        private void DoWriteText(string text)
+        {
+            EventHandler<TextEventArgs> textEvent = WriteText;
+
+            if (textEvent != null)
+                textEvent(this, new TextEventArgs(text));
+        }
+
+        private void DoWriteChar(char ch)
+        {
+            EventHandler<CharEventArgs> charEvent = WriteChar;
+
+            if (charEvent != null)
+                charEvent(this, new CharEventArgs(ch));
+        }
+
+        public void Start()
+        {
+            Int19();
         }
 
         public void Stop()

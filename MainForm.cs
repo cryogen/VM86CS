@@ -5,23 +5,28 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using System.Threading;
 
 namespace x86CS
 {
     public partial class MainForm : Form
     {
-        private bool running = false;
         private Machine machine = new Machine();
         private string[] screenText = new string[25];
-        private int currLine = 0;
+        private int currLine, currPos;
         Font panelFont = new Font("Courier New", 9.64f);
         bool clearDebug = true;
+        bool stepping = false;
+        Thread machineThread;
 
         public MainForm()
         {
             machine = new Machine();
             machine.WriteText += new EventHandler<TextEventArgs>(machine_WriteText);
+            machine.WriteChar += new EventHandler<CharEventArgs>(machine_WriteChar);
             machine.CPU.DebugText += new EventHandler<TextEventArgs>(CPU_DebugText);
+
+            currLine = currPos = 0;
 
             InitializeComponent();
 
@@ -30,53 +35,93 @@ namespace x86CS
             PrintRegisters();
 
             mainPanel.Select();
+
+            machineThread = new Thread(new ThreadStart(RunMachine));
+            machineThread.Start();
         }
 
-        void CPU_DebugText(object sender, TextEventArgs e)
+        private void RunMachine()
+        {
+            while (true)
+            {
+                if(machine.Running && !stepping)
+                    machine.RunCycle();
+            }
+        }
+
+        void machine_WriteChar(object sender, CharEventArgs e)
+        {
+            switch (e.Char)
+            {
+                case '\r':
+                    currPos = 0;
+                    break;
+                case '\n':
+                    currLine++;
+                    break;
+                default:
+                    screenText[currLine] += e.Char;
+                    currPos++;
+                    break;
+            }
+            if (currPos > 80)
+            {
+                currPos = 0;
+                currLine++;
+            }
+
+            mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height*2));
+        }
+
+        private void SetCPULabel(string text)
         {
             if (clearDebug)
                 cpuLabel.Text = "";
 
-            if (e.Text.EndsWith("\n"))
+            if (text.EndsWith("\n"))
             {
-                cpuLabel.Text += e.Text.Substring(0, e.Text.Length - 1);
+                cpuLabel.Text += text.Substring(0, text.Length - 1);
                 clearDebug = true;
             }
             else
             {
-                cpuLabel.Text += e.Text;
+                cpuLabel.Text += text;
                 clearDebug = false;
             }
+
+        }
+
+        void CPU_DebugText(object sender, TextEventArgs e)
+        {
+            this.Invoke((MethodInvoker)delegate { SetCPULabel(e.Text); });
         }
 
         void mainPanel_Paint(object sender, PaintEventArgs e)
         {
+            if (e.ClipRectangle.Height == 0)
+                return;
             for (int i = 0; i < 25; i++)
             {
                 string line = screenText[i];
+                if (String.IsNullOrEmpty(line))
+                    continue;
                 e.Graphics.DrawString(line, panelFont, Brushes.White, new PointF(0, i * panelFont.Height * 1.06f));
             }
         }
 
         void machine_WriteText(object sender, TextEventArgs e)
         {
-            Graphics g = mainPanel.CreateGraphics();
-            SizeF stringSize = g.MeasureString(e.Text, panelFont);
-            int numLines;
-
-            numLines = (int)stringSize.Width / mainPanel.Width;
-
             screenText[currLine++] = e.Text;
             if (currLine >= 25)
                 currLine = 0;
 
-            mainPanel.Invalidate();
+            mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height));
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            running = false;
-            clockTimer.Stop();
+            machine.Stop();
+            machineThread.Abort();
             Application.Exit();
         }
 
@@ -119,19 +164,12 @@ namespace x86CS
 
         private void clockTimer_Tick(object sender, EventArgs e)
         {
-            if (!running)
-                return;
-
-            PrintRegisters();
-            machine.RunCycle();
         }
 
         private void runToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            running = true;
             runToolStripMenuItem.Enabled = false;
             stopToolStripMenuItem.Enabled = true;
-            clockTimer.Start();
             machine.Start();
         }
 
@@ -139,8 +177,6 @@ namespace x86CS
         {
             stopToolStripMenuItem.Enabled = false;
             runToolStripMenuItem.Enabled = true;
-            running = false;
-            clockTimer.Stop();
             machine.Stop();
         }
 
@@ -154,6 +190,7 @@ namespace x86CS
 
         private void stepButton_Click(object sender, EventArgs e)
         {
+            stepping = true;
             if (!machine.Running)
                 machine.Start();
             PrintRegisters();
@@ -162,8 +199,6 @@ namespace x86CS
 
         private void goButton_Click(object sender, EventArgs e)
         {
-            running = true;
-            clockTimer.Start();
             if (!machine.Running)
                 machine.Start();
         }

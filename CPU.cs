@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Collections;
 
 namespace x86CS
 {
@@ -103,8 +104,15 @@ namespace x86CS
         private CPUFlags eFlags;
         private SegmentRegister dataSegment;
         private bool repPrefix = false;
+        private bool debug = false;
         public event EventHandler<TextEventArgs> DebugText;
         public event EventHandler<IntEventArgs> InteruptFired;
+
+        public bool Debug
+        {
+            get { return debug; }
+            set { debug = value; }
+        }
 
         #region Registers
 
@@ -128,8 +136,8 @@ namespace x86CS
 
         public byte AH
         {
-            get { return (byte)((registers[(int)CPURegister.EAX].Word >> 2) & 0x0F); }
-            set { registers[(int)CPURegister.EAX].Word |= (ushort)((value & 0xF) << 2); }
+            get { return (byte)((registers[(int)CPURegister.EAX].Word >> 8)); }
+            set { registers[(int)CPURegister.EAX].Word |= (ushort)(value << 8); }
         }
 
         public uint EBX
@@ -152,8 +160,8 @@ namespace x86CS
 
         public byte BH
         {
-            get { return (byte)((registers[(int)CPURegister.EBX].Word >> 2) & 0x0F); }
-            set { registers[(int)CPURegister.EBX].Word |= (ushort)((value & 0xF) << 2); }
+            get { return (byte)((registers[(int)CPURegister.EBX].Word >> 8)); }
+            set { registers[(int)CPURegister.EBX].Word |= (ushort)(value << 8); }
         }
 
         public uint ECX
@@ -176,8 +184,8 @@ namespace x86CS
 
         public byte CH
         {
-            get { return (byte)((registers[(int)CPURegister.ECX].Word >> 2) & 0x0F); }
-            set { registers[(int)CPURegister.ECX].Word |= (ushort)((value & 0xF) << 2); }
+            get { return (byte)((registers[(int)CPURegister.ECX].Word >> 8)); }
+            set { registers[(int)CPURegister.ECX].Word |= (ushort)(value << 8); }
         }
 
         public uint EDX
@@ -200,8 +208,8 @@ namespace x86CS
 
         public byte DH
         {
-            get { return (byte)((registers[(int)CPURegister.EDX].Word >> 2) & 0x0F); }
-            set { registers[(int)CPURegister.EDX].Word |= (ushort)((value & 0xF) << 2); }
+            get { return (byte)((registers[(int)CPURegister.EDX].Word >> 8)); }
+            set { registers[(int)CPURegister.EDX].Word |= (ushort)(value << 8); }
         }
 
         public uint ESI
@@ -418,6 +426,9 @@ namespace x86CS
 
         private void DebugWrite(string text)
         {
+            if (!debug)
+                return;
+                    
             EventHandler<TextEventArgs> textEvent = DebugText;
 
             if (textEvent != null)
@@ -709,7 +720,17 @@ namespace x86CS
             return isReg;
         }
 
-        private byte Sub(byte dst, byte src)
+        private void SetParity(int value)
+        {
+            BitArray bitCount = new BitArray(new int[] { value });
+
+            if (bitCount.CountSet() % 2 == 0)
+                PF = true;
+            else
+                PF = false;
+        }
+
+        private byte Sub(byte src, byte dst)
         {
             short result = (short)(dst - src);
             if (result > byte.MaxValue)
@@ -722,7 +743,6 @@ namespace x86CS
                 ZF = true;
                 SF = false;
                 OF = false;
-                PF = true;
             }
             else if (result > 0)
             {
@@ -734,35 +754,37 @@ namespace x86CS
                 ZF = false;
                 SF = true;
             }
+
+            SetParity(result);
 
             return (byte)result;
         }
 
-        private ushort Sub(ushort dst, ushort src)
+        private ushort Sub(ushort src, ushort dst)
         {
             int result = (int)(dst - src);
-            if (result > ushort.MaxValue)
+
+            if (result >= ushort.MaxValue)
                 CF = true;
             else
                 CF = false;
 
-            if (result == 0)
-            {
-                ZF = true;
-                SF = false;
-                OF = false;
-                PF = true;
-            }
-            else if (result > 0)
-            {
-                ZF = false;
-                SF = false;
-            }
+            if ((short)result < short.MinValue)
+                OF = true;
             else
-            {
+                OF = false;
+
+            if (result == 0)
+                ZF = true;
+            else
                 ZF = false;
+
+            if (result < 0)
                 SF = true;
-            }
+            else
+                SF = false;
+
+            SetParity(result);
 
             return (ushort)result;
         }
@@ -815,6 +837,8 @@ namespace x86CS
             else
                 SF = false;
 
+            SetParity(ret);
+
             return (byte)ret;
         }
 
@@ -846,7 +870,58 @@ namespace x86CS
             else
                 SF = false;
 
+            SetParity(ret);
+
             return (ushort)ret;
+        }
+
+        private void Mul(ushort src, int dst)
+        {
+            uint mulResult = (uint)dst * src;
+
+            AX = (ushort)(mulResult & 0x0000FFFF);
+            DX = (ushort)(mulResult >> 16);
+
+            if (DX == 0)
+            {
+                OF = false;
+                CF = false;
+            }
+            else
+            {
+                OF = true;
+                CF = true;
+            }
+        }
+
+        private void Mul(byte src, ushort dst)
+        {
+            ushort mulResult = (ushort)(dst * src);
+
+            AL = (byte)(mulResult & 0x00FF);
+            AH = (byte)(mulResult >> 8);
+
+            if (AH == 0)
+            {
+                OF = false;
+                CF = false;
+            }
+            else
+            {
+                OF = true;
+                CF = true;
+            }
+        }
+
+        private void Div(ushort src, int dst)
+        {
+            uint dividend = (uint)(((DX << 8) & 0xFFFF0000) + AX);
+
+            if (dividend / src > ushort.MaxValue)
+                throw new Exception("Division Error");
+
+            AX = (ushort)(dividend / src);
+            DX = (ushort)(dividend % src);
         }
 
         private byte GetByteReg(byte offset, out string regStr)
@@ -893,6 +968,47 @@ namespace x86CS
             return byteOp;
         }
 
+        private void SetByteReg(byte offset, byte byteOp, out string regStr)
+        {
+            regStr = "INVALID";
+
+            switch (offset)
+            {
+                case 0x00:
+                    AL = byteOp;
+                    regStr = "AL";
+                    break;
+                case 0x01:
+                    CL = byteOp;
+                    regStr = "CL";
+                    break;
+                case 0x2:
+                    DL = byteOp;
+                    regStr = "DL";
+                    break;
+                case 0x3:
+                    BL = byteOp;
+                    regStr = "BL";
+                    break;
+                case 0x4:
+                    AH = byteOp;
+                    regStr = "AH";
+                    break;
+                case 0x5:
+                    CH = byteOp;
+                    regStr = "CH";
+                    break;
+                case 0x6:
+                    DH = byteOp;
+                    regStr = "DH";
+                    break;
+                case 0x7:
+                    BH = byteOp;
+                    regStr = "BH";
+                    break;
+            }
+        }
+
         public void Cycle()
         {
             ushort wordOp = 0;
@@ -901,7 +1017,6 @@ namespace x86CS
             ushort addr;
             bool isReg;
             string opStr, regStr, grpStr = "";
-            int tmpOp;
 
             DebugWrite(String.Format("{0:X4}:{1:X4}    ", CS, IP));
 
@@ -910,6 +1025,49 @@ namespace x86CS
             #region OpCodes
             switch (op)
             {
+                case 0x00:          /* ADD reg/mem8, reg8 */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    byteOp = GetByteReg(reg, out regStr);
+
+                    if (isReg)
+                    {
+                    }
+                    else
+                    {
+                        DataWriteByte(addr, byteOp);
+                    }
+
+                    DebugWriteLine(String.Format("ADD {0:2X}, {1}", opStr, regStr));
+                    break;
+                case 0x01:          /* ADD reg/mem16, reg */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    if (isReg)
+                        wordOp = registers[addr].Word;
+                    else
+                        wordOp = DataReadWord(addr);
+
+                    wordOp = Add(registers[reg].Word, wordOp);
+
+                    DebugWriteLine(String.Format("ADD {0}, {1}", opStr, GetRegStr(reg)));
+                    break;
+                case 0x02:          /* ADD reg8, reg/mem8 */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    byteOp = GetByteReg(reg, out regStr);
+
+                    if (isReg)
+                    {
+//                        SetByteReg(reg, byteOp, 
+                    }
+                    else
+                    {
+                        DataWriteByte(addr, byteOp);
+                    }
+
+                    DebugWriteLine(String.Format("ADD {0:2X}, {1}", opStr, regStr));
+                    break;
                 case 0x03:          /* ADD reg, reg/mem16 */
                     isReg = ReadRM(out reg, out addr, out opStr);
 
@@ -922,6 +1080,13 @@ namespace x86CS
 
                     DebugWriteLine(String.Format("ADD {0}, {1}", GetRegStr(reg), opStr));
                     break;
+                case 0x04:          /* ADD AL, imm8 */
+                    byteOp = ReadByte();
+
+                    AL = Add(byteOp, AL);
+
+                    DebugWriteLine(String.Format("ADD {0}, {1:2X}", AL, byteOp));
+                    break;
                 case 0x06:          /* PUSH ES */
                     StackPush(ES);
                     DebugWriteLine("PUSH ES");
@@ -930,7 +1095,38 @@ namespace x86CS
                     ES = StackPop();
                     DebugWriteLine("POP ES");
                     break;
-                case 0x13:
+                case 0x0a:          /* OR reg8, reg8/mem8 */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+                    
+                    byteOp = GetByteReg(reg, out regStr);
+
+                    if (isReg)
+                    {
+                        byteOp = registers[addr].Byte;
+                        GetByteReg((byte)addr, out opStr);
+                    }
+                    else
+                        byteOp = DataReadByte(addr);
+
+                    byteOp2 = (byte)(byteOp | registers[reg].Byte);
+
+                    OF = CF = false;
+
+                    if (byteOp2 == 0)
+                        ZF = true;
+                    else
+                        ZF = false;
+
+                    if ((sbyte)byteOp2 < 0)
+                        SF = true;
+                    else
+                        SF = false;
+
+                    SetParity(byteOp2);
+
+                    DebugWriteLine(String.Format("OR {0}, {1}", regStr, opStr));
+                    break;
+                case 0x13:          /* ADC reg, reg/mem16 */
                     isReg = ReadRM(out reg, out addr, out opStr);
 
                     if (isReg)
@@ -966,10 +1162,22 @@ namespace x86CS
        
                     DebugWriteLine(String.Format("XOR {0}, {1}", GetRegStr(reg), opStr));
                     break;
+                case 0x3b:          /* CMP reg, reg/mem16 */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    if(isReg)
+                        wordOp = registers[addr].Word;
+                    else
+                        wordOp = DataReadWord(addr);
+
+                    Sub(wordOp, registers[reg].Word);
+
+                    DebugWriteLine(String.Format("CMP {0}, {1}", GetRegStr(reg), opStr));
+                    break;
                 case 0x3c:          /* CMP AL, imm8 */
                     byteOp = ReadByte();
 
-                    Sub(AL, byteOp);
+                    Sub(byteOp, AL);
                     DebugWriteLine(String.Format("CMP AL, {0:X2}", byteOp));
                     break;
                 case 0x39:          /* CMP reg/mem16, reg */
@@ -984,7 +1192,19 @@ namespace x86CS
 
                     DebugWriteLine(String.Format("CMP {0}, {1}", opStr, GetRegStr(reg)));
                     break;
-                case 0x48:
+                case 0x40:          /* INC reg */
+                case 0x41:
+                case 0x42:
+                case 0x43:
+                case 0x44:
+                case 0x45:
+                case 0x46:
+                case 0x47:
+                    registers[op - 0x40].Word++;
+
+                    DebugWriteLine(String.Format("INC {0}", GetRegStr(op - 0x40)));
+                    break;
+                case 0x48:          /* DEC reg */
                 case 0x49:
                 case 0x4a:
                 case 0x4b:
@@ -1007,6 +1227,17 @@ namespace x86CS
 
                     DebugWriteLine(String.Format("PUSH {0}", GetRegStr(op - 0x50)));
                     break;
+                case 0x58:          /* POP reg */
+                case 0x59:
+                case 0x5a:
+                case 0x5b:
+                case 0x5c:
+                case 0x5d:
+                case 0x5e:
+                    registers[op - 0x58].Word = StackPop();
+
+                    DebugWriteLine(string.Format("POP {0}", GetRegStr(op - 0x58)));
+                    break;
                 case 0x72:          /* JB rel8 */
                     byteOp = ReadByte();
 
@@ -1016,6 +1247,16 @@ namespace x86CS
                         IP = addr;
                    
                     DebugWriteLine(String.Format("JB {0:X4}", addr));
+                    break;
+                case 0x73:          /* JNB rel8 */
+                    byteOp = ReadByte();
+
+                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+
+                    if (!CF)
+                        IP = addr;
+
+                    DebugWriteLine(String.Format("JNB {0:X4}", addr));
                     break;
                 case 0x74:          /* JE rel8 */
                     byteOp = ReadByte();
@@ -1043,9 +1284,9 @@ namespace x86CS
 
                     switch (opCode)
                     {
-                        case 0x7:
+                        case 0x7:   /* CMP */
                             grpStr = "CMP";
-                            Sub(byteOp2, byteOp);
+                            Sub(byteOp, byteOp2);
                             break;
 
                         default:
@@ -1137,12 +1378,21 @@ namespace x86CS
 
                     DebugWriteLine(String.Format("MOV {0}, {1}", Enum.GetName(typeof(SegmentRegister), segment), opStr));
                     break;
+                case 0x8f:          /* POP reg/mem16 */
+                    break;
                 case 0xa0:          /* MOV AL, moffs8 */
                     wordOp = ReadWord();
 
                     AL = DataReadByte(wordOp);
 
                     DebugWriteLine(String.Format("MOV AL, [{0:X4}]", wordOp));
+                    break;
+                case 0xa1:          /* MOV AX, moffs16 */
+                    wordOp = ReadWord();
+
+                    AX = DataReadWord(wordOp);
+
+                    DebugWriteLine(String.Format("MOV AX, [{0:X4}]", wordOp));
                     break;
                 case 0xa3:          /* MOV moffs16, AX */
                     wordOp = ReadWord();
@@ -1178,7 +1428,25 @@ namespace x86CS
                     break;
                 case 0xac:          /* LODSB */
                     AL = SegReadByte(SegmentRegister.DS, SI);
+
+                    if (DF)
+                        SI--;
+                    else
+                        SI++;
                     DebugWriteLine(String.Format("LODSB"));
+                    break;
+                case 0xb0:          /* MOV reg8, imm8 */
+                case 0xb1:
+                case 0xb2:
+                case 0xb3:
+                case 0xb4:
+                case 0xb5:
+                case 0xb6:
+                case 0xb7:
+                    byteOp = ReadByte();
+                    SetByteReg((byte)(op - 0xb0), byteOp, out regStr);
+
+                    DebugWriteLine(String.Format("MOV {0}, {1:X2}", regStr, byteOp));
                     break;
                 case 0xb8:          /* MOV reg, imm16 */
                 case 0xb9:
@@ -1241,9 +1509,15 @@ namespace x86CS
                     IP += (ushort)((short)wordOp);
                     DebugWriteLine(String.Format("CALL {0:X4}", IP));
                     break;
-                case 0xeb:          /* JMP rel8 */  
+                case 0xeb:          /* JMP rel8 */
+                    sbyte relOffs;
                     byteOp = ReadByte();
-                    IP += (byte)((sbyte)byteOp);
+
+                    relOffs = (sbyte)byteOp;
+                    if (relOffs < 0)
+                        IP -= (ushort)-relOffs;
+                    else
+                        IP += byteOp;
                     DebugWriteLine(String.Format("JMP {0:X4}", IP));
                     break;
                 case 0xf7:          /* GRP DX:AX, reg/mem16 */
@@ -1257,25 +1531,12 @@ namespace x86CS
                     switch (opCode)
                     {
                         case 0x4:   /* MUL */
-                            uint mulResult = (uint)AX * wordOp;
-
+                            Mul(wordOp, (int)AX);
                             grpStr = "MUL";
-
-                            AX = (ushort)(mulResult & 0x0000FFFF);
-                            DX = (ushort)(mulResult >> 8);
-
-                            if (DX == 0)
-                            {
-                                OF = false;
-                                CF = false;
-                            }
-                            else
-                            {
-                                OF = true;
-                                CF = true;
-                            }
                             break;
-                        case 0x6:
+                        case 0x6:   /* DIV */
+                            Div(wordOp, (int)AX);
+                            grpStr = "DIV";
                             break;
                         default:
                             break;
@@ -1283,9 +1544,15 @@ namespace x86CS
 
                     DebugWriteLine(String.Format("{0} {1:X4}", grpStr, opStr));
                     break;
+                case 0xf9:          /* STC */
+                    CF = true;
+
+                    DebugWriteLine("STC");
+                    break;  
                 case 0xfa:          /* CLI */
                     IF = false;
-                    DebugWriteLine(String.Format("CLI"));
+
+                    DebugWriteLine("CLI");
                     break;
                 case 0xfb:
                     IF = true;
@@ -1303,6 +1570,7 @@ namespace x86CS
             #endregion
             }
             dataSegment = SegmentRegister.DS;
+            repPrefix = false;
         }
 
         public void SetSegment(SegmentRegister register, int addr)
