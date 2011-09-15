@@ -70,7 +70,8 @@ namespace x86CS
                 currLine++;
             }
 
-            mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height*2));
+            //mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height*2));
+            mainPanel.Invalidate();
         }
 
         private void SetCPULabel(string text)
@@ -115,7 +116,8 @@ namespace x86CS
             if (currLine >= 25)
                 currLine = 0;
 
-            mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height));
+            //mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height));
+            mainPanel.Refresh();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -201,6 +203,11 @@ namespace x86CS
         {
             if (!machine.Running)
                 machine.Start();
+        }
+
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            machineThread.Abort();
         }
     }
 }
