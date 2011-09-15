@@ -162,6 +162,9 @@
             this.mainPanel.Name = "mainPanel";
             this.mainPanel.Size = new System.Drawing.Size(640, 400);
             this.mainPanel.TabIndex = 1;
+            this.mainPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.mainPanel_Paint);
+            this.mainPanel.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.mainPanel_PreviewKeyDown);
+            this.mainPanel.Click += new System.EventHandler(this.mainPanel_Click);
             // 
             // registersGroup
             // 

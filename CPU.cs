@@ -1379,6 +1379,17 @@ namespace x86CS
                     DebugWriteLine(String.Format("MOV {0}, {1}", Enum.GetName(typeof(SegmentRegister), segment), opStr));
                     break;
                 case 0x8f:          /* POP reg/mem16 */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    if (isReg)
+                    {
+                    }
+                    else
+                    {
+                        DataWriteWord(addr, StackPop());
+                    }
+
+                    DebugWriteLine(string.Format("POP {0}", opStr));
                     break;
                 case 0xa0:          /* MOV AL, moffs8 */
                     wordOp = ReadWord();
@@ -1518,6 +1529,7 @@ namespace x86CS
                         IP -= (ushort)-relOffs;
                     else
                         IP += byteOp;
+
                     DebugWriteLine(String.Format("JMP {0:X4}", IP));
                     break;
                 case 0xf7:          /* GRP DX:AX, reg/mem16 */

@@ -30,14 +30,17 @@ namespace x86CS
 
             InitializeComponent();
 
-            mainPanel.Paint += new PaintEventHandler(mainPanel_Paint);
-
             PrintRegisters();
 
             mainPanel.Select();
 
             machineThread = new Thread(new ThreadStart(RunMachine));
             machineThread.Start();
+
+            for (int i = 0; i < screenText.Length; i++)
+            {
+                screenText[i] = new string(' ', 80);
+            }
         }
 
         private void RunMachine()
@@ -60,14 +63,25 @@ namespace x86CS
                     currLine++;
                     break;
                 default:
-                    screenText[currLine] += e.Char;
+                    char[] chars = screenText[currLine].ToCharArray();
+
+                    chars[currPos] = e.Char;
+
+                    screenText[currLine] = new string(chars);
                     currPos++;
                     break;
             }
+
             if (currPos > 80)
             {
                 currPos = 0;
                 currLine++;
+            }
+
+            if (currLine >= 24)
+            {
+                currLine = 0;
+                currPos = 0;
             }
 
             //mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height*2));
@@ -89,7 +103,6 @@ namespace x86CS
                 cpuLabel.Text += text;
                 clearDebug = false;
             }
-
         }
 
         void CPU_DebugText(object sender, TextEventArgs e)
@@ -196,6 +209,7 @@ namespace x86CS
             if (!machine.Running)
                 machine.Start();
             PrintRegisters();
+            machine.CPU.Debug = true;
             machine.RunCycle();
         }
 
@@ -203,11 +217,23 @@ namespace x86CS
         {
             if (!machine.Running)
                 machine.Start();
+            machine.CPU.Debug = false;
+            stepping = false;
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             machineThread.Abort();
+        }
+
+        private void mainPanel_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            machine.KeyPresses.Push((char)e.KeyValue);
+        }
+
+        private void mainPanel_Click(object sender, EventArgs e)
+        {
+            mainPanel.Select();
         }
     }
 }

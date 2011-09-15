@@ -62,6 +62,13 @@ namespace x86CS
         public event EventHandler<TextEventArgs> WriteText;
         public event EventHandler<CharEventArgs> WriteChar;
         private Dictionary<int, InteruptHandler> interuptVectors = new Dictionary<int, InteruptHandler>();
+        private Stack<char> keyPresses = new Stack<char>();
+
+        public Stack<char> KeyPresses
+        {
+            get { return keyPresses; }
+            set { keyPresses = value; }
+        }
 
         public Floppy FloppyDrive
         {
@@ -84,9 +91,21 @@ namespace x86CS
 
             interuptVectors.Add(0x10, Int10);
             interuptVectors.Add(0x13, Int13);
+            interuptVectors.Add(0x16, _Int16);
             interuptVectors.Add(0x19, Int19);
 
             cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
+        }
+
+        private char GetChar()
+        {
+            if (keyPresses.Count > 0)
+                return keyPresses.Pop();
+
+            while (keyPresses.Count == 0)
+                ;
+
+            return keyPresses.Pop();
         }
 
         void cpu_InteruptFired(object sender, IntEventArgs e)
@@ -119,6 +138,18 @@ namespace x86CS
                 case 0x00:
                     floppyDrive.Reset();
                     cpu.CF = false;
+                    break;
+            }
+        }
+
+        private void _Int16()
+        {
+            switch (cpu.AH)
+            {
+                case 0x00:
+                    char c = GetChar();
+                    break;
+                default:
                     break;
             }
         }
