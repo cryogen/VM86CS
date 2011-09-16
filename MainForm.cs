@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 using System.Threading;
+using System.Globalization;
 
 namespace x86CS
 {
@@ -233,6 +234,21 @@ namespace x86CS
         private void mainPanel_Click(object sender, EventArgs e)
         {
             mainPanel.Select();
+        }
+
+        private void memoryButton_Click(object sender, EventArgs e)
+        {
+            ushort seg;
+            ushort off;
+            int addr;
+
+            seg = ushort.Parse(memSegment.Text, NumberStyles.HexNumber);
+            off = ushort.Parse(memOffset.Text, NumberStyles.HexNumber);
+                
+            addr = (seg << 4) + off;
+
+            memByte.Text = Memory.ReadByte(addr).ToString("X2");
+            memWord.Text = Memory.ReadWord(addr).ToString("X4");
         }
     }
 }

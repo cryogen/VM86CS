@@ -57,7 +57,7 @@ namespace x86CS
 
         public static ushort GetHigh(this ushort b)
         {
-            return (ushort)((b >> 8) & 0x000f);
+            return (ushort)((b >> 8) & 0x00ff);
         }
     }
 }

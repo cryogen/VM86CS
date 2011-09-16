@@ -90,11 +90,19 @@
             this.goButton = new System.Windows.Forms.Button();
             this.cpuGroup = new System.Windows.Forms.GroupBox();
             this.cpuLabel = new System.Windows.Forms.Label();
+            this.memoryGroup = new System.Windows.Forms.GroupBox();
+            this.memSegment = new System.Windows.Forms.TextBox();
+            this.memoryButton = new System.Windows.Forms.Button();
+            this.memDWord = new System.Windows.Forms.TextBox();
+            this.memWord = new System.Windows.Forms.TextBox();
+            this.memByte = new System.Windows.Forms.TextBox();
+            this.memOffset = new System.Windows.Forms.TextBox();
             this.mainMenu.SuspendLayout();
             this.registersGroup.SuspendLayout();
             this.segmentGroup.SuspendLayout();
             this.flagsGroup.SuspendLayout();
             this.cpuGroup.SuspendLayout();
+            this.memoryGroup.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainMenu
@@ -186,7 +194,7 @@
             this.registersGroup.Controls.Add(this.EAX);
             this.registersGroup.Location = new System.Drawing.Point(646, 27);
             this.registersGroup.Name = "registersGroup";
-            this.registersGroup.Size = new System.Drawing.Size(205, 138);
+            this.registersGroup.Size = new System.Drawing.Size(205, 100);
             this.registersGroup.TabIndex = 2;
             this.registersGroup.TabStop = false;
             this.registersGroup.Text = "Registers:";
@@ -194,7 +202,7 @@
             // espLabel
             // 
             this.espLabel.AutoSize = true;
-            this.espLabel.Location = new System.Drawing.Point(103, 97);
+            this.espLabel.Location = new System.Drawing.Point(104, 78);
             this.espLabel.Name = "espLabel";
             this.espLabel.Size = new System.Drawing.Size(28, 13);
             this.espLabel.TabIndex = 18;
@@ -203,7 +211,7 @@
             // ebpLabel
             // 
             this.ebpLabel.AutoSize = true;
-            this.ebpLabel.Location = new System.Drawing.Point(3, 96);
+            this.ebpLabel.Location = new System.Drawing.Point(6, 77);
             this.ebpLabel.Name = "ebpLabel";
             this.ebpLabel.Size = new System.Drawing.Size(28, 13);
             this.ebpLabel.TabIndex = 17;
@@ -212,7 +220,7 @@
             // ediLabel
             // 
             this.ediLabel.AutoSize = true;
-            this.ediLabel.Location = new System.Drawing.Point(104, 45);
+            this.ediLabel.Location = new System.Drawing.Point(107, 38);
             this.ediLabel.Name = "ediLabel";
             this.ediLabel.Size = new System.Drawing.Size(25, 13);
             this.ediLabel.TabIndex = 16;
@@ -221,7 +229,7 @@
             // esiLabel
             // 
             this.esiLabel.AutoSize = true;
-            this.esiLabel.Location = new System.Drawing.Point(6, 44);
+            this.esiLabel.Location = new System.Drawing.Point(10, 37);
             this.esiLabel.Name = "esiLabel";
             this.esiLabel.Size = new System.Drawing.Size(24, 13);
             this.esiLabel.TabIndex = 15;
@@ -229,7 +237,7 @@
             // 
             // EDI
             // 
-            this.EDI.Location = new System.Drawing.Point(131, 41);
+            this.EDI.Location = new System.Drawing.Point(131, 34);
             this.EDI.Name = "EDI";
             this.EDI.ReadOnly = true;
             this.EDI.Size = new System.Drawing.Size(70, 20);
@@ -237,7 +245,7 @@
             // 
             // ESP
             // 
-            this.ESP.Location = new System.Drawing.Point(131, 93);
+            this.ESP.Location = new System.Drawing.Point(131, 74);
             this.ESP.Name = "ESP";
             this.ESP.ReadOnly = true;
             this.ESP.Size = new System.Drawing.Size(70, 20);
@@ -245,7 +253,7 @@
             // 
             // EBP
             // 
-            this.EBP.Location = new System.Drawing.Point(30, 93);
+            this.EBP.Location = new System.Drawing.Point(33, 74);
             this.EBP.Name = "EBP";
             this.EBP.ReadOnly = true;
             this.EBP.Size = new System.Drawing.Size(70, 20);
@@ -253,7 +261,7 @@
             // 
             // ESI
             // 
-            this.ESI.Location = new System.Drawing.Point(33, 41);
+            this.ESI.Location = new System.Drawing.Point(33, 34);
             this.ESI.Name = "ESI";
             this.ESI.ReadOnly = true;
             this.ESI.Size = new System.Drawing.Size(70, 20);
@@ -262,7 +270,7 @@
             // edxLabel
             // 
             this.edxLabel.AutoSize = true;
-            this.edxLabel.Location = new System.Drawing.Point(103, 71);
+            this.edxLabel.Location = new System.Drawing.Point(103, 58);
             this.edxLabel.Name = "edxLabel";
             this.edxLabel.Size = new System.Drawing.Size(29, 13);
             this.edxLabel.TabIndex = 10;
@@ -271,7 +279,7 @@
             // ecxLabel
             // 
             this.ecxLabel.AutoSize = true;
-            this.ecxLabel.Location = new System.Drawing.Point(3, 70);
+            this.ecxLabel.Location = new System.Drawing.Point(6, 57);
             this.ecxLabel.Name = "ecxLabel";
             this.ecxLabel.Size = new System.Drawing.Size(28, 13);
             this.ecxLabel.TabIndex = 9;
@@ -305,7 +313,7 @@
             // 
             // EDX
             // 
-            this.EDX.Location = new System.Drawing.Point(131, 67);
+            this.EDX.Location = new System.Drawing.Point(131, 54);
             this.EDX.Name = "EDX";
             this.EDX.ReadOnly = true;
             this.EDX.Size = new System.Drawing.Size(70, 20);
@@ -313,7 +321,7 @@
             // 
             // ECX
             // 
-            this.ECX.Location = new System.Drawing.Point(30, 67);
+            this.ECX.Location = new System.Drawing.Point(33, 54);
             this.ECX.Name = "ECX";
             this.ECX.ReadOnly = true;
             this.ECX.Size = new System.Drawing.Size(70, 20);
@@ -341,9 +349,9 @@
             this.segmentGroup.Controls.Add(this.DS);
             this.segmentGroup.Controls.Add(this.csLabel);
             this.segmentGroup.Controls.Add(this.CS);
-            this.segmentGroup.Location = new System.Drawing.Point(646, 171);
+            this.segmentGroup.Location = new System.Drawing.Point(646, 133);
             this.segmentGroup.Name = "segmentGroup";
-            this.segmentGroup.Size = new System.Drawing.Size(205, 69);
+            this.segmentGroup.Size = new System.Drawing.Size(205, 59);
             this.segmentGroup.TabIndex = 3;
             this.segmentGroup.TabStop = false;
             this.segmentGroup.Text = "Segments:";
@@ -351,7 +359,7 @@
             // ssLabel
             // 
             this.ssLabel.AutoSize = true;
-            this.ssLabel.Location = new System.Drawing.Point(134, 42);
+            this.ssLabel.Location = new System.Drawing.Point(134, 35);
             this.ssLabel.Name = "ssLabel";
             this.ssLabel.Size = new System.Drawing.Size(21, 13);
             this.ssLabel.TabIndex = 11;
@@ -359,7 +367,7 @@
             // 
             // SS
             // 
-            this.SS.Location = new System.Drawing.Point(154, 39);
+            this.SS.Location = new System.Drawing.Point(154, 32);
             this.SS.Name = "SS";
             this.SS.ReadOnly = true;
             this.SS.Size = new System.Drawing.Size(34, 20);
@@ -368,7 +376,7 @@
             // gsLabel
             // 
             this.gsLabel.AutoSize = true;
-            this.gsLabel.Location = new System.Drawing.Point(77, 42);
+            this.gsLabel.Location = new System.Drawing.Point(77, 35);
             this.gsLabel.Name = "gsLabel";
             this.gsLabel.Size = new System.Drawing.Size(22, 13);
             this.gsLabel.TabIndex = 9;
@@ -376,7 +384,7 @@
             // 
             // GS
             // 
-            this.GS.Location = new System.Drawing.Point(97, 39);
+            this.GS.Location = new System.Drawing.Point(97, 32);
             this.GS.Name = "GS";
             this.GS.ReadOnly = true;
             this.GS.Size = new System.Drawing.Size(34, 20);
@@ -385,7 +393,7 @@
             // fsLabel
             // 
             this.fsLabel.AutoSize = true;
-            this.fsLabel.Location = new System.Drawing.Point(17, 42);
+            this.fsLabel.Location = new System.Drawing.Point(17, 35);
             this.fsLabel.Name = "fsLabel";
             this.fsLabel.Size = new System.Drawing.Size(20, 13);
             this.fsLabel.TabIndex = 7;
@@ -393,7 +401,7 @@
             // 
             // FS
             // 
-            this.FS.Location = new System.Drawing.Point(37, 39);
+            this.FS.Location = new System.Drawing.Point(37, 32);
             this.FS.Name = "FS";
             this.FS.ReadOnly = true;
             this.FS.Size = new System.Drawing.Size(34, 20);
@@ -468,16 +476,16 @@
             this.flagsGroup.Controls.Add(this.AF);
             this.flagsGroup.Controls.Add(this.PF);
             this.flagsGroup.Controls.Add(this.CF);
-            this.flagsGroup.Location = new System.Drawing.Point(647, 246);
+            this.flagsGroup.Location = new System.Drawing.Point(646, 198);
             this.flagsGroup.Name = "flagsGroup";
-            this.flagsGroup.Size = new System.Drawing.Size(204, 75);
+            this.flagsGroup.Size = new System.Drawing.Size(204, 64);
             this.flagsGroup.TabIndex = 4;
             this.flagsGroup.TabStop = false;
             this.flagsGroup.Text = "Flags";
             // 
             // VIP
             // 
-            this.VIP.Location = new System.Drawing.Point(169, 45);
+            this.VIP.Location = new System.Drawing.Point(169, 39);
             this.VIP.Name = "VIP";
             this.VIP.ReadOnly = true;
             this.VIP.Size = new System.Drawing.Size(23, 20);
@@ -485,7 +493,7 @@
             // 
             // VIF
             // 
-            this.VIF.Location = new System.Drawing.Point(145, 45);
+            this.VIF.Location = new System.Drawing.Point(146, 39);
             this.VIF.Name = "VIF";
             this.VIF.ReadOnly = true;
             this.VIF.Size = new System.Drawing.Size(23, 20);
@@ -493,7 +501,7 @@
             // 
             // AC
             // 
-            this.AC.Location = new System.Drawing.Point(122, 45);
+            this.AC.Location = new System.Drawing.Point(123, 39);
             this.AC.Name = "AC";
             this.AC.ReadOnly = true;
             this.AC.Size = new System.Drawing.Size(23, 20);
@@ -501,7 +509,7 @@
             // 
             // VM
             // 
-            this.VM.Location = new System.Drawing.Point(99, 45);
+            this.VM.Location = new System.Drawing.Point(100, 39);
             this.VM.Name = "VM";
             this.VM.ReadOnly = true;
             this.VM.Size = new System.Drawing.Size(23, 20);
@@ -509,7 +517,7 @@
             // 
             // RF
             // 
-            this.RF.Location = new System.Drawing.Point(76, 45);
+            this.RF.Location = new System.Drawing.Point(77, 39);
             this.RF.Name = "RF";
             this.RF.ReadOnly = true;
             this.RF.Size = new System.Drawing.Size(23, 20);
@@ -517,7 +525,7 @@
             // 
             // NT
             // 
-            this.NT.Location = new System.Drawing.Point(53, 45);
+            this.NT.Location = new System.Drawing.Point(54, 39);
             this.NT.Name = "NT";
             this.NT.ReadOnly = true;
             this.NT.Size = new System.Drawing.Size(23, 20);
@@ -525,7 +533,7 @@
             // 
             // IOPL
             // 
-            this.IOPL.Location = new System.Drawing.Point(30, 45);
+            this.IOPL.Location = new System.Drawing.Point(31, 39);
             this.IOPL.Name = "IOPL";
             this.IOPL.ReadOnly = true;
             this.IOPL.Size = new System.Drawing.Size(23, 20);
@@ -533,7 +541,7 @@
             // 
             // OF
             // 
-            this.OF.Location = new System.Drawing.Point(8, 45);
+            this.OF.Location = new System.Drawing.Point(8, 39);
             this.OF.Name = "OF";
             this.OF.ReadOnly = true;
             this.OF.Size = new System.Drawing.Size(23, 20);
@@ -615,7 +623,7 @@
             // 
             // stepButton
             // 
-            this.stepButton.Location = new System.Drawing.Point(16, 66);
+            this.stepButton.Location = new System.Drawing.Point(16, 45);
             this.stepButton.Name = "stepButton";
             this.stepButton.Size = new System.Drawing.Size(75, 23);
             this.stepButton.TabIndex = 0;
@@ -625,7 +633,7 @@
             // 
             // goButton
             // 
-            this.goButton.Location = new System.Drawing.Point(109, 66);
+            this.goButton.Location = new System.Drawing.Point(109, 45);
             this.goButton.Name = "goButton";
             this.goButton.Size = new System.Drawing.Size(75, 23);
             this.goButton.TabIndex = 1;
@@ -638,9 +646,9 @@
             this.cpuGroup.Controls.Add(this.cpuLabel);
             this.cpuGroup.Controls.Add(this.stepButton);
             this.cpuGroup.Controls.Add(this.goButton);
-            this.cpuGroup.Location = new System.Drawing.Point(652, 327);
+            this.cpuGroup.Location = new System.Drawing.Point(647, 268);
             this.cpuGroup.Name = "cpuGroup";
-            this.cpuGroup.Size = new System.Drawing.Size(200, 100);
+            this.cpuGroup.Size = new System.Drawing.Size(204, 75);
             this.cpuGroup.TabIndex = 5;
             this.cpuGroup.TabStop = false;
             this.cpuGroup.Text = "CPU";
@@ -648,16 +656,80 @@
             // cpuLabel
             // 
             this.cpuLabel.AutoSize = true;
-            this.cpuLabel.Location = new System.Drawing.Point(6, 32);
+            this.cpuLabel.Location = new System.Drawing.Point(6, 20);
             this.cpuLabel.Name = "cpuLabel";
             this.cpuLabel.Size = new System.Drawing.Size(0, 13);
             this.cpuLabel.TabIndex = 2;
+            // 
+            // memoryGroup
+            // 
+            this.memoryGroup.Controls.Add(this.memOffset);
+            this.memoryGroup.Controls.Add(this.memByte);
+            this.memoryGroup.Controls.Add(this.memWord);
+            this.memoryGroup.Controls.Add(this.memDWord);
+            this.memoryGroup.Controls.Add(this.memoryButton);
+            this.memoryGroup.Controls.Add(this.memSegment);
+            this.memoryGroup.Location = new System.Drawing.Point(650, 349);
+            this.memoryGroup.Name = "memoryGroup";
+            this.memoryGroup.Size = new System.Drawing.Size(201, 78);
+            this.memoryGroup.TabIndex = 6;
+            this.memoryGroup.TabStop = false;
+            this.memoryGroup.Text = "Memory";
+            // 
+            // memSegment
+            // 
+            this.memSegment.Location = new System.Drawing.Point(21, 20);
+            this.memSegment.Name = "memSegment";
+            this.memSegment.Size = new System.Drawing.Size(34, 20);
+            this.memSegment.TabIndex = 0;
+            // 
+            // memoryButton
+            // 
+            this.memoryButton.Location = new System.Drawing.Point(109, 16);
+            this.memoryButton.Name = "memoryButton";
+            this.memoryButton.Size = new System.Drawing.Size(75, 23);
+            this.memoryButton.TabIndex = 2;
+            this.memoryButton.Text = "&Lookup";
+            this.memoryButton.UseVisualStyleBackColor = true;
+            this.memoryButton.Click += new System.EventHandler(this.memoryButton_Click);
+            // 
+            // memDWord
+            // 
+            this.memDWord.Location = new System.Drawing.Point(21, 45);
+            this.memDWord.Name = "memDWord";
+            this.memDWord.ReadOnly = true;
+            this.memDWord.Size = new System.Drawing.Size(70, 20);
+            this.memDWord.TabIndex = 4;
+            // 
+            // memWord
+            // 
+            this.memWord.Location = new System.Drawing.Point(109, 45);
+            this.memWord.Name = "memWord";
+            this.memWord.ReadOnly = true;
+            this.memWord.Size = new System.Drawing.Size(34, 20);
+            this.memWord.TabIndex = 5;
+            // 
+            // memByte
+            // 
+            this.memByte.Location = new System.Drawing.Point(157, 45);
+            this.memByte.Name = "memByte";
+            this.memByte.ReadOnly = true;
+            this.memByte.Size = new System.Drawing.Size(23, 20);
+            this.memByte.TabIndex = 6;
+            // 
+            // memOffset
+            // 
+            this.memOffset.Location = new System.Drawing.Point(61, 20);
+            this.memOffset.Name = "memOffset";
+            this.memOffset.Size = new System.Drawing.Size(34, 20);
+            this.memOffset.TabIndex = 1;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(856, 428);
+            this.Controls.Add(this.memoryGroup);
             this.Controls.Add(this.cpuGroup);
             this.Controls.Add(this.flagsGroup);
             this.Controls.Add(this.segmentGroup);
@@ -678,6 +750,8 @@
             this.flagsGroup.PerformLayout();
             this.cpuGroup.ResumeLayout(false);
             this.cpuGroup.PerformLayout();
+            this.memoryGroup.ResumeLayout(false);
+            this.memoryGroup.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -746,6 +820,13 @@
         private System.Windows.Forms.Button goButton;
         private System.Windows.Forms.GroupBox cpuGroup;
         private System.Windows.Forms.Label cpuLabel;
+        private System.Windows.Forms.GroupBox memoryGroup;
+        private System.Windows.Forms.TextBox memByte;
+        private System.Windows.Forms.TextBox memWord;
+        private System.Windows.Forms.TextBox memDWord;
+        private System.Windows.Forms.Button memoryButton;
+        private System.Windows.Forms.TextBox memSegment;
+        private System.Windows.Forms.TextBox memOffset;
     }
 }
 
