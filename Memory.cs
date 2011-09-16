@@ -24,11 +24,27 @@ namespace x86CS
             return new IntPtr(realMemBase.ToInt32() + virtualPtr);
         }
 
+        public static void SegBlockWrite(ushort segment, ushort offset, byte[] buffer, int length)
+        {
+            ushort virtualPtr = (ushort)((segment << 4) + offset);
+
+            Marshal.Copy(buffer, 0, new IntPtr(realMemBase.ToInt32() + virtualPtr), length);
+        }
+
         public static void BlockWrite(int addr, byte[] buffer, int length)
         {
             IntPtr realOffset = GetRealAddress(addr);
 
             Marshal.Copy(buffer, 0, realOffset, length);
+        }
+
+        public static int BlockRead(int addr, byte[] buffer, int length)
+        {
+            IntPtr realOffset = GetRealAddress(addr);
+
+            Marshal.Copy(realOffset, buffer, 0, length);
+
+            return buffer.Length;
         }
 
         public static byte ReadByte(int addr)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Runtime.InteropServices;
 
 namespace x86CS
 {
@@ -94,6 +95,15 @@ namespace x86CS
             interuptVectors.Add(0x16, _Int16);
             interuptVectors.Add(0x19, Int19);
 
+            IntPtr p = Marshal.AllocHGlobal(Marshal.SizeOf(floppyDrive.DPT));
+            Marshal.StructureToPtr(floppyDrive.DPT, p, false);
+            byte[] tmp = new byte[Marshal.SizeOf(floppyDrive.DPT)];
+            Marshal.Copy(p, tmp, 0, tmp.Length);
+
+            Memory.BlockWrite(0xf0000, tmp, tmp.Length);
+            Memory.WriteWord(0x78, 0x0000);
+            Memory.WriteWord(0x7a, 0xf000);
+
             cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
         }
 
@@ -131,6 +141,30 @@ namespace x86CS
             }
         }
 
+        private void ReadSector()
+        {
+            int count = cpu.AL;
+            byte sector, cyl, head;
+            DisketteParamTable dpt;
+            byte[] buffer = new byte[Marshal.SizeOf(typeof(DisketteParamTable))];          
+            IntPtr p;
+
+            sector = (byte)(cpu.CL & 0x3f);
+            cyl = cpu.CH;
+            head = cpu.DH;
+
+            Memory.BlockRead((Memory.ReadWord(0x7a) << 16) + Memory.ReadWord(0x78), buffer, buffer.Length);
+            p = Marshal.AllocHGlobal(buffer.Length);
+            Marshal.Copy(buffer, 0, p, buffer.Length);
+            dpt = (DisketteParamTable)Marshal.PtrToStructure(p, typeof(DisketteParamTable));
+
+            int addr = (cyl * 2 + head) * dpt.LastTrack + (sector - 1);
+
+            byte[] fileBuffer = floppyDrive.ReadSector(addr);
+
+            Memory.SegBlockWrite(cpu.ES, cpu.BX, fileBuffer, fileBuffer.Length);
+        }
+
         private void Int13()
         {
             switch (cpu.AH)
@@ -138,6 +172,11 @@ namespace x86CS
                 case 0x00:
                     floppyDrive.Reset();
                     cpu.CF = false;
+                    break;
+                case 0x02:
+                    ReadSector();
+                    break;
+                default:
                     break;
             }
         }

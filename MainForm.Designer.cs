@@ -648,7 +648,7 @@
             // cpuLabel
             // 
             this.cpuLabel.AutoSize = true;
-            this.cpuLabel.Location = new System.Drawing.Point(11, 32);
+            this.cpuLabel.Location = new System.Drawing.Point(6, 32);
             this.cpuLabel.Name = "cpuLabel";
             this.cpuLabel.Size = new System.Drawing.Size(0, 13);
             this.cpuLabel.TabIndex = 2;

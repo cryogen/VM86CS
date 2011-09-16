@@ -11,7 +11,7 @@ namespace x86CS
 {
     public partial class MainForm : Form
     {
-        private Machine machine = new Machine();
+        private Machine machine;
         private string[] screenText = new string[25];
         private int currLine, currPos;
         Font panelFont = new Font("Courier New", 9.64f);
@@ -72,7 +72,7 @@ namespace x86CS
                     break;
             }
 
-            if (currPos > 80)
+            if (currPos == 80)
             {
                 currPos = 0;
                 currLine++;
@@ -129,8 +129,7 @@ namespace x86CS
             if (currLine >= 25)
                 currLine = 0;
 
-            //mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height));
-            mainPanel.Refresh();
+            mainPanel.Invalidate();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
