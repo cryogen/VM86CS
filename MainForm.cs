@@ -19,6 +19,7 @@ namespace x86CS
         bool clearDebug = true;
         bool stepping = false;
         Thread machineThread;
+        Breakpoints breakpoints = new Breakpoints();
 
         public MainForm()
         {
@@ -26,6 +27,9 @@ namespace x86CS
             machine.WriteText += new EventHandler<TextEventArgs>(machine_WriteText);
             machine.WriteChar += new EventHandler<CharEventArgs>(machine_WriteChar);
             machine.CPU.DebugText += new EventHandler<TextEventArgs>(CPU_DebugText);
+
+            breakpoints.ItemAdded += new EventHandler<IntEventArgs>(breakpoints_ItemAdded);
+            breakpoints.ItemDeleted += new EventHandler<IntEventArgs>(breakpoints_ItemDeleted);
 
             currLine = currPos = 0;
 
@@ -44,12 +48,33 @@ namespace x86CS
             }
         }
 
+        void breakpoints_ItemDeleted(object sender, IntEventArgs e)
+        {
+            machine.ClearBreakpoint(e.Number);
+        }
+
+        void breakpoints_ItemAdded(object sender, IntEventArgs e)
+        {
+            machine.SetBreakpoint(e.Number);
+        }
+
         private void RunMachine()
         {
             while (true)
             {
-                if(machine.Running && !stepping)
+                if (machine.Running && !stepping)
+                {
+                    if (machine.CheckBreakpoint())
+                    {
+                        stepping = true;
+                        machine.CPU.Debug = true;
+                        this.Invoke((MethodInvoker)delegate { PrintRegisters(); });
+                    }
+                    else
+                        machine.CPU.Debug = false;
+
                     machine.RunCycle();
+                }
             }
         }
 
@@ -177,10 +202,6 @@ namespace x86CS
             VIP.Text = cpu.VIP ? "VP" : "NP";   
         }
 
-        private void clockTimer_Tick(object sender, EventArgs e)
-        {
-        }
-
         private void runToolStripMenuItem_Click(object sender, EventArgs e)
         {
             runToolStripMenuItem.Enabled = false;
@@ -206,8 +227,10 @@ namespace x86CS
         private void stepButton_Click(object sender, EventArgs e)
         {
             stepping = true;
+            
             if (!machine.Running)
                 machine.Start();
+
             PrintRegisters();
             machine.CPU.Debug = true;
             machine.RunCycle();
@@ -217,6 +240,7 @@ namespace x86CS
         {
             if (!machine.Running)
                 machine.Start();
+
             machine.CPU.Debug = false;
             stepping = false;
         }
@@ -238,17 +262,36 @@ namespace x86CS
 
         private void memoryButton_Click(object sender, EventArgs e)
         {
-            ushort seg;
-            ushort off;
+            ushort seg = 0;
+            ushort off = 0;
             int addr;
 
-            seg = ushort.Parse(memSegment.Text, NumberStyles.HexNumber);
-            off = ushort.Parse(memOffset.Text, NumberStyles.HexNumber);
+            try
+            {
+                seg = ushort.Parse(memSegment.Text, NumberStyles.HexNumber);
+                off = ushort.Parse(memOffset.Text, NumberStyles.HexNumber);
+            }
+            catch
+            {
+            }
                 
             addr = (seg << 4) + off;
 
             memByte.Text = Memory.ReadByte(addr).ToString("X2");
             memWord.Text = Memory.ReadWord(addr).ToString("X4");
+        }
+
+        private void breakpointsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            breakpoints.ShowDialog();
+        }
+
+        private void restartToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            machine.Restart();
+
+            machine.CPU.Debug = false;
+            stepping = false;
         }
     }
 }

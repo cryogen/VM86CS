@@ -12,6 +12,7 @@ namespace x86CS
         private BinaryReader floppyReader;
         bool mounted = false;
         private DisketteParamTable dpt;
+        private StreamWriter logFile = File.CreateText("floppy.txt");
 
         public bool Mounted
         {
@@ -41,6 +42,8 @@ namespace x86CS
             dpt.FillChar = 0xf6;            /* default fill byte/char */
             dpt.HeadSettle = 0x0f;          /* 15ms */
             dpt.MotorOn = 0x08;             /* 1s */
+
+            logFile.AutoFlush = true;
         }
 
         public bool MountImage(string imagePath)
@@ -58,33 +61,48 @@ namespace x86CS
                 return false;
             }
 
+            logFile.WriteLine("Mounted image file {0}", imagePath);
             mounted = true;
             return true;
         }
 
         public byte ReadByte()
         {
-            return floppyReader.ReadByte();
+            byte ret = floppyReader.ReadByte();
+
+            logFile.WriteLine(String.Format("Floppy Read Byte {0:X4} {1:X2}", floppyReader.BaseStream.Position, ret));
+
+            return ret;
         }
 
         public ushort ReadWord()
         {
-            return floppyReader.ReadUInt16();
+            ushort ret = floppyReader.ReadUInt16();
+
+            logFile.WriteLine(String.Format("Floppy Read Word {0:X4} {1:X4}", floppyReader.BaseStream.Position, ret));
+
+            return ret;
         }
 
         public byte[] ReadBytes(int count)
         {
-            return floppyReader.ReadBytes(count);
+            byte[] ret = floppyReader.ReadBytes(count);;
+
+            logFile.WriteLine(String.Format("Floppy Read Bytes {0:X4} {1}", floppyReader.BaseStream.Position, count));
+
+            return ret;
         }
 
         public void Reset()
         {
+            logFile.WriteLine("Floppy RESET");
             floppyStream.Seek(0, SeekOrigin.Begin);
         }
 
         public byte[] ReadSector(int offset)
         {
             floppyStream.Seek(offset * 512, SeekOrigin.Begin);
+            logFile.WriteLine("Floppy Read Sector {0:X4}", offset);
             return floppyReader.ReadBytes(512);
         }
     }
@@ -97,14 +115,14 @@ namespace x86CS
 
         public byte StepRate
         {
-            get { return stepRateHeadUnload.GetLow(); }
-            set { stepRateHeadUnload = stepRateHeadUnload.SetLow(value); }
+            get { return stepRateHeadUnload.GetHigh(); }
+            set { stepRateHeadUnload = stepRateHeadUnload.SetHigh(value); }
         }
 
         public byte HeadUnload
         {
-            get { return stepRateHeadUnload.GetHigh(); }
-            set { stepRateHeadUnload = stepRateHeadUnload.SetHigh(value); }
+            get { return stepRateHeadUnload.GetLow(); }
+            set { stepRateHeadUnload = stepRateHeadUnload.SetLow(value); }
         }
 
         public byte HeadLoad

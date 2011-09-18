@@ -3,3 +3,6 @@ bin/x86/Debug/cpulog.txt
 *.pdb
 *.suo
 *.Cache
+bin/x86/Debug/*
+obj/x86/Debug/*
+obj/x86/Debug/*

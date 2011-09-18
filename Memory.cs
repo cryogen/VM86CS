@@ -2,33 +2,34 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.IO;
 
 namespace x86CS
 {
     public class Memory
     {
         private static IntPtr realMemBase;
-        private static uint memorySize = 0xFFFFF; 
+        private static uint memorySize = 0xFFFFF;
+        private static StreamWriter logFile = File.CreateText("memlog.txt");
 
         static Memory()
         {
             realMemBase = Marshal.AllocHGlobal((int)memorySize);
+            logFile.AutoFlush = true;
         }
 
         private static IntPtr GetRealAddress(int virtualAddr)
         {
-            ushort virtualSeg = (ushort)(virtualAddr >> 16);
-            ushort virtualOff = (ushort)(virtualAddr & 0xffff);
-            ushort virtualPtr = (ushort)(virtualSeg + virtualOff);
-
-            return new IntPtr(realMemBase.ToInt32() + virtualPtr);
+            return new IntPtr(realMemBase.ToInt32() + virtualAddr);
         }
 
         public static void SegBlockWrite(ushort segment, ushort offset, byte[] buffer, int length)
         {
-            ushort virtualPtr = (ushort)((segment << 4) + offset);
+            uint virtualPtr = (uint)((segment << 4) + offset);
 
             Marshal.Copy(buffer, 0, new IntPtr(realMemBase.ToInt32() + virtualPtr), length);
+
+            logFile.WriteLine(String.Format("Seg Write Block: {0:X4}:{1:X4} ({2:X4}) {3}", segment, offset, virtualPtr, length));
         }
 
         public static void BlockWrite(int addr, byte[] buffer, int length)
@@ -36,6 +37,8 @@ namespace x86CS
             IntPtr realOffset = GetRealAddress(addr);
 
             Marshal.Copy(buffer, 0, realOffset, length);
+
+            logFile.WriteLine(String.Format("Mem Write Block: {0:X4} {1}", addr, length));
         }
 
         public static int BlockRead(int addr, byte[] buffer, int length)
@@ -44,26 +47,38 @@ namespace x86CS
 
             Marshal.Copy(realOffset, buffer, 0, length);
 
+            logFile.WriteLine(String.Format("Mem Read Block: {0:X4} {1}", addr, length));
+
             return buffer.Length;
         }
 
         public static byte ReadByte(int addr)
         {
             IntPtr realOffset = GetRealAddress(addr);
+            byte ret;
 
-            return Marshal.ReadByte(realOffset);
+            ret = Marshal.ReadByte(realOffset);
+            logFile.WriteLine(String.Format("Mem Read Byte: {0:X4} {1:X2}", addr, ret));
+
+            return ret;
         }
 
         public static ushort ReadWord(int addr)
         {
             IntPtr realOffset = GetRealAddress(addr);
+            ushort ret;
 
-            return (ushort)Marshal.ReadInt16(realOffset);
+            ret = (ushort)Marshal.ReadInt16(realOffset);
+            logFile.WriteLine(String.Format("Mem Read Word: {0:X4} {1:X4}", addr, ret));
+        
+            return ret;
         }
 
         public static void WriteByte(int addr, byte value)
         {
             IntPtr realOffset = GetRealAddress(addr);
+
+            logFile.WriteLine(String.Format("Mem Write Byte: {0:X4} {1:X2}", addr, value));
 
             Marshal.WriteByte(realOffset, value);
         }
@@ -71,6 +86,8 @@ namespace x86CS
         public static void WriteWord(int addr, ushort value)
         {
             IntPtr realOffset = GetRealAddress(addr);
+
+            logFile.WriteLine(String.Format("Mem Write Word: {0:X4} {1:X4}", addr, value));
 
             Marshal.WriteInt16(realOffset, (short)value);
         }

@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.mainMenu = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -36,21 +35,23 @@
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.floppyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mountToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.debugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.breakpointsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainPanel = new System.Windows.Forms.Panel();
             this.registersGroup = new System.Windows.Forms.GroupBox();
-            this.espLabel = new System.Windows.Forms.Label();
-            this.ebpLabel = new System.Windows.Forms.Label();
-            this.ediLabel = new System.Windows.Forms.Label();
-            this.esiLabel = new System.Windows.Forms.Label();
-            this.EDI = new System.Windows.Forms.TextBox();
-            this.ESP = new System.Windows.Forms.TextBox();
             this.EBP = new System.Windows.Forms.TextBox();
+            this.ebpLabel = new System.Windows.Forms.Label();
+            this.ESP = new System.Windows.Forms.TextBox();
+            this.ebxLabel = new System.Windows.Forms.Label();
+            this.esiLabel = new System.Windows.Forms.Label();
+            this.espLabel = new System.Windows.Forms.Label();
+            this.EBX = new System.Windows.Forms.TextBox();
             this.ESI = new System.Windows.Forms.TextBox();
+            this.ediLabel = new System.Windows.Forms.Label();
+            this.EDI = new System.Windows.Forms.TextBox();
             this.edxLabel = new System.Windows.Forms.Label();
             this.ecxLabel = new System.Windows.Forms.Label();
-            this.ebxLabel = new System.Windows.Forms.Label();
             this.eaxLabel = new System.Windows.Forms.Label();
-            this.EBX = new System.Windows.Forms.TextBox();
             this.EDX = new System.Windows.Forms.TextBox();
             this.ECX = new System.Windows.Forms.TextBox();
             this.EAX = new System.Windows.Forms.TextBox();
@@ -84,19 +85,19 @@
             this.AF = new System.Windows.Forms.TextBox();
             this.PF = new System.Windows.Forms.TextBox();
             this.CF = new System.Windows.Forms.TextBox();
-            this.clockTimer = new System.Windows.Forms.Timer(this.components);
             this.floppyOpen = new System.Windows.Forms.OpenFileDialog();
             this.stepButton = new System.Windows.Forms.Button();
             this.goButton = new System.Windows.Forms.Button();
             this.cpuGroup = new System.Windows.Forms.GroupBox();
             this.cpuLabel = new System.Windows.Forms.Label();
             this.memoryGroup = new System.Windows.Forms.GroupBox();
-            this.memSegment = new System.Windows.Forms.TextBox();
-            this.memoryButton = new System.Windows.Forms.Button();
-            this.memDWord = new System.Windows.Forms.TextBox();
-            this.memWord = new System.Windows.Forms.TextBox();
-            this.memByte = new System.Windows.Forms.TextBox();
             this.memOffset = new System.Windows.Forms.TextBox();
+            this.memByte = new System.Windows.Forms.TextBox();
+            this.memWord = new System.Windows.Forms.TextBox();
+            this.memDWord = new System.Windows.Forms.TextBox();
+            this.memoryButton = new System.Windows.Forms.Button();
+            this.memSegment = new System.Windows.Forms.TextBox();
+            this.restartToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainMenu.SuspendLayout();
             this.registersGroup.SuspendLayout();
             this.segmentGroup.SuspendLayout();
@@ -109,7 +110,8 @@
             // 
             this.mainMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fileToolStripMenuItem,
-            this.floppyToolStripMenuItem});
+            this.floppyToolStripMenuItem,
+            this.debugToolStripMenuItem});
             this.mainMenu.Location = new System.Drawing.Point(0, 0);
             this.mainMenu.Name = "mainMenu";
             this.mainMenu.Size = new System.Drawing.Size(856, 24);
@@ -120,6 +122,7 @@
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.runToolStripMenuItem,
             this.stopToolStripMenuItem,
+            this.restartToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
@@ -128,7 +131,7 @@
             // runToolStripMenuItem
             // 
             this.runToolStripMenuItem.Name = "runToolStripMenuItem";
-            this.runToolStripMenuItem.Size = new System.Drawing.Size(98, 22);
+            this.runToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.runToolStripMenuItem.Text = "&Run";
             this.runToolStripMenuItem.Click += new System.EventHandler(this.runToolStripMenuItem_Click);
             // 
@@ -136,14 +139,14 @@
             // 
             this.stopToolStripMenuItem.Enabled = false;
             this.stopToolStripMenuItem.Name = "stopToolStripMenuItem";
-            this.stopToolStripMenuItem.Size = new System.Drawing.Size(98, 22);
+            this.stopToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.stopToolStripMenuItem.Text = "&Stop";
             this.stopToolStripMenuItem.Click += new System.EventHandler(this.stopToolStripMenuItem_Click);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(98, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
@@ -162,6 +165,21 @@
             this.mountToolStripMenuItem.Text = "&Mount";
             this.mountToolStripMenuItem.Click += new System.EventHandler(this.mountToolStripMenuItem_Click);
             // 
+            // debugToolStripMenuItem
+            // 
+            this.debugToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.breakpointsToolStripMenuItem});
+            this.debugToolStripMenuItem.Name = "debugToolStripMenuItem";
+            this.debugToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
+            this.debugToolStripMenuItem.Text = "&Debug";
+            // 
+            // breakpointsToolStripMenuItem
+            // 
+            this.breakpointsToolStripMenuItem.Name = "breakpointsToolStripMenuItem";
+            this.breakpointsToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
+            this.breakpointsToolStripMenuItem.Text = "&Breakpoints";
+            this.breakpointsToolStripMenuItem.Click += new System.EventHandler(this.breakpointsToolStripMenuItem_Click);
+            // 
             // mainPanel
             // 
             this.mainPanel.BackColor = System.Drawing.Color.Black;
@@ -176,19 +194,19 @@
             // 
             // registersGroup
             // 
-            this.registersGroup.Controls.Add(this.espLabel);
-            this.registersGroup.Controls.Add(this.ebpLabel);
-            this.registersGroup.Controls.Add(this.ediLabel);
-            this.registersGroup.Controls.Add(this.esiLabel);
-            this.registersGroup.Controls.Add(this.EDI);
-            this.registersGroup.Controls.Add(this.ESP);
             this.registersGroup.Controls.Add(this.EBP);
+            this.registersGroup.Controls.Add(this.ebpLabel);
+            this.registersGroup.Controls.Add(this.ESP);
+            this.registersGroup.Controls.Add(this.ebxLabel);
+            this.registersGroup.Controls.Add(this.esiLabel);
+            this.registersGroup.Controls.Add(this.espLabel);
+            this.registersGroup.Controls.Add(this.EBX);
             this.registersGroup.Controls.Add(this.ESI);
+            this.registersGroup.Controls.Add(this.ediLabel);
+            this.registersGroup.Controls.Add(this.EDI);
             this.registersGroup.Controls.Add(this.edxLabel);
             this.registersGroup.Controls.Add(this.ecxLabel);
-            this.registersGroup.Controls.Add(this.ebxLabel);
             this.registersGroup.Controls.Add(this.eaxLabel);
-            this.registersGroup.Controls.Add(this.EBX);
             this.registersGroup.Controls.Add(this.EDX);
             this.registersGroup.Controls.Add(this.ECX);
             this.registersGroup.Controls.Add(this.EAX);
@@ -199,78 +217,95 @@
             this.registersGroup.TabStop = false;
             this.registersGroup.Text = "Registers:";
             // 
-            // espLabel
-            // 
-            this.espLabel.AutoSize = true;
-            this.espLabel.Location = new System.Drawing.Point(104, 78);
-            this.espLabel.Name = "espLabel";
-            this.espLabel.Size = new System.Drawing.Size(28, 13);
-            this.espLabel.TabIndex = 18;
-            this.espLabel.Text = "ESP";
-            // 
-            // ebpLabel
-            // 
-            this.ebpLabel.AutoSize = true;
-            this.ebpLabel.Location = new System.Drawing.Point(6, 77);
-            this.ebpLabel.Name = "ebpLabel";
-            this.ebpLabel.Size = new System.Drawing.Size(28, 13);
-            this.ebpLabel.TabIndex = 17;
-            this.ebpLabel.Text = "EBP";
-            // 
-            // ediLabel
-            // 
-            this.ediLabel.AutoSize = true;
-            this.ediLabel.Location = new System.Drawing.Point(107, 38);
-            this.ediLabel.Name = "ediLabel";
-            this.ediLabel.Size = new System.Drawing.Size(25, 13);
-            this.ediLabel.TabIndex = 16;
-            this.ediLabel.Text = "EDI";
-            // 
-            // esiLabel
-            // 
-            this.esiLabel.AutoSize = true;
-            this.esiLabel.Location = new System.Drawing.Point(10, 37);
-            this.esiLabel.Name = "esiLabel";
-            this.esiLabel.Size = new System.Drawing.Size(24, 13);
-            this.esiLabel.TabIndex = 15;
-            this.esiLabel.Text = "ESI";
-            // 
-            // EDI
-            // 
-            this.EDI.Location = new System.Drawing.Point(131, 34);
-            this.EDI.Name = "EDI";
-            this.EDI.ReadOnly = true;
-            this.EDI.Size = new System.Drawing.Size(70, 20);
-            this.EDI.TabIndex = 14;
-            // 
-            // ESP
-            // 
-            this.ESP.Location = new System.Drawing.Point(131, 74);
-            this.ESP.Name = "ESP";
-            this.ESP.ReadOnly = true;
-            this.ESP.Size = new System.Drawing.Size(70, 20);
-            this.ESP.TabIndex = 13;
-            // 
             // EBP
             // 
-            this.EBP.Location = new System.Drawing.Point(33, 74);
+            this.EBP.Location = new System.Drawing.Point(131, 54);
             this.EBP.Name = "EBP";
             this.EBP.ReadOnly = true;
             this.EBP.Size = new System.Drawing.Size(70, 20);
             this.EBP.TabIndex = 12;
             // 
+            // ebpLabel
+            // 
+            this.ebpLabel.AutoSize = true;
+            this.ebpLabel.Location = new System.Drawing.Point(104, 58);
+            this.ebpLabel.Name = "ebpLabel";
+            this.ebpLabel.Size = new System.Drawing.Size(28, 13);
+            this.ebpLabel.TabIndex = 17;
+            this.ebpLabel.Text = "EBP";
+            // 
+            // ESP
+            // 
+            this.ESP.Location = new System.Drawing.Point(33, 54);
+            this.ESP.Name = "ESP";
+            this.ESP.ReadOnly = true;
+            this.ESP.Size = new System.Drawing.Size(70, 20);
+            this.ESP.TabIndex = 13;
+            // 
+            // ebxLabel
+            // 
+            this.ebxLabel.AutoSize = true;
+            this.ebxLabel.Location = new System.Drawing.Point(104, 39);
+            this.ebxLabel.Name = "ebxLabel";
+            this.ebxLabel.Size = new System.Drawing.Size(28, 13);
+            this.ebxLabel.TabIndex = 8;
+            this.ebxLabel.Text = "EBX";
+            // 
+            // esiLabel
+            // 
+            this.esiLabel.AutoSize = true;
+            this.esiLabel.Location = new System.Drawing.Point(10, 77);
+            this.esiLabel.Name = "esiLabel";
+            this.esiLabel.Size = new System.Drawing.Size(24, 13);
+            this.esiLabel.TabIndex = 15;
+            this.esiLabel.Text = "ESI";
+            // 
+            // espLabel
+            // 
+            this.espLabel.AutoSize = true;
+            this.espLabel.Location = new System.Drawing.Point(6, 58);
+            this.espLabel.Name = "espLabel";
+            this.espLabel.Size = new System.Drawing.Size(28, 13);
+            this.espLabel.TabIndex = 18;
+            this.espLabel.Text = "ESP";
+            // 
+            // EBX
+            // 
+            this.EBX.Location = new System.Drawing.Point(131, 35);
+            this.EBX.Name = "EBX";
+            this.EBX.ReadOnly = true;
+            this.EBX.Size = new System.Drawing.Size(70, 20);
+            this.EBX.TabIndex = 6;
+            // 
             // ESI
             // 
-            this.ESI.Location = new System.Drawing.Point(33, 34);
+            this.ESI.Location = new System.Drawing.Point(33, 74);
             this.ESI.Name = "ESI";
             this.ESI.ReadOnly = true;
             this.ESI.Size = new System.Drawing.Size(70, 20);
             this.ESI.TabIndex = 11;
             // 
+            // ediLabel
+            // 
+            this.ediLabel.AutoSize = true;
+            this.ediLabel.Location = new System.Drawing.Point(107, 77);
+            this.ediLabel.Name = "ediLabel";
+            this.ediLabel.Size = new System.Drawing.Size(25, 13);
+            this.ediLabel.TabIndex = 16;
+            this.ediLabel.Text = "EDI";
+            // 
+            // EDI
+            // 
+            this.EDI.Location = new System.Drawing.Point(131, 74);
+            this.EDI.Name = "EDI";
+            this.EDI.ReadOnly = true;
+            this.EDI.Size = new System.Drawing.Size(70, 20);
+            this.EDI.TabIndex = 14;
+            // 
             // edxLabel
             // 
             this.edxLabel.AutoSize = true;
-            this.edxLabel.Location = new System.Drawing.Point(103, 58);
+            this.edxLabel.Location = new System.Drawing.Point(5, 39);
             this.edxLabel.Name = "edxLabel";
             this.edxLabel.Size = new System.Drawing.Size(29, 13);
             this.edxLabel.TabIndex = 10;
@@ -279,20 +314,11 @@
             // ecxLabel
             // 
             this.ecxLabel.AutoSize = true;
-            this.ecxLabel.Location = new System.Drawing.Point(6, 57);
+            this.ecxLabel.Location = new System.Drawing.Point(104, 18);
             this.ecxLabel.Name = "ecxLabel";
             this.ecxLabel.Size = new System.Drawing.Size(28, 13);
             this.ecxLabel.TabIndex = 9;
             this.ecxLabel.Text = "ECX";
-            // 
-            // ebxLabel
-            // 
-            this.ebxLabel.AutoSize = true;
-            this.ebxLabel.Location = new System.Drawing.Point(104, 19);
-            this.ebxLabel.Name = "ebxLabel";
-            this.ebxLabel.Size = new System.Drawing.Size(28, 13);
-            this.ebxLabel.TabIndex = 8;
-            this.ebxLabel.Text = "EBX";
             // 
             // eaxLabel
             // 
@@ -303,17 +329,9 @@
             this.eaxLabel.TabIndex = 7;
             this.eaxLabel.Text = "EAX";
             // 
-            // EBX
-            // 
-            this.EBX.Location = new System.Drawing.Point(131, 15);
-            this.EBX.Name = "EBX";
-            this.EBX.ReadOnly = true;
-            this.EBX.Size = new System.Drawing.Size(70, 20);
-            this.EBX.TabIndex = 6;
-            // 
             // EDX
             // 
-            this.EDX.Location = new System.Drawing.Point(131, 54);
+            this.EDX.Location = new System.Drawing.Point(33, 35);
             this.EDX.Name = "EDX";
             this.EDX.ReadOnly = true;
             this.EDX.Size = new System.Drawing.Size(70, 20);
@@ -321,7 +339,7 @@
             // 
             // ECX
             // 
-            this.ECX.Location = new System.Drawing.Point(33, 54);
+            this.ECX.Location = new System.Drawing.Point(131, 15);
             this.ECX.Name = "ECX";
             this.ECX.ReadOnly = true;
             this.ECX.Size = new System.Drawing.Size(70, 20);
@@ -611,11 +629,6 @@
             this.CF.Size = new System.Drawing.Size(23, 20);
             this.CF.TabIndex = 0;
             // 
-            // clockTimer
-            // 
-            this.clockTimer.Interval = 1;
-            this.clockTimer.Tick += new System.EventHandler(this.clockTimer_Tick);
-            // 
             // floppyOpen
             // 
             this.floppyOpen.Filter = "All files|*.*";
@@ -676,12 +689,38 @@
             this.memoryGroup.TabStop = false;
             this.memoryGroup.Text = "Memory";
             // 
-            // memSegment
+            // memOffset
             // 
-            this.memSegment.Location = new System.Drawing.Point(21, 20);
-            this.memSegment.Name = "memSegment";
-            this.memSegment.Size = new System.Drawing.Size(34, 20);
-            this.memSegment.TabIndex = 0;
+            this.memOffset.Location = new System.Drawing.Point(61, 20);
+            this.memOffset.MaxLength = 4;
+            this.memOffset.Name = "memOffset";
+            this.memOffset.Size = new System.Drawing.Size(34, 20);
+            this.memOffset.TabIndex = 1;
+            this.memOffset.Text = "0000";
+            // 
+            // memByte
+            // 
+            this.memByte.Location = new System.Drawing.Point(157, 45);
+            this.memByte.Name = "memByte";
+            this.memByte.ReadOnly = true;
+            this.memByte.Size = new System.Drawing.Size(23, 20);
+            this.memByte.TabIndex = 6;
+            // 
+            // memWord
+            // 
+            this.memWord.Location = new System.Drawing.Point(109, 45);
+            this.memWord.Name = "memWord";
+            this.memWord.ReadOnly = true;
+            this.memWord.Size = new System.Drawing.Size(34, 20);
+            this.memWord.TabIndex = 5;
+            // 
+            // memDWord
+            // 
+            this.memDWord.Location = new System.Drawing.Point(21, 45);
+            this.memDWord.Name = "memDWord";
+            this.memDWord.ReadOnly = true;
+            this.memDWord.Size = new System.Drawing.Size(70, 20);
+            this.memDWord.TabIndex = 4;
             // 
             // memoryButton
             // 
@@ -693,36 +732,21 @@
             this.memoryButton.UseVisualStyleBackColor = true;
             this.memoryButton.Click += new System.EventHandler(this.memoryButton_Click);
             // 
-            // memDWord
+            // memSegment
             // 
-            this.memDWord.Location = new System.Drawing.Point(21, 45);
-            this.memDWord.Name = "memDWord";
-            this.memDWord.ReadOnly = true;
-            this.memDWord.Size = new System.Drawing.Size(70, 20);
-            this.memDWord.TabIndex = 4;
+            this.memSegment.Location = new System.Drawing.Point(21, 20);
+            this.memSegment.MaxLength = 4;
+            this.memSegment.Name = "memSegment";
+            this.memSegment.Size = new System.Drawing.Size(34, 20);
+            this.memSegment.TabIndex = 0;
+            this.memSegment.Text = "0000";
             // 
-            // memWord
+            // restartToolStripMenuItem
             // 
-            this.memWord.Location = new System.Drawing.Point(109, 45);
-            this.memWord.Name = "memWord";
-            this.memWord.ReadOnly = true;
-            this.memWord.Size = new System.Drawing.Size(34, 20);
-            this.memWord.TabIndex = 5;
-            // 
-            // memByte
-            // 
-            this.memByte.Location = new System.Drawing.Point(157, 45);
-            this.memByte.Name = "memByte";
-            this.memByte.ReadOnly = true;
-            this.memByte.Size = new System.Drawing.Size(23, 20);
-            this.memByte.TabIndex = 6;
-            // 
-            // memOffset
-            // 
-            this.memOffset.Location = new System.Drawing.Point(61, 20);
-            this.memOffset.Name = "memOffset";
-            this.memOffset.Size = new System.Drawing.Size(34, 20);
-            this.memOffset.TabIndex = 1;
+            this.restartToolStripMenuItem.Name = "restartToolStripMenuItem";
+            this.restartToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.restartToolStripMenuItem.Text = "R&estart";
+            this.restartToolStripMenuItem.Click += new System.EventHandler(this.restartToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -811,7 +835,6 @@
         private System.Windows.Forms.TextBox VIP;
         private System.Windows.Forms.TextBox VIF;
         private System.Windows.Forms.TextBox AC;
-        private System.Windows.Forms.Timer clockTimer;
         private System.Windows.Forms.ToolStripMenuItem stopToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem floppyToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem mountToolStripMenuItem;
@@ -827,6 +850,9 @@
         private System.Windows.Forms.Button memoryButton;
         private System.Windows.Forms.TextBox memSegment;
         private System.Windows.Forms.TextBox memOffset;
+        private System.Windows.Forms.ToolStripMenuItem debugToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem breakpointsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem restartToolStripMenuItem;
     }
 }
 
