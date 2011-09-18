@@ -306,6 +306,11 @@ namespace x86CS
         #endregion
 
         #region Flags
+        public ushort EFlags
+        {
+            get { return (ushort)eFlags; }
+        }
+
         public CPUFlags Flags
         {
             get { return eFlags; }
@@ -581,7 +586,7 @@ namespace x86CS
             SegWriteWord(dataSegment, offset, value);
         }
 
-        private ushort StackPop()
+        public ushort StackPop()
         {
             ushort ret;
 
@@ -591,7 +596,7 @@ namespace x86CS
             return ret;
         }
 
-        private void StackPush(ushort value)
+        public void StackPush(ushort value)
         {
             SP -= 2;
 
@@ -1176,6 +1181,26 @@ namespace x86CS
                     BH = byteOp;
                     regStr = "BH";
                     break;
+            }
+        }
+
+        private void FarCall(ushort seg, ushort off)
+        {
+            if (seg == 0xf000)
+            {
+                IntPtr p = new IntPtr(Memory.ReadDWord(((seg << 4) + off)));
+                InteruptHandler handler = (InteruptHandler)Marshal.GetDelegateForFunctionPointer(p, typeof(InteruptHandler));
+
+                handler();
+
+                IP = StackPop();
+                CS = StackPop();
+                eFlags = (CPUFlags)StackPop();
+            }
+            else
+            {
+                CS = seg;
+                IP = off;
             }
         }
 
@@ -1902,6 +1927,25 @@ namespace x86CS
 
                     debugStr += "CBW";
                     break;
+                case 0x9a:          /* CALL FAR ptr16:ptr16 */
+                    addr = ReadWord();
+                    wordOp = ReadWord();
+
+                    StackPush(CS);
+                    StackPush(IP);
+
+                    FarCall(wordOp, addr);
+
+                    debugStr += String.Format("CALL FAR {0:X4}:{1:X4}", CS, IP);
+                    break;
+                case 0x9c:          /* PUSHF */
+                    StackPush(EFlags);
+                    debugStr += "PUSHF";
+                    break;
+                case 0x9d:          /* POPF */
+                    eFlags = (CPUFlags)StackPop();
+                    debugStr += "POPF";
+                    break;
                 case 0xa0:          /* MOV AL, moffs8 */
                     wordOp = ReadWord();
 
@@ -1921,7 +1965,7 @@ namespace x86CS
 
                     DataWriteByte(wordOp, AL);
 
-                    debugStr += String.Format("MOV AL, [{0:X2}]", wordOp);
+                    debugStr += String.Format("MOV [{0:X4}], AL", wordOp);
                     break;
                 case 0xa3:          /* MOV moffs16, AX */
                     wordOp = ReadWord();
@@ -2102,6 +2146,14 @@ namespace x86CS
 
                     debugStr += "LEAVE";
                     break;
+                case 0xca:          /* RETF imm16 */
+                    wordOp = ReadWord();
+
+                    IP = StackPop();
+                    CS = StackPop();
+
+                    SP += wordOp;
+                    break;
                 case 0xcb:          /* RETF */
                     IP = StackPop();
                     CS = StackPop();
@@ -2230,6 +2282,11 @@ namespace x86CS
 
                     debugStr += String.Format("{0} {1}, CL", grpStr, isReg ? GetRegStr(addr) : addr.ToString("X4"));
                     break;
+                case 0xe4:          /* IN AL, imm8 */
+                    byteOp = ReadByte();
+
+                    debugStr += String.Format("IN AL, {0:X2}", byteOp);
+                    break;
                 case 0xe6:          /* OUT imm8, AL */
                     byteOp = ReadByte();
 
@@ -2250,8 +2307,7 @@ namespace x86CS
                     addr = ReadWord();
                     wordOp = ReadWord();
 
-                    CS = wordOp;
-                    IP = addr;
+                    FarCall(wordOp, addr);
 
                     debugStr += String.Format("JMP {0:X4}:{1:X4}", wordOp, addr);
                     break;
@@ -2382,6 +2438,21 @@ namespace x86CS
 
                     switch (opCode)
                     {
+                        case 0x03:
+                            grpStr = "CALL FAR";
+                            wordOp2 = DataReadWord(addr + 2);
+
+                            StackPush(CS);
+                            StackPush(IP);
+
+                            FarCall(wordOp2, wordOp);
+                            break;
+                        case 0x05:
+                            grpStr = "JMP FAR";
+                            wordOp2 = DataReadWord(addr + 2);
+
+                            FarCall(wordOp2, wordOp);
+                            break;
                         case 0x06:
                             grpStr = "PUSH";
                             StackPush(wordOp);

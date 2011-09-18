@@ -58,6 +58,7 @@
             this.breakpointList.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.segmentHeader,
             this.OffsetColumn});
+            this.breakpointList.FullRowSelect = true;
             this.breakpointList.Location = new System.Drawing.Point(0, 0);
             this.breakpointList.Name = "breakpointList";
             this.breakpointList.Size = new System.Drawing.Size(394, 128);
@@ -125,7 +126,11 @@
             this.Controls.Add(this.breakpointList);
             this.Controls.Add(this.offset);
             this.Controls.Add(this.segment);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
             this.Name = "Breakpoints";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Breakpoints";
             this.ResumeLayout(false);
             this.PerformLayout();

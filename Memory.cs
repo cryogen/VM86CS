@@ -74,6 +74,17 @@ namespace x86CS
             return ret;
         }
 
+        public static uint ReadDWord(int addr)
+        {
+            IntPtr realOffset = GetRealAddress(addr);
+            uint ret;
+
+            ret = (uint)Marshal.ReadInt32(realOffset);
+            logFile.WriteLine(String.Format("Mem Read DWord: {0:X4} {1:X8}", addr, ret));
+
+            return ret;
+        }
+
         public static void WriteByte(int addr, byte value)
         {
             IntPtr realOffset = GetRealAddress(addr);

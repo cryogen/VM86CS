@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace x86CS
 {
@@ -79,6 +80,10 @@ namespace x86CS
         private Stack<char> keyPresses = new Stack<char>();
         private Dictionary<int, int> breakpoints = new Dictionary<int, int>();
         private SystemConfig sysConfig = new SystemConfig();
+        private int systemAddr = 0xf0000;
+        private int sysConfigAddr;
+        DateTime currTime = DateTime.Now;
+        private byte midnightCounter = 0;
 
         public Stack<char> KeyPresses
         {
@@ -103,10 +108,69 @@ namespace x86CS
 
         public Machine()
         {
-            IntPtr p;
-            byte[] tmp;
+            InteruptHandler defaultHandler = new InteruptHandler(UnhandledInt);
 
             floppyDrive = new Floppy();
+
+            for(int i = 0; i < 0x10; i++)
+                SetupInterrupt(i, defaultHandler);
+            SetupInterrupt(0x10, new InteruptHandler(Int10));
+            SetupInterrupt(0x11, new InteruptHandler(Int11));
+            SetupInterrupt(0x12, new InteruptHandler(Int12));
+            SetupInterrupt(0x13, new InteruptHandler(Int13));
+            SetupInterrupt(0x14, defaultHandler);
+            SetupInterrupt(0x15, new InteruptHandler(Int15));
+            SetupInterrupt(0x16, new InteruptHandler(_Int16));
+            SetupInterrupt(0x17, defaultHandler);
+            SetupInterrupt(0x18, defaultHandler);
+            SetupInterrupt(0x19, new InteruptHandler(Int19));
+            SetupInterrupt(0x1a, new InteruptHandler(Int1a));
+            for(int i = 0x1b; i < 0x1e; i++)
+                SetupInterrupt(i, defaultHandler);
+
+            SetupSystemConfig();
+            SetupDPT();
+
+            cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
+        }
+
+        private void UnhandledInt()
+        {
+
+        }
+
+        private void SetupInterrupt(int vector, Delegate handler)
+        {
+            GCHandle handle;
+            IntPtr p;
+
+            handle = GCHandle.Alloc(handler);
+            p = Marshal.GetFunctionPointerForDelegate(handler);
+
+            Memory.BlockWrite(systemAddr, BitConverter.GetBytes(p.ToInt32()), 4);
+
+            WriteIVTEntry(vector, systemAddr);
+            systemAddr += 4;
+        }
+
+        private void WriteIVTEntry(int offset, int addr)
+        {
+            ushort seg;
+            ushort off;
+            
+            off = (ushort)(addr & 0xffff);
+            addr -= off;
+            seg = (ushort)((addr >> 4) & 0xffff);
+
+            Memory.WriteWord(offset * 4, off);
+            Memory.WriteWord(offset * 4 + 2, seg);
+        }
+
+        private void SetupSystemConfig()
+        {
+            IntPtr p;
+            byte[] tmp;
+            int configSize = Marshal.SizeOf(sysConfig);
 
             sysConfig.NumBytes = 8;
             sysConfig.Model = 0xfc;
@@ -118,35 +182,38 @@ namespace x86CS
             sysConfig.Feature4 = 0;
             sysConfig.Feature5 = 0;
 
-            p = Marshal.AllocHGlobal(Marshal.SizeOf(sysConfig));
+            p = Marshal.AllocHGlobal(configSize);
             Marshal.StructureToPtr(sysConfig, p, false);
-            tmp = new byte[Marshal.SizeOf(sysConfig)];
+            tmp = new byte[configSize];
 
-            Marshal.Copy(p, tmp, 0, Marshal.SizeOf(sysConfig));
-            Memory.BlockWrite(0xf0100, tmp, tmp.Length);
+            Marshal.Copy(p, tmp, 0, configSize);
+            Memory.BlockWrite(systemAddr, tmp, configSize);
 
             Marshal.FreeHGlobal(p);
 
-            interuptVectors.Add(0x10, Int10);
-            interuptVectors.Add(0x11, Int11);
-            interuptVectors.Add(0x12, Int12);
-            interuptVectors.Add(0x13, Int13);
-            interuptVectors.Add(0x15, Int15);
-            interuptVectors.Add(0x16, _Int16);
-            interuptVectors.Add(0x19, Int19);
+            sysConfigAddr = systemAddr;
 
-            p = Marshal.AllocHGlobal(Marshal.SizeOf(floppyDrive.DPT));
+            systemAddr += configSize;
+        }
+
+        private void SetupDPT()
+        {
+            IntPtr p;
+            byte[] tmp;
+            int dptSize = Marshal.SizeOf(floppyDrive.DPT);
+
+            p = Marshal.AllocHGlobal(dptSize);
             Marshal.StructureToPtr(floppyDrive.DPT, p, false);
-            tmp = new byte[Marshal.SizeOf(floppyDrive.DPT)];
-            Marshal.Copy(p, tmp, 0, tmp.Length);
+            tmp = new byte[dptSize];
+            Marshal.Copy(p, tmp, 0, dptSize);
 
-            Memory.BlockWrite(0xf0000, tmp, tmp.Length);
-            Memory.WriteWord(0x78, 0x0000);
-            Memory.WriteWord(0x7a, 0xf000);
+            Memory.BlockWrite(systemAddr, tmp, dptSize);
+
+            WriteIVTEntry(0x78, systemAddr);
 
             Marshal.FreeHGlobal(p);
 
-            cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
+            systemAddr += dptSize;
         }
 
         public void Restart()
@@ -196,11 +263,42 @@ namespace x86CS
 
         void cpu_InteruptFired(object sender, IntEventArgs e)
         {
-            InteruptHandler handler;
+            InteruptHandler handler = null;
+            ushort seg, off;
+            int addr;
+            IntPtr p;
 
-            if (!interuptVectors.TryGetValue(e.Number, out handler))
+            off = Memory.ReadWord(e.Number * 4);
+            seg = Memory.ReadWord(e.Number * 4 + 2);
+
+            addr = ((seg << 4) + off);
+
+            p = new IntPtr(Memory.ReadDWord(addr));
+
+            /*            if (!interuptVectors.TryGetValue(e.Number, out handler))
+                        {
+                            Console.WriteLine("Missing interrupt {0:X2}", e.Number);
+                            return;
+                        }*/
+
+            if (seg == 0xf000)
+                handler = (InteruptHandler)Marshal.GetDelegateForFunctionPointer(p, typeof(InteruptHandler));
+            else
             {
-                Console.WriteLine("Missing interrupt {0:X2}", e.Number);
+
+                // Marshal failed, interrupt has been overridden
+                Console.WriteLine("Call to {0}, has been overriden to {1:X4}:{2:X4}", e.Number, seg, off);
+
+                cpu.StackPush(cpu.EFlags);
+                cpu.IF = false;
+                cpu.TF = false;
+                cpu.AC = false;
+                cpu.StackPush(cpu.CS);
+                cpu.StackPush(cpu.IP);
+
+                cpu.CS = seg;
+                cpu.IP = off;
+
                 return;
             }
 
@@ -275,6 +373,9 @@ namespace x86CS
                     else
                         cpu.CF = true;
                     break;
+                case 0x08:
+                    cpu.CF = true;
+                    break;
                 default:
                     break;
             }
@@ -282,14 +383,22 @@ namespace x86CS
 
         private void Int15()
         {
+            ushort seg;
+            ushort off;
+            int addr = sysConfigAddr;
+
+            off = (ushort)(addr & 0xffff);
+            addr -= off;
+            seg = (ushort)((addr >> 4) & 0xffff);
+
             switch (cpu.AH)
             {
                 case 0xc0:
                     cpu.CF = false;
                     cpu.AH = 0;
 
-                    cpu.ES = 0xf000;
-                    cpu.BX = 0x0100;
+                    cpu.ES = seg;
+                    cpu.BX = off;
                     break;
                 default:
                     break;
@@ -302,6 +411,63 @@ namespace x86CS
             {
                 case 0x00:
                     char c = GetChar();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private byte ToBCD(int value)
+        {
+            byte ret;
+            int tens, ones;
+
+            tens = value / 10;
+            ones = value % 10;
+
+            ret = (byte)(((byte)tens << 4) + (byte)ones);
+
+            return ret;
+        }
+
+        private void Int1a()
+        {
+            switch (cpu.AH)
+            {
+                case 0x0:
+                    uint numTicks;
+                    float tmp;
+
+                    numTicks = (uint)((currTime.Hour * 60 * 60) + (currTime.Minute * 60) + currTime.Second);
+                    tmp = numTicks * 18.2f;
+                    numTicks = (uint)tmp;
+
+                    cpu.CX = (ushort)(numTicks >> 16);
+                    cpu.AX = (ushort)(numTicks & 0xffff);
+                    cpu.AL = midnightCounter;
+
+                    midnightCounter--;
+
+                    break;
+                case 0x2:
+                    cpu.CH = ToBCD(currTime.Hour);
+                    cpu.CL = ToBCD(currTime.Minute);
+                    cpu.DH = ToBCD(currTime.Second);
+
+                    if (currTime.IsDaylightSavingTime())
+                        cpu.DL = 0x1;
+                    else
+                        cpu.DL = 0x0;
+
+                    cpu.CF = false;
+                    break;
+                case 0x4:
+                    cpu.CH = ToBCD(currTime.Year / 100);
+                    cpu.CL = ToBCD(currTime.Year % 100);
+                    cpu.DH = ToBCD(currTime.Month);
+                    cpu.DL = ToBCD(currTime.Day);
+
+                    cpu.CF = false;
                     break;
                 default:
                     break;
@@ -370,6 +536,11 @@ namespace x86CS
         {
             if(running)
                 cpu.Cycle();
+
+            if (DateTime.Now.Day != currTime.Day)
+                midnightCounter++;
+
+            currTime = DateTime.Now;
         }
     }
 }
