@@ -108,11 +108,18 @@ namespace x86CS
 
         public Machine()
         {
-            InteruptHandler defaultHandler = new InteruptHandler(UnhandledInt);
-
             floppyDrive = new Floppy();
 
-            for(int i = 0; i < 0x10; i++)
+            SetupSystem();
+
+            cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
+        }
+
+        private void SetupSystem()
+        {
+            InteruptHandler defaultHandler = new InteruptHandler(UnhandledInt);
+
+            for (int i = 0; i < 0x10; i++)
                 SetupInterrupt(i, defaultHandler);
             SetupInterrupt(0x10, new InteruptHandler(Int10));
             SetupInterrupt(0x11, new InteruptHandler(Int11));
@@ -125,13 +132,14 @@ namespace x86CS
             SetupInterrupt(0x18, defaultHandler);
             SetupInterrupt(0x19, new InteruptHandler(Int19));
             SetupInterrupt(0x1a, new InteruptHandler(Int1a));
-            for(int i = 0x1b; i < 0x1e; i++)
+            for (int i = 0x1b; i < 0x1e; i++)
                 SetupInterrupt(i, defaultHandler);
 
             SetupSystemConfig();
             SetupDPT();
 
-            cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
+            /* BDA */
+            Memory.WriteByte(0x496, 0x10);
         }
 
         private void UnhandledInt()
@@ -209,7 +217,7 @@ namespace x86CS
 
             Memory.BlockWrite(systemAddr, tmp, dptSize);
 
-            WriteIVTEntry(0x78, systemAddr);
+            WriteIVTEntry(0x1E, systemAddr);
 
             Marshal.FreeHGlobal(p);
 
@@ -218,8 +226,11 @@ namespace x86CS
 
         public void Restart()
         {
+            running = false;
             cpu.Reset();
+            SetupSystem();
             Int19();
+            running = true;
         }
 
         public void SetBreakpoint(int addr)
@@ -320,7 +331,7 @@ namespace x86CS
 
         private void Int11()
         {
-            cpu.AX = 0x27;
+            cpu.AX = 0x4227;
         }
 
         private void Int12()

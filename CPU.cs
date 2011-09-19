@@ -816,11 +816,11 @@ namespace x86CS
             else
                 result = (sbyte)(dst - src);
 
-            if ((byte)result > byte.MaxValue)
+            if (dst < src)
                 CF = true;
             else
                 CF = false;
-      
+  
             if (result == 0)
             {
                 ZF = true;
@@ -1021,6 +1021,26 @@ namespace x86CS
 
             AX = (ushort)(dividend / src);
             DX = (ushort)(dividend % src);
+        }
+
+        private byte And(byte src, byte dst)
+        {
+            byte temp = (byte)(src & dst);
+
+            if ((sbyte)temp < 0)
+                SF = true;
+            else
+                SF = false;
+
+            if (temp == 0)
+                ZF = true;
+            else
+                ZF = false;
+
+            CF = false;
+            OF = false;
+
+            return temp;
         }
 
         private ushort And(ushort src, ushort dst)
@@ -1330,6 +1350,13 @@ namespace x86CS
 
                     debugStr += (String.Format("OR {0}, {1}", regStr, isReg ? regStr2 : opStr));
                     break;
+                case 0x0c:          /* OR AL, imm8 */
+                    byteOp = ReadByte();
+
+                    AL = Or(byteOp, AL);
+
+                    debugStr += String.Format("OR AL, {0:X2}", byteOp);
+                    break;
                 case 0x0e:          /* PUSH CS */
                     StackPush(CS);
                     debugStr += "PUSH CS";
@@ -1358,10 +1385,17 @@ namespace x86CS
                     DS = StackPop();
                     debugStr += ("POP DS");
                     break;
+                case 0x24:          /* AND AL, imm8 */
+                    byteOp = ReadByte();
+
+                    AL = And(byteOp, AL);
+
+                    debugStr += String.Format("AND AL, {0:X2}", byteOp);
+                    break;
                 case 0x25:          /* AND AX, imm16 */
                     wordOp = ReadWord();
 
-                    AX &= wordOp;
+                    AX = And(wordOp, AX);
 
                     debugStr += String.Format("AND AX, {0:X4}", wordOp);
                     break;
@@ -2167,6 +2201,13 @@ namespace x86CS
 
                     debugStr += String.Format("INT {0:X2}", byteOp);
                     break;
+                case 0xcf:          /* IRET */
+                    IP = StackPop();
+                    CS = StackPop();
+                    eFlags = (CPUFlags)StackPop();
+
+                    debugStr += "IRET";
+                    break;
                 case 0xd0:          /* GRP reg/mem8, 1 */
                     isReg = ReadRM(out opCode, out addr, out opStr);
 
@@ -2180,6 +2221,17 @@ namespace x86CS
                         case 0x00:
                             grpStr = "ROL";
                             SetByteReg((byte)addr, (byte)((byteOp << 1) | (byteOp >> (8 - 1))));
+                            break;
+                        case 0x05:
+                            grpStr = "SHR";
+
+                            byteOp = (byte)(byteOp >> 1);
+
+                            if (isReg)
+                                SetByteReg((byte)addr, byteOp);
+                            else
+                                DataWriteByte(addr, byteOp);
+
                             break;
                         default:
                             break;
@@ -2359,7 +2411,7 @@ namespace x86CS
                             break;
                     }
 
-                    debugStr += String.Format("{0} {1}", grpStr, isReg ? regStr : opStr);
+                    debugStr += String.Format("{0} {1} {2}", grpStr, isReg ? regStr : opStr, opCode < 2 ? "," + byteOp2.ToString("X2") : "");
                     break;
                 case 0xf7:          /* GRP DX:AX, reg/mem16 */
                     isReg = ReadRM(out opCode, out addr, out opStr);
@@ -2417,16 +2469,32 @@ namespace x86CS
 
                     debugStr += ("CLD");
                     break;
-                case 0xfe:          /* INC reg8/mem8 */
-                    isReg = ReadRM(out reg, out addr, out opStr);
+                case 0xfe:          /* GRP reg8/mem8 */
+                    isReg = ReadRM(out opCode, out addr, out opStr);
 
                     byteOp = GetByteReg((byte)addr, out regStr);
-                    if (isReg)
-                        SetByteReg((byte)addr, (byte)(byteOp + 1));
-                    else
-                        DataWriteByte((byte)addr, (byte)(byteOp + 1));
 
-                    debugStr += (String.Format("INC {0}", regStr));
+                    switch (opCode)
+                    {
+                        case 0x00:
+                            grpStr = "INC";
+                            if (isReg)
+                                SetByteReg((byte)addr, (byte)(byteOp + 1));
+                            else
+                                DataWriteByte((byte)addr, (byte)(byteOp + 1));
+                            break;
+                        case 0x01:
+                            grpStr = "DEC";
+                            if (isReg)
+                                SetByteReg((byte)addr, (byte)(byteOp - 1));
+                            else
+                                DataWriteByte((byte)addr, (byte)(byteOp - 1));
+                            break;
+                        default:
+                            break;
+                    }
+
+                    debugStr += (String.Format("{0} {1}", grpStr, isReg ? regStr : opStr));
                     break;
                 case 0xff:          /* GRP reg/mem16 */
                     isReg = ReadRM(out opCode, out addr, out opStr);
