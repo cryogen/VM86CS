@@ -7,6 +7,9 @@ using System.IO;
 
 namespace x86CS
 {
+    public delegate ushort ReadCallback(ushort addr);
+    public delegate void WriteCallback(ushort addr, ushort value);
+
     public enum SegmentRegister
     {
         ES = 0,
@@ -66,6 +69,14 @@ namespace x86CS
         Spare14 = 0x80000000,
     }
 
+    public enum ShiftType
+    {
+        Left,
+        ArithmaticLeft,
+        Right,
+        ArithmaticRight
+    }
+
     public struct Segment
     {
         private ushort value;
@@ -108,6 +119,8 @@ namespace x86CS
         private bool debug = false;
         public event EventHandler<TextEventArgs> DebugText;
         public event EventHandler<IntEventArgs> InteruptFired;
+        public event ReadCallback IORead;
+        public event WriteCallback IOWrite;
         private StreamWriter logFile = File.CreateText("cpulog.txt");
         string debugStr = "";
 
@@ -309,6 +322,7 @@ namespace x86CS
         public ushort EFlags
         {
             get { return (ushort)eFlags; }
+            set { eFlags = (CPUFlags)value; }
         }
 
         public CPUFlags Flags
@@ -1105,6 +1119,92 @@ namespace x86CS
             return ret;
         }
 
+        private byte Shift(byte src, byte count, ShiftType type)
+        {
+            byte tempCount, tempDest, dest;
+
+            dest = src;
+
+            tempCount = (byte)(count & 0x1f);
+            tempDest = dest;
+
+            while (tempCount != 0)
+            {
+                if (type == ShiftType.ArithmaticLeft || type == ShiftType.Left)
+                {
+                    CF = ((dest & 0x80) == 0x80);
+                    dest *= 2;
+                }
+                else
+                {
+                    CF = ((dest & 0x01) == 0x01);
+                    if (type == ShiftType.ArithmaticRight)
+                        dest = (byte)((sbyte)dest / 2);
+                    else
+                        dest /= 2;
+                }
+                tempCount--;
+            }
+
+            if (count == 1)
+            {
+                if (type == ShiftType.ArithmaticLeft || type == ShiftType.Left)
+                {
+                    byte tmp = (byte)((dest & 0x80) ^ (CF ? 1 : 0));
+                    OF = (tmp != 0);
+                }
+                else if (type == ShiftType.ArithmaticRight)
+                    OF = false;
+                else
+                    OF = ((tempDest & 0x80) == 0x80);
+            }
+
+            return dest;
+        }
+
+        private ushort Shift(ushort src, ushort count, ShiftType type)
+        {
+            ushort tempCount, tempDest, dest;
+
+            dest = src;
+
+            tempCount = (ushort)(count & 0x1f);
+            tempDest = dest;
+
+            while (tempCount != 0)
+            {
+                if (type == ShiftType.ArithmaticLeft || type == ShiftType.Left)
+                {
+                    CF = ((dest & 0x8000) == 0x8000);
+                    dest *= 2;
+                }
+                else
+                {
+                    CF = ((dest & 0x0001) == 0x0001);
+                    if (type == ShiftType.ArithmaticRight)
+                        dest = (ushort)((short)dest / 2);
+                    else
+                        dest /= 2;
+                }
+                tempCount--;
+            }
+
+            if (count == 1)
+            {
+                if (type == ShiftType.ArithmaticLeft || type == ShiftType.Left)
+                {
+                    ushort tmp = (ushort)((dest & 0x8000) ^ (CF ? 1 : 0));
+                    OF = (tmp != 0);
+                }
+                else if (type == ShiftType.ArithmaticRight)
+                    OF = false;
+                else
+                    OF = ((tempDest & 0x8000) == 0x8000);
+            }
+
+            return dest;
+        }
+
         private byte GetByteReg(byte offset)
         {
             string tmp;
@@ -1224,13 +1324,42 @@ namespace x86CS
             }
         }
 
+        private byte DoIORead(byte addr)
+        {
+            return (byte)(DoIORead((ushort)(addr & 0x00ff)) & 0x00ff);
+        }
+
+        private ushort DoIORead(ushort addr)
+        {
+            ReadCallback ioRead = IORead;
+
+            if (ioRead != null)
+                return ioRead(addr);
+
+            return 0xffff;
+        }
+
+        private void DoIOWrite(byte addr, byte value)
+        {
+            DoIOWrite((ushort)(addr & 0x00ff), (ushort)(value & 0x00ff));
+        }
+
+        private void DoIOWrite(ushort addr, ushort value)
+        {
+            WriteCallback ioWrite = IOWrite;
+
+            if (ioWrite != null)
+                ioWrite(addr, value);
+        }
+
         public void Cycle()
         {
             ushort wordOp = 0, wordOp2 = 0;
             byte byteOp, byteOp2 = 0;
             byte op, reg, segment, opCode;
             ushort addr;
-            bool isReg;
+            bool isReg, oldCF;
+
             string opStr, regStr = "", regStr2 = "", grpStr = "";
 
             debugStr = String.Format("{0:X4}:{1:X4}    ", CS, IP);
@@ -1335,6 +1464,18 @@ namespace x86CS
 
                     debugStr += String.Format("OR {0}, {1}", isReg ? regStr2 : opStr, regStr);
                     break;
+                case 0x09:          /* OR reg/mem16, reg */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    wordOp = registers[reg].Word;
+
+                    if (isReg)
+                        registers[addr].Word = Or(wordOp, registers[addr].Word);
+                    else
+                        DataWriteWord(addr, Or(wordOp, DataReadWord(addr)));
+
+                    debugStr += String.Format("OR {0}, {1}", opStr, GetRegStr(reg));
+                    break;
                 case 0x0a:          /* OR reg8, reg8/mem8 */
                     isReg = ReadRM(out reg, out addr, out opStr);
                     
@@ -1349,6 +1490,18 @@ namespace x86CS
                     SetByteReg(reg, byteOp);
 
                     debugStr += (String.Format("OR {0}, {1}", regStr, isReg ? regStr2 : opStr));
+                    break;
+                case 0x0b:          /* OR reg, reg/mem16 */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    if (isReg)
+                        wordOp = registers[addr].Word;
+                    else
+                        wordOp = DataReadWord(addr);
+
+                    registers[reg].Word = Or(wordOp, registers[reg].Word);
+
+                    debugStr += String.Format("OR {0}, {1}", GetRegStr(reg), opStr);
                     break;
                 case 0x0c:          /* OR AL, imm8 */
                     byteOp = ReadByte();
@@ -1371,11 +1524,23 @@ namespace x86CS
 
                     registers[reg].Word = Adc(wordOp, registers[reg].Word);
 
-                    debugStr += (String.Format("ADC {0}, {1}", GetRegStr(reg), opStr, wordOp));
+                    debugStr += String.Format("ADC {0}, {1}", GetRegStr(reg), opStr, wordOp);
                     break;
                 case 0x16:          /* PUSH SS */
                     StackPush(SS);
                     debugStr += ("PUSH SS");
+                    break;
+                case 0x19:          /* SBB reg/mem16, reg */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    wordOp = registers[reg].Word;
+
+                    if (isReg)
+                        registers[addr].Word = Sbb(wordOp, registers[addr].Word);
+                    else
+                        DataWriteWord(addr, Sbb(wordOp, DataReadWord(addr)));
+
+                    grpStr += String.Format("SBB {0}, {1}", opStr, GetRegStr(reg));
                     break;
                 case 0x1e:          /* PUSH DS */
                     StackPush(DS);
@@ -1410,6 +1575,20 @@ namespace x86CS
                         DataWriteWord(addr, Sub(wordOp, DataReadWord(addr)));
 
                     debugStr += String.Format("SUB {0}, {1}", opStr, GetRegStr(reg));
+                    break;
+                case 0x2a:          /* SUB reg8, reg8/mem8 */
+                    isReg = ReadRM(out reg, out addr, out opStr);
+
+                    byteOp = GetByteReg(reg, out regStr);
+
+                    if (isReg)
+                        byteOp2 = GetByteReg((byte)addr, out regStr2);
+                    else
+                        byteOp2 = DataReadByte(addr);
+
+                    SetByteReg(reg, Sub(byteOp2, byteOp));
+
+                    debugStr += String.Format("SUB {0}, {1}", regStr, isReg ? regStr2 : opStr);
                     break;
                 case 0x2b:          /* SUB reg, reg/mem16 */
                     isReg = ReadRM(out reg, out addr, out opStr);
@@ -1529,7 +1708,9 @@ namespace x86CS
                 case 0x45:
                 case 0x46:
                 case 0x47:
-                    registers[op - 0x40].Word++;
+                    oldCF = CF;
+                    registers[op - 0x40].Word = Add(1, registers[op - 0x40].Word);
+                    CF = oldCF;
 
                     debugStr += (String.Format("INC {0}", GetRegStr(op - 0x40)));
                     break;
@@ -1541,7 +1722,9 @@ namespace x86CS
                 case 0x4d:
                 case 0x4e:
                 case 0x4f:
-                    registers[op - 0x48].Word--;
+                    oldCF = CF;
+                    registers[op - 0x48].Word = Sub(1, registers[op - 0x48].Word);
+                    CF = oldCF;
 
                     debugStr += (String.Format("DEC {0}", GetRegStr(op - 0x48)));
                     break;
@@ -1572,7 +1755,7 @@ namespace x86CS
                 case 0x72:          /* JB rel8 */
                     byteOp = ReadByte();
 
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
 
                     if(CF)
                         IP = addr;
@@ -1582,7 +1765,7 @@ namespace x86CS
                 case 0x73:          /* JNB rel8 */
                     byteOp = ReadByte();
 
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
 
                     if (!CF)
                         IP = addr;
@@ -1592,7 +1775,7 @@ namespace x86CS
                 case 0x74:          /* JE rel8 */
                     byteOp = ReadByte();
 
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
 
                     if(ZF)
                         IP = addr;
@@ -1602,7 +1785,7 @@ namespace x86CS
                 case 0x75:          /* JNZ rel8 */
                     byteOp = ReadByte();
 
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
 
                     if (!ZF)
                         IP = addr;
@@ -1611,7 +1794,7 @@ namespace x86CS
                     break;
                 case 0x76:          /* JBE rel8 */
                     byteOp = ReadByte();
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
 
                     if (CF && ZF)
                         IP = addr;
@@ -1620,7 +1803,7 @@ namespace x86CS
                     break;
                 case 0x77:          /* JNBE rel8 */
                     byteOp = ReadByte();
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
 
                     if (!CF && !ZF)
                         IP = addr;
@@ -1630,7 +1813,7 @@ namespace x86CS
                 case 0x7c:          /* JL rel8 */
                     byteOp = ReadByte();
 
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
                     if (SF != OF)
                         IP = addr;
 
@@ -1639,7 +1822,7 @@ namespace x86CS
                 case 0x7d:          /* JNL rel8 */
                     byteOp = ReadByte();
 
-                    addr = (ushort)(IP + (byte)((sbyte)byteOp));
+                    addr = (ushort)(IP + ((sbyte)byteOp));
                     if (SF == OF)
                         IP = addr;
 
@@ -1676,11 +1859,18 @@ namespace x86CS
                                 DataWriteByte(addr, byteOp2);
 
                             break;
+                        case 0x06:
+                            grpStr = "XOR";
+                            byteOp2 ^= byteOp;
+                            if (isReg)
+                                SetByteReg((byte)addr, byteOp2);
+                            else
+                                DataWriteByte(addr, byteOp2);
+                            break;
                         case 0x07:
                             grpStr = "CMP";
                             Sub(byteOp, byteOp2);
                             break;
-
                         default:
                             break;
                     }
@@ -1731,6 +1921,18 @@ namespace x86CS
                                 DataWriteWord(addr, wordOp);
                             }
                             break;
+                        case 0x04:
+                            grpStr = "AND";
+
+                            if (isReg)
+                                registers[addr].Word = And((ushort)wordOp2, wordOp);
+                            else
+                            {
+                                wordOp = And((ushort)wordOp2, wordOp);
+                                DataWriteWord(addr, wordOp);
+                            }
+
+                            break;
                         case 0x07:
                             grpStr = "CMP";
                             Sub(wordOp2, wordOp);
@@ -1763,6 +1965,17 @@ namespace x86CS
                                 DataWriteWord(addr, wordOp);
                             }
                             break;
+                        case 0x01:
+                            grpStr = "OR";
+
+                            if (isReg)
+                                registers[addr].Word = Or(byteOp, wordOp);
+                            else
+                            {
+                                wordOp = Or(byteOp, wordOp);
+                                DataWriteWord(addr, wordOp);
+                            }
+                            break;
                         case 0x02:
                             grpStr = "ADC";
                             if (isReg)
@@ -1783,7 +1996,6 @@ namespace x86CS
                                 wordOp = Sbb((ushort)(short)byteOp, wordOp);
                                 DataWriteWord(addr, wordOp);
                             }
-
                             break;
                         case 0x05:
                             grpStr = "SUB";
@@ -2208,7 +2420,7 @@ namespace x86CS
 
                     debugStr += "IRET";
                     break;
-                case 0xd0:          /* GRP reg/mem8, 1 */
+                case 0xd0:          /* GRP reg8/mem8, 1 */
                     isReg = ReadRM(out opCode, out addr, out opStr);
 
                     if (isReg)
@@ -2222,10 +2434,39 @@ namespace x86CS
                             grpStr = "ROL";
                             SetByteReg((byte)addr, (byte)((byteOp << 1) | (byteOp >> (8 - 1))));
                             break;
+                        case 0x01:
+                            int tmpCount = 1 % 8;
+                            byte dest = byteOp;
+
+                            grpStr = "ROR";
+
+                            while (tmpCount != 0)
+                            {
+                                byte tmpCF = (byte)(byteOp & 0x01);
+                                dest = (byte)((dest / 2) + (tmpCF * 256));
+                                tmpCount--;
+                            }
+                            if (isReg)
+                                SetByteReg((byte)addr, dest);
+                            else
+                                DataWriteByte(addr, dest);
+
+                            break;
+                        case 0x04:
+                            grpStr = "SHL";
+
+                            byteOp = Shift(byteOp, 1, ShiftType.Left);
+
+                            if (isReg)
+                                SetByteReg((byte)addr, byteOp);
+                            else
+                                DataWriteByte(addr, byteOp);
+
+                            break;
                         case 0x05:
                             grpStr = "SHR";
 
-                            byteOp = (byte)(byteOp >> 1);
+                            byteOp = Shift(byteOp, 1, ShiftType.Right);
 
                             if (isReg)
                                 SetByteReg((byte)addr, byteOp);
@@ -2252,7 +2493,7 @@ namespace x86CS
                         case 0x04:
                             grpStr = "SHL";
 
-                            wordOp = (ushort)(wordOp << 1);
+                            wordOp = Shift(wordOp, 1, ShiftType.Left);
 
                             if (isReg)
                                 registers[addr].Word = wordOp;
@@ -2262,7 +2503,7 @@ namespace x86CS
                         case 0x05:
                             grpStr = "SHR";
 
-                            wordOp = (ushort)(wordOp >> 1);
+                            wordOp = Shift(wordOp, 1, ShiftType.Right);
 
                             if (isReg)
                                 registers[addr].Word = wordOp;
@@ -2285,14 +2526,25 @@ namespace x86CS
 
                     switch (opCode)
                     {
-                        case 0x4:   /* SHL */
+                        case 0x4:   
                             opStr = "SHL";
-                            byteOp = (byte)(byteOp << CL);
+
+                            byteOp = Shift(byteOp, CL, ShiftType.Left);
 
                             if (isReg)
                                 SetByteReg((byte)addr, byteOp);
                             else
                                 DataWriteByte(addr, byteOp);
+                            break;
+                        case 0x5:
+                            opStr = "SHR";
+
+                            byteOp = Shift(byteOp, CL, ShiftType.Right);
+                            if (isReg)
+                                SetByteReg((byte)addr, byteOp);
+                            else
+                                DataWriteByte(addr, byteOp);
+
                             break;
                         default:
                             break;
@@ -2310,9 +2562,10 @@ namespace x86CS
 
                     switch (opCode)
                     {
-                        case 0x4:   /* SHL */
+                        case 0x4:
                             grpStr = "SHL";
-                            wordOp = (ushort)(wordOp << CL);
+
+                            wordOp = Shift(wordOp, CL, ShiftType.Left);
 
                             if (isReg)
                                 registers[addr].Word = wordOp;
@@ -2321,7 +2574,8 @@ namespace x86CS
                             break;
                         case 0x5:
                             grpStr = "SHR";
-                            wordOp = (ushort)(wordOp >> CL);
+
+                            wordOp = Shift(wordOp, CL, ShiftType.Right);
 
                             if (isReg)
                                 registers[addr].Word = wordOp;
@@ -2334,13 +2588,37 @@ namespace x86CS
 
                     debugStr += String.Format("{0} {1}, CL", grpStr, isReg ? GetRegStr(addr) : addr.ToString("X4"));
                     break;
+                case 0xd5:          /* AAD, imm8 */
+                    byteOp = ReadByte();
+
+                    AL = (byte)((AL + (AH * byteOp)) & 0xff);
+                    AH = 0;
+
+                    if (AL == 0)
+                        ZF = true;
+                    else
+                        ZF = false;
+
+                    if ((sbyte)AL < 0)
+                        SF = true;
+                    else
+                        SF = false;
+
+                    SetParity(AL);
+
+                    debugStr += String.Format("AAD {0:X2}", byteOp);
+                    break;
                 case 0xe4:          /* IN AL, imm8 */
                     byteOp = ReadByte();
+
+                    AL = DoIORead(byteOp);
 
                     debugStr += String.Format("IN AL, {0:X2}", byteOp);
                     break;
                 case 0xe6:          /* OUT imm8, AL */
                     byteOp = ReadByte();
+
+                    DoIOWrite(byteOp, AL);
 
                     debugStr += String.Format("OUT {0:X2}, AL", byteOp);
                     break;
@@ -2386,6 +2664,15 @@ namespace x86CS
                         IP = addr; 
 
                     debugStr += String.Format("LOOP {0:X4}", addr);
+                    break;
+                case 0xe3:          /* JCXZ rel8 */
+                    byteOp = ReadByte();
+
+                    addr = (ushort)(IP + ((sbyte)byteOp));
+
+                    if (CX == 0)
+                        IP = addr;
+
                     break;
                 case 0xf6:          /* GRP reg8/mem8, imm8 */
                     isReg = ReadRM(out opCode, out addr, out opStr);
@@ -2478,17 +2765,29 @@ namespace x86CS
                     {
                         case 0x00:
                             grpStr = "INC";
+                            oldCF = CF;
+
+                            byteOp = Add(1, byteOp);
+
                             if (isReg)
-                                SetByteReg((byte)addr, (byte)(byteOp + 1));
+                                SetByteReg((byte)addr, byteOp);
                             else
-                                DataWriteByte((byte)addr, (byte)(byteOp + 1));
+                                DataWriteByte((byte)addr, byteOp);
+
+                            CF = oldCF;
                             break;
                         case 0x01:
                             grpStr = "DEC";
+                            oldCF = CF;
+
+                            byteOp = Sub(1, byteOp);
+
                             if (isReg)
-                                SetByteReg((byte)addr, (byte)(byteOp - 1));
+                                SetByteReg((byte)addr, byteOp);
                             else
-                                DataWriteByte((byte)addr, (byte)(byteOp - 1));
+                                DataWriteByte((byte)addr, byteOp);
+
+                            CF = oldCF;
                             break;
                         default:
                             break;
@@ -2506,6 +2805,18 @@ namespace x86CS
 
                     switch (opCode)
                     {
+                        case 0x00:
+                            grpStr = "INC";
+
+                            oldCF = CF;
+                            wordOp = Add(1, wordOp);
+                            CF = oldCF;
+
+                            if (isReg)
+                                registers[addr].Word = wordOp;
+                            else
+                                DataWriteWord(addr, wordOp);
+                            break;
                         case 0x03:
                             grpStr = "CALL FAR";
                             wordOp2 = DataReadWord(addr + 2);
@@ -2533,17 +2844,13 @@ namespace x86CS
                     break;
                 default:
                     debugStr += (String.Format("Invalid opcode! '{0}'", op));
+                    throw new Exception("moo");
                     break;
             #endregion
             }
             dataSegment = SegmentRegister.DS;
             repPrefix = false;
             DebugWriteLine(debugStr);
-        }
-
-        public void SetSegment(SegmentRegister register, int addr)
-        {
-            segments[(int)register].Addr = addr;
         }
     }
 }

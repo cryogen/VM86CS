@@ -110,7 +110,6 @@ namespace x86CS
                 currPos = 0;
             }
 
-            //mainPanel.Invalidate(new Rectangle(0, currLine * panelFont.Height, mainPanel.Width, panelFont.Height*2));
             mainPanel.Invalidate();
         }
 

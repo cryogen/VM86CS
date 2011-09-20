@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Reflection;
+using System.IO;
 
 namespace x86CS
 {
@@ -56,6 +57,12 @@ namespace x86CS
 
     public delegate void InteruptHandler();
 
+    public struct IOEntry
+    {
+        public ReadCallback Read;
+        public WriteCallback Write;
+    }
+
     public struct SystemConfig
     {
         public ushort NumBytes;
@@ -84,6 +91,9 @@ namespace x86CS
         private int sysConfigAddr;
         DateTime currTime = DateTime.Now;
         private byte midnightCounter = 0;
+        private Dictionary<ushort, IOEntry> ioPorts;
+        private StreamWriter logFile = File.CreateText("machinelog.txt");
+        private CMOS cmos = new CMOS();
 
         public Stack<char> KeyPresses
         {
@@ -110,14 +120,55 @@ namespace x86CS
         {
             floppyDrive = new Floppy();
 
+            logFile.AutoFlush = true;
+
             SetupSystem();
 
             cpu.InteruptFired += new EventHandler<IntEventArgs>(cpu_InteruptFired);
+            cpu.IORead += new ReadCallback(cpu_IORead);
+            cpu.IOWrite += new WriteCallback(cpu_IOWrite);
+        }
+
+        private void SetupIOEntry(ushort port, ReadCallback read, WriteCallback write)
+        {
+            IOEntry entry = new IOEntry();
+
+            entry.Read = read;
+            entry.Write = write;
+
+            ioPorts.Add(port, entry);
+        }
+
+        private ushort cpu_IORead(ushort addr)
+        {
+            IOEntry entry;
+            ushort ret;
+
+            if (!ioPorts.TryGetValue(addr, out entry))
+                ret = 0xffff;
+            else
+                ret = entry.Read(addr);
+
+            logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
+
+            return ret;
+        }
+
+        private void cpu_IOWrite(ushort addr, ushort value)
+        {
+            IOEntry entry;
+
+            if (ioPorts.TryGetValue(addr, out entry))
+                entry.Write(addr, value);
+
+            logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
         }
 
         private void SetupSystem()
         {
             InteruptHandler defaultHandler = new InteruptHandler(UnhandledInt);
+
+            ioPorts = new Dictionary<ushort, IOEntry>();
 
             for (int i = 0; i < 0x10; i++)
                 SetupInterrupt(i, defaultHandler);
@@ -137,6 +188,9 @@ namespace x86CS
 
             SetupSystemConfig();
             SetupDPT();
+
+            SetupIOEntry(0x70, new ReadCallback(cmos.Read), new WriteCallback(cmos.Write));
+            SetupIOEntry(0x71, new ReadCallback(cmos.Read), new WriteCallback(cmos.Write));
 
             /* BDA */
             Memory.WriteByte(0x496, 0x10);
@@ -292,20 +346,20 @@ namespace x86CS
                             return;
                         }*/
 
+            cpu.StackPush(cpu.EFlags);
+            cpu.IF = false;
+            cpu.TF = false;
+            cpu.AC = false;
+            cpu.StackPush(cpu.CS);
+            cpu.StackPush(cpu.IP);
+
             if (seg == 0xf000)
                 handler = (InteruptHandler)Marshal.GetDelegateForFunctionPointer(p, typeof(InteruptHandler));
             else
             {
 
                 // Marshal failed, interrupt has been overridden
-                Console.WriteLine("Call to {0}, has been overriden to {1:X4}:{2:X4}", e.Number, seg, off);
-
-                cpu.StackPush(cpu.EFlags);
-                cpu.IF = false;
-                cpu.TF = false;
-                cpu.AC = false;
-                cpu.StackPush(cpu.CS);
-                cpu.StackPush(cpu.IP);
+                Console.WriteLine("Call to {0:X2}, has been overriden to {1:X4}:{2:X4}", e.Number, seg, off);
 
                 cpu.CS = seg;
                 cpu.IP = off;
@@ -314,7 +368,12 @@ namespace x86CS
             }
 
             if (handler != null)
+            {
                 handler();
+                cpu.IP = cpu.StackPop();
+                cpu.CS = cpu.StackPop();
+                cpu.EFlags = cpu.StackPop();
+            }
         }
 
         private void Int10()
@@ -369,27 +428,39 @@ namespace x86CS
 
         private void Int13()
         {
+            ushort tmpIP, tmpCS;
+            CPUFlags tmpFlags;
+
+            tmpIP = cpu.StackPop();
+            tmpCS = cpu.StackPop();
+            tmpFlags = (CPUFlags)cpu.StackPop();
+
             switch (cpu.AH)
             {
                 case 0x00:
                     floppyDrive.Reset();
-                    cpu.CF = false;
+                    tmpFlags &= ~CPUFlags.CF;
                     break;
                 case 0x02:
                     if (ReadSector())
                     {
-                        cpu.CF = false;
+                        tmpFlags &= ~CPUFlags.CF;
                         cpu.AH = 0;
                     }
                     else
-                        cpu.CF = true;
+                        tmpFlags |= CPUFlags.CF;
                     break;
                 case 0x08:
-                    cpu.CF = true;
+                    tmpFlags |= CPUFlags.CF;
+                    cpu.AH = 0x01;
                     break;
                 default:
                     break;
             }
+
+            cpu.StackPush((ushort)tmpFlags);
+            cpu.StackPush(tmpCS);
+            cpu.StackPush(tmpIP);
         }
 
         private void Int15()
@@ -511,7 +582,7 @@ namespace x86CS
 
             if (gotBootSector)
             {
-                cpu.SetSegment(SegmentRegister.CS, 0);
+                cpu.CS = 0;
                 cpu.IP = 0x7c00;
                 running = true;
             }
@@ -545,8 +616,17 @@ namespace x86CS
 
         public void RunCycle()
         {
-            if(running)
-                cpu.Cycle();
+            if (running)
+            {
+                try
+                {
+                    cpu.Cycle();
+                }
+                catch
+                {
+                    running = false;
+                }
+            }
 
             if (DateTime.Now.Day != currTime.Day)
                 midnightCounter++;
