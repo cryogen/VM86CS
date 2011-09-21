@@ -87,13 +87,22 @@ namespace x86CS
         private Stack<char> keyPresses = new Stack<char>();
         private Dictionary<int, int> breakpoints = new Dictionary<int, int>();
         private SystemConfig sysConfig = new SystemConfig();
-        private int systemAddr = 0xf0000;
-        private int sysConfigAddr;
+        private uint systemAddr = 0xf0000;
+        private uint sysConfigAddr;
         DateTime currTime = DateTime.Now;
         private byte midnightCounter = 0;
         private Dictionary<ushort, IOEntry> ioPorts;
         private StreamWriter logFile = File.CreateText("machinelog.txt");
         private CMOS cmos = new CMOS();
+        private object[] operands;
+        private int opLen;
+        private byte opCode;
+        private string opStr = "";
+
+        public string Operation
+        {
+            get { return opStr; }
+        }
 
         public Stack<char> KeyPresses
         {
@@ -170,7 +179,7 @@ namespace x86CS
 
             ioPorts = new Dictionary<ushort, IOEntry>();
 
-            for (int i = 0; i < 0x10; i++)
+            for (uint i = 0; i < 0x10; i++)
                 SetupInterrupt(i, defaultHandler);
             SetupInterrupt(0x10, new InteruptHandler(Int10));
             SetupInterrupt(0x11, new InteruptHandler(Int11));
@@ -183,7 +192,7 @@ namespace x86CS
             SetupInterrupt(0x18, defaultHandler);
             SetupInterrupt(0x19, new InteruptHandler(Int19));
             SetupInterrupt(0x1a, new InteruptHandler(Int1a));
-            for (int i = 0x1b; i < 0x1e; i++)
+            for (uint i = 0x1b; i < 0x1e; i++)
                 SetupInterrupt(i, defaultHandler);
 
             SetupSystemConfig();
@@ -201,7 +210,7 @@ namespace x86CS
 
         }
 
-        private void SetupInterrupt(int vector, Delegate handler)
+        private void SetupInterrupt(uint vector, Delegate handler)
         {
             GCHandle handle;
             IntPtr p;
@@ -215,7 +224,7 @@ namespace x86CS
             systemAddr += 4;
         }
 
-        private void WriteIVTEntry(int offset, int addr)
+        private void WriteIVTEntry(uint offset, uint addr)
         {
             ushort seg;
             ushort off;
@@ -232,7 +241,7 @@ namespace x86CS
         {
             IntPtr p;
             byte[] tmp;
-            int configSize = Marshal.SizeOf(sysConfig);
+            uint configSize = (uint)Marshal.SizeOf(sysConfig);
 
             sysConfig.NumBytes = 8;
             sysConfig.Model = 0xfc;
@@ -244,12 +253,12 @@ namespace x86CS
             sysConfig.Feature4 = 0;
             sysConfig.Feature5 = 0;
 
-            p = Marshal.AllocHGlobal(configSize);
+            p = Marshal.AllocHGlobal((int)configSize);
             Marshal.StructureToPtr(sysConfig, p, false);
             tmp = new byte[configSize];
 
-            Marshal.Copy(p, tmp, 0, configSize);
-            Memory.BlockWrite(systemAddr, tmp, configSize);
+            Marshal.Copy(p, tmp, 0, (int)configSize);
+            Memory.BlockWrite(systemAddr, tmp, (int)configSize);
 
             Marshal.FreeHGlobal(p);
 
@@ -262,14 +271,14 @@ namespace x86CS
         {
             IntPtr p;
             byte[] tmp;
-            int dptSize = Marshal.SizeOf(floppyDrive.DPT);
+            uint dptSize = (uint)Marshal.SizeOf(floppyDrive.DPT);
 
-            p = Marshal.AllocHGlobal(dptSize);
+            p = Marshal.AllocHGlobal((int)dptSize);
             Marshal.StructureToPtr(floppyDrive.DPT, p, false);
             tmp = new byte[dptSize];
-            Marshal.Copy(p, tmp, 0, dptSize);
+            Marshal.Copy(p, tmp, 0, (int)dptSize);
 
-            Memory.BlockWrite(systemAddr, tmp, dptSize);
+            Memory.BlockWrite(systemAddr, tmp, (int)dptSize);
 
             WriteIVTEntry(0x1E, systemAddr);
 
@@ -330,13 +339,13 @@ namespace x86CS
         {
             InteruptHandler handler = null;
             ushort seg, off;
-            int addr;
+            uint addr;
             IntPtr p;
 
-            off = Memory.ReadWord(e.Number * 4);
-            seg = Memory.ReadWord(e.Number * 4 + 2);
+            off = Memory.ReadWord((uint)(e.Number * 4));
+            seg = Memory.ReadWord((uint)(e.Number * 4 + 2));
 
-            addr = ((seg << 4) + off);
+            addr = (uint)((seg << 4) + off);
 
             p = new IntPtr(Memory.ReadDWord(addr));
 
@@ -412,7 +421,7 @@ namespace x86CS
 
             Console.WriteLine("Sector {0:X2}, Cyl {1:X2}, Head {2:X2}, Count {3:X2}", sector, cyl, head, count);
 
-            Memory.BlockRead((Memory.ReadWord(0x7a) << 16) + Memory.ReadWord(0x78), buffer, buffer.Length);
+            Memory.BlockRead((uint)((Memory.ReadWord(0x7a) << 16) + Memory.ReadWord(0x78)), buffer, buffer.Length);
             p = Marshal.AllocHGlobal(buffer.Length);
             Marshal.Copy(buffer, 0, p, buffer.Length);
             dpt = (DisketteParamTable)Marshal.PtrToStructure(p, typeof(DisketteParamTable));
@@ -467,7 +476,7 @@ namespace x86CS
         {
             ushort seg;
             ushort off;
-            int addr = sysConfigAddr;
+            uint addr = sysConfigAddr;
 
             off = (ushort)(addr & 0xffff);
             addr -= off;
@@ -607,6 +616,7 @@ namespace x86CS
         public void Start()
         {
             Int19();
+            cpu.Decode(cpu.CS, cpu.IP, out opCode, out opStr, out operands);
         }
 
         public void Stop()
@@ -618,14 +628,8 @@ namespace x86CS
         {
             if (running)
             {
-                try
-                {
-                    cpu.Cycle();
-                }
-                catch
-                {
-                    running = false;
-                }
+                cpu.Cycle(opLen, opCode, operands);
+                cpu.Decode(cpu.CS, cpu.IP, out opCode, out opStr, out operands);
             }
 
             if (DateTime.Now.Day != currTime.Day)

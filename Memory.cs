@@ -18,7 +18,7 @@ namespace x86CS
             logFile.AutoFlush = true;
         }
 
-        private static IntPtr GetRealAddress(int virtualAddr)
+        private static IntPtr GetRealAddress(uint virtualAddr)
         {
             return new IntPtr(realMemBase.ToInt32() + virtualAddr);
         }
@@ -32,7 +32,7 @@ namespace x86CS
             logFile.WriteLine(String.Format("Seg Write Block: {0:X4}:{1:X4} ({2:X4}) {3}", segment, offset, virtualPtr, length));
         }
 
-        public static void BlockWrite(int addr, byte[] buffer, int length)
+        public static void BlockWrite(uint addr, byte[] buffer, int length)
         {
             IntPtr realOffset = GetRealAddress(addr);
 
@@ -41,7 +41,7 @@ namespace x86CS
             logFile.WriteLine(String.Format("Mem Write Block: {0:X4} {1}", addr, length));
         }
 
-        public static int BlockRead(int addr, byte[] buffer, int length)
+        public static int BlockRead(uint addr, byte[] buffer, int length)
         {
             IntPtr realOffset = GetRealAddress(addr);
 
@@ -52,7 +52,7 @@ namespace x86CS
             return buffer.Length;
         }
 
-        public static byte ReadByte(int addr)
+        public static byte ReadByte(uint addr)
         {
             IntPtr realOffset = GetRealAddress(addr);
             byte ret;
@@ -63,7 +63,7 @@ namespace x86CS
             return ret;
         }
 
-        public static ushort ReadWord(int addr)
+        public static ushort ReadWord(uint addr)
         {
             IntPtr realOffset = GetRealAddress(addr);
             ushort ret;
@@ -74,7 +74,7 @@ namespace x86CS
             return ret;
         }
 
-        public static uint ReadDWord(int addr)
+        public static uint ReadDWord(uint addr)
         {
             IntPtr realOffset = GetRealAddress(addr);
             uint ret;
@@ -85,7 +85,7 @@ namespace x86CS
             return ret;
         }
 
-        public static void WriteByte(int addr, byte value)
+        public static void WriteByte(uint addr, byte value)
         {
             IntPtr realOffset = GetRealAddress(addr);
 
@@ -94,7 +94,7 @@ namespace x86CS
             Marshal.WriteByte(realOffset, value);
         }
 
-        public static void WriteWord(int addr, ushort value)
+        public static void WriteWord(uint addr, ushort value)
         {
             IntPtr realOffset = GetRealAddress(addr);
 

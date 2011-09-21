@@ -26,7 +26,6 @@ namespace x86CS
             machine = new Machine();
             machine.WriteText += new EventHandler<TextEventArgs>(machine_WriteText);
             machine.WriteChar += new EventHandler<CharEventArgs>(machine_WriteChar);
-            machine.CPU.DebugText += new EventHandler<TextEventArgs>(CPU_DebugText);
 
             breakpoints.ItemAdded += new EventHandler<IntEventArgs>(breakpoints_ItemAdded);
             breakpoints.ItemDeleted += new EventHandler<IntEventArgs>(breakpoints_ItemDeleted);
@@ -226,9 +225,14 @@ namespace x86CS
         private void stepButton_Click(object sender, EventArgs e)
         {
             stepping = true;
-            
+
             if (!machine.Running)
+            {
                 machine.Start();
+                SetCPULabel(machine.Operation);
+                PrintRegisters();
+                return;
+            }
 
             PrintRegisters();
             machine.CPU.Debug = true;
@@ -263,7 +267,7 @@ namespace x86CS
         {
             ushort seg = 0;
             ushort off = 0;
-            int addr;
+            uint addr;
 
             try
             {
@@ -274,7 +278,7 @@ namespace x86CS
             {
             }
                 
-            addr = (seg << 4) + off;
+            addr = (uint)((seg << 4) + off);
 
             memByte.Text = Memory.ReadByte(addr).ToString("X2");
             memWord.Text = Memory.ReadWord(addr).ToString("X4");

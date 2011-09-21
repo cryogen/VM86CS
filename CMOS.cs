@@ -53,9 +53,9 @@ namespace x86CS
                     break;
                 case 0x71:
                     registers[currentReg] = (byte)value;
-                    switch (currentReg)
+/*                    switch (currentReg)
                     {
-                    }
+                    }*/
                     break;
             }
         }

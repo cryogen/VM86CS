@@ -80,7 +80,12 @@
     <Compile Include="Breakpoints.Designer.cs">
       <DependentUpon>Breakpoints.cs</DependentUpon>
     </Compile>
-    <Compile Include="CPU.cs" />
+    <Compile Include="CPU\Arithmetic.cs" />
+    <Compile Include="CPU\BCD.cs" />
+    <Compile Include="CPU\CPU.cs" />
+    <Compile Include="CPU\Decoder.cs" />
+    <Compile Include="CPU\Logic.cs" />
+    <Compile Include="CPU\Strings.cs" />
     <Compile Include="Floppy.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MainForm.cs">
