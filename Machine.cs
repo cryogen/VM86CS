@@ -616,7 +616,8 @@ namespace x86CS
         public void Start()
         {
             Int19();
-            cpu.Decode(cpu.CS, cpu.IP, out opCode, out opStr, out operands);
+            opLen = cpu.Decode(cpu.CS, cpu.IP, out opCode, out opStr, out operands);
+            opStr = String.Format("{0:X4}:{1:X4} {2}", cpu.CS, cpu.IP, opStr);
         }
 
         public void Stop()
@@ -629,7 +630,8 @@ namespace x86CS
             if (running)
             {
                 cpu.Cycle(opLen, opCode, operands);
-                cpu.Decode(cpu.CS, cpu.IP, out opCode, out opStr, out operands);
+                opLen = cpu.Decode(cpu.CS, cpu.IP, out opCode, out opStr, out operands);
+                opStr = String.Format("{0:X4}:{1:X4} {2}", cpu.CS, cpu.IP, opStr);
             }
 
             if (DateTime.Now.Day != currTime.Day)

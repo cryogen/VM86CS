@@ -114,19 +114,7 @@ namespace x86CS
 
         private void SetCPULabel(string text)
         {
-            if (clearDebug)
-                cpuLabel.Text = "";
-
-            if (text.EndsWith("\n"))
-            {
-                cpuLabel.Text += text.Substring(0, text.Length - 1);
-                clearDebug = true;
-            }
-            else
-            {
-                cpuLabel.Text += text;
-                clearDebug = false;
-            }
+            cpuLabel.Text = text;
         }
 
         void CPU_DebugText(object sender, TextEventArgs e)
@@ -234,9 +222,10 @@ namespace x86CS
                 return;
             }
 
-            PrintRegisters();
             machine.CPU.Debug = true;
             machine.RunCycle();
+            SetCPULabel(machine.Operation);
+            PrintRegisters();
         }
 
         private void goButton_Click(object sender, EventArgs e)

@@ -258,23 +258,26 @@ namespace x86CS
         {
             string opStr = "";
             string grpStr = "";
-            RegMemData rmData;
+            RegMemData rmData = null;
             sbyte signedOp = 0;
             short signedWord = 0;
             ushort offset = 0;
-            
-            rmData = operands[0] as RegMemData;
 
-            if (operands[0] is byte)
+            if (operands.Length > 0)
             {
-                signedOp = (sbyte)(byte)operands[0];
-                offset = (ushort)(currentAddr + signedOp);
-            }
+                rmData = operands[0] as RegMemData;
 
-            if (operands[0] is ushort)
-            {
-                signedWord = (short)operands[0];
-                offset = (ushort)(currentAddr + signedWord);
+                if (operands[0] is byte)
+                {
+                    signedOp = (sbyte)(byte)operands[0];
+                    offset = (ushort)(currentAddr + signedOp);
+                }
+
+                if (operands[0] is ushort)
+                {
+                    signedWord = (short)(ushort)operands[0];
+                    offset = (ushort)(currentAddr + signedWord);
+                }
             }
 
             switch (opCode)
@@ -760,7 +763,7 @@ namespace x86CS
                 case 0xbd:
                 case 0xbe:
                 case 0xbf:
-                    opStr = String.Format("MOV {0}, {1:X4}", GetRegStr(opCode - 0xb0), operands[0]);
+                    opStr = String.Format("MOV {0}, {1:X4}", GetRegStr(opCode - 0xb8), operands[0]);
                     break;
                 case 0xc0:
                     switch (rmData.Register)
@@ -1320,21 +1323,25 @@ namespace x86CS
                     break;
                 case 0xc6:          /* Group */
                     regMem = DecodeRM(false);
+                    srcByte = DecodeReadByte();
 
                     switch (regMem.Register)
                     {
                         case 0x0:
                             args.Add(regMem);
+                            args.Add(srcByte);
                             break;
                     }
                     break;
                 case 0xc7:          /* Group */
                     regMem = DecodeRM(true);
+                    srcWord = DecodeReadWord();
 
                     switch (regMem.Register)
                     {
                         case 0x0:
                             args.Add(regMem);
+                            args.Add(srcWord);
                             break;
                     }
                     break;

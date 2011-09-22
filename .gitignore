@@ -7,3 +7,4 @@ bin/x86/Debug/*
 obj/x86/Debug/*
 obj/x86/Debug/*
 obj/x86/Debug/x86CS.csproj.FileListAbsolute.txt
+bin/x86/Debug/x86CS.vshost.exe.manifest

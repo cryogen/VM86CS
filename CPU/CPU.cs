@@ -979,22 +979,25 @@ namespace x86CS
             ushort memAddress, offset = 0;
             sbyte signedByte;
             short signedWord;
-            RegMemData rmData;
+            RegMemData rmData = null;
              
             IP += (ushort)len;
 
-            rmData = operands[0] as RegMemData;
-
-            if (operands[0] is byte)
+            if (operands.Length > 0)
             {
-                signedByte = (sbyte)(byte)operands[0];
-                offset = (ushort)(IP + signedByte);
-            }
+                rmData = operands[0] as RegMemData;
 
-            if (operands[0] is ushort)
-            {
-                signedWord = (short)operands[0];
-                offset = (ushort)(IP + signedWord);
+                if (operands[0] is byte)
+                {
+                    signedByte = (sbyte)(byte)operands[0];
+                    offset = (ushort)(IP + signedByte);
+                }
+
+                if (operands[0] is ushort)
+                {
+                    signedWord = (short)(ushort)operands[0];
+                    offset = (ushort)(IP + signedWord);
+                }
             }
 
             switch (opCode)
@@ -1302,11 +1305,11 @@ namespace x86CS
                     break;
                 case 0xc6:
                     memAddress = ProcessRegMem(rmData, out sourceByte, out destByte);
-                    WriteRegMem(rmData, memAddress, (byte)operands[0]);
+                    WriteRegMem(rmData, memAddress, (byte)operands[1]);
                     break;
                 case 0xc7:
                     memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
-                    WriteRegMem(rmData, memAddress, (ushort)operands[0]);
+                    WriteRegMem(rmData, memAddress, (ushort)operands[1]);
                     break;
                 #endregion
                 #region Exchange
@@ -1517,7 +1520,7 @@ namespace x86CS
                 case 0x55:
                 case 0x56:
                 case 0x57:
-                    StackPush(registers[opCode - 0x58].Word);
+                    StackPush(registers[opCode - 0x50].Word);
                     break;
                 case 0x58:
                 case 0x59:
