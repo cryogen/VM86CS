@@ -55,6 +55,22 @@ namespace x86CS
                 OF = false;
         }
 
+        private void CheckOverflow(uint dest, uint source, uint result)
+        {
+            int signedDest, signedSource, signedResult;
+
+            signedDest = (int)dest;
+            signedSource = (int)source;
+            signedResult = (int)result;
+
+            if (signedDest > 0 && signedSource > 0 && signedResult < 0)
+                OF = true;
+            else if (signedDest < 0 && signedSource < 0 && signedResult > 0)
+                OF = true;
+            else
+                OF = false;
+        }
+
         #region Addition
         private void Add(byte source)
         {
@@ -64,6 +80,11 @@ namespace x86CS
         private void Add(ushort source)
         {
             AX = Add(AX, source);
+        }
+
+        private void Add(uint source)
+        {
+            EAX = Add(EAX, source);
         }
 
         private byte Add(byte dest, byte source)
@@ -76,7 +97,17 @@ namespace x86CS
             return DoAdd(dest, (ushort)(short)(sbyte)source, false);
         }
 
+        private uint Add(uint dest, byte source)
+        {
+            return DoAdd(dest, (uint)(int)(sbyte)source, false);
+        }
+
         private ushort Add(ushort dest, ushort source)
+        {
+            return DoAdd(dest, source, false);
+        }
+
+        private uint Add(uint dest, uint source)
         {
             return DoAdd(dest, source, false);
         }
@@ -92,6 +123,10 @@ namespace x86CS
             AX = AddWithCarry(AX, source);
         }
 
+        private void AddWithCarry(uint source)
+        {
+            EAX = AddWithCarry(EAX, source);
+        }
 
         private byte AddWithCarry(byte dest, byte source)
         {
@@ -103,7 +138,17 @@ namespace x86CS
             return DoAdd(dest, (ushort)(short)(sbyte)source, true);
         }
 
+        private uint AddWithCarry(uint dest, byte source)
+        {
+            return DoAdd(dest, (uint)(int)(sbyte)source, true);
+        }
+
         private ushort AddWithCarry(ushort dest, ushort source)
+        {
+            return DoAdd(dest, source, true);
+        }
+
+        private uint AddWithCarry(uint dest, uint source)
         {
             return DoAdd(dest, source, true);
         }
@@ -148,6 +193,27 @@ namespace x86CS
 
             return (ushort)ret;
         }
+
+        private uint DoAdd(uint dest, uint source, bool carry)
+        {
+            ulong ret;
+
+            ret = (ulong)(source + dest);
+
+            if (carry)
+                ret += (ulong)(CF ? 1 : 0);
+
+            CheckOverflow(dest, source, (uint)ret);
+
+            if (ret > uint.MaxValue)
+                CF = true;
+            else
+                CF = false;
+
+            SetCPUFlags((uint)ret);
+
+            return (uint)ret;
+        }
         #endregion
 
         #region Subtraction
@@ -161,6 +227,11 @@ namespace x86CS
             AX = DoSub(AX, source, false);
         }
 
+        private void Subtract(uint source)
+        {
+            EAX = DoSub(EAX, source, false);
+        }
+
         private byte Subtract(byte dest, byte source)
         {
             return DoSub(dest, source, false);
@@ -171,7 +242,17 @@ namespace x86CS
             return DoSub(dest, (ushort)(short)(sbyte)source, false);
         }
 
+        private uint Subtract(uint dest, byte source)
+        {
+            return DoSub(dest, (uint)(int)(sbyte)source, false);
+        }
+
         private ushort Subtract(ushort dest, ushort source)
+        {
+            return DoSub(dest, source, false);
+        }
+
+        private uint Subtract(uint dest, uint source)
         {
             return DoSub(dest, source, false);
         }
@@ -186,6 +267,11 @@ namespace x86CS
             AX = DoSub(AX, source, true);
         }
 
+        private void SubWithBorrow(uint source)
+        {
+            EAX = DoSub(EAX, source, true);
+        }
+
         private byte SubWithBorrow(byte dest, byte source)
         {
             return DoSub(dest, source, true);
@@ -196,7 +282,17 @@ namespace x86CS
             return DoSub(dest, (ushort)(short)(sbyte)source, true);
         }
 
+        private uint SubWithBorrow(uint dest, byte source)
+        {
+            return DoSub(dest, (uint)(int)(sbyte)source, true);
+        }
+
         private ushort SubWithBorrow(ushort dest, ushort source)
+        {
+            return DoSub(dest, source, true);
+        }
+
+        private uint SubWithBorrow(uint dest, uint source)
         {
             return DoSub(dest, source, true);
         }
@@ -240,6 +336,26 @@ namespace x86CS
 
             return (ushort)result;
         }
+
+        private uint DoSub(uint dest, uint source, bool borrow)
+        {
+            int result;
+
+            if (borrow && CF)
+                result = (int)(dest - (source + 1));
+            else
+                result = (int)(dest - source);
+
+            if (dest < source)
+                CF = true;
+            else
+                CF = false;
+
+            CheckOverflow(dest, source, (uint)result);
+            SetCPUFlags((uint)result);
+
+            return (uint)result;
+        }
         #endregion
 
         #region Inc/Dec
@@ -266,6 +382,19 @@ namespace x86CS
 
             return ret;
         }
+
+        private uint Increment(uint dest)
+        {
+            bool tempCF = CF;
+            uint ret;
+
+            ret = Add(dest, 1);
+
+            CF = tempCF;
+
+            return ret;
+        }
+
         private byte Decrement(byte dest)
         {
             bool tempCF = CF;
@@ -282,6 +411,18 @@ namespace x86CS
         {
             bool tempCF = CF;
             ushort ret;
+
+            ret = Subtract(dest, 1);
+
+            CF = tempCF;
+
+            return ret;
+        }
+
+        private uint Decrement(uint dest)
+        {
+            bool tempCF = CF;
+            uint ret;
 
             ret = Subtract(dest, 1);
 
@@ -337,9 +478,37 @@ namespace x86CS
             }
         }
 
-        private ushort SignedMultiple(ushort dest, byte source)
+        private void SignedMultiply(uint source)
+        {
+            int signedSource;
+            long temp;
+
+            signedSource = (int)source;
+            temp = (long)((int)EAX * signedSource);
+
+            EAX = (uint)(temp & 0xffffffff);
+            EDX = (uint)((temp >> 32) & 0xffffffff);
+
+            if (EDX == 0x0000 || EDX == 0xffffffff)
+            {
+                CF = false;
+                OF = false;
+            }
+            else
+            {
+                CF = true;
+                OF = true;
+            }
+        }
+
+        private ushort SignedMultiply(ushort dest, byte source)
         {
             return SignedMultiply(dest, (ushort)(short)(sbyte)source);
+        }
+
+        private uint SignedMultiply(uint dest, byte source)
+        {
+            return SignedMultiply(dest, (uint)(int)(sbyte)source);
         }
 
         private ushort SignedMultiply(ushort dest, ushort source)
@@ -368,6 +537,32 @@ namespace x86CS
             return (ushort)ret;
         }
 
+        private uint SignedMultiply(uint dest, uint source)
+        {
+            int signedDest, signedSource;
+            int ret;
+            long temp;
+
+            signedDest = (int)dest;
+            signedSource = (int)source;
+
+            temp = signedDest * signedSource;
+            ret = (int)(signedDest * signedSource);
+
+            if (temp != ret)
+            {
+                CF = true;
+                OF = true;
+            }
+            else
+            {
+                CF = false;
+                OF = false;
+            }
+
+            return (uint)ret;
+        }
+
         private void Multiply(byte source)
         {
             AX = (ushort)(AL * source);
@@ -392,6 +587,25 @@ namespace x86CS
             DX = (ushort)(mulResult >> 16);
 
             if (DX == 0)
+            {
+                OF = false;
+                CF = false;
+            }
+            else
+            {
+                OF = true;
+                CF = true;
+            }
+        }
+
+        private void Multiply(uint source)
+        {
+            ulong mulResult = (ulong)EAX * source;
+
+            EAX = (ushort)(mulResult & 0xffffffff);
+            EDX = (ushort)(mulResult >> 32);
+
+            if (EDX == 0)
             {
                 OF = false;
                 CF = false;
@@ -435,6 +649,17 @@ namespace x86CS
             DX = (ushort)(dividend % source);
         }
 
+        private void Divide(uint source)
+        {
+            ulong dividend = (ulong)(((EDX << 32) & 0xffffffff00000000) + EAX);
+            uint temp;
+
+            temp = (uint)(dividend / source);
+
+            EAX = temp;
+            EDX = (uint)(dividend % source);
+        }
+
         private void SDivide(ushort source)
         {
             uint dividend = (uint)((DX << 16 & 0xffff0000) + AX);
@@ -443,6 +668,16 @@ namespace x86CS
             temp = (short)((int)dividend / (short)source);
             AX = (ushort)temp;
             DX = (ushort)((int)dividend / (short)source);
+        }
+
+        private void SDivide(uint source)
+        {
+            ulong dividend = (ulong)((EDX << 32 & 0xffffffff00000000) + EAX);
+            int temp;
+
+            temp = (int)((long)dividend / (int)source);
+            EAX = (uint)temp;
+            EDX = (uint)((long)dividend / (int)source);
         }
         #endregion
 
@@ -453,28 +688,32 @@ namespace x86CS
 
         private ushort Rotate(ushort dest, ushort count, RotateType type)
         {
-            return DoRotate(dest, count, type, 16);
+            return (ushort)DoRotate(dest, count, type, 16);
         }
 
-        private ushort DoRotate(ushort dest, ushort count, RotateType type, int size)
+        private uint Rotate(uint dest, uint count, RotateType type)
         {
-            int tempCount;
+            return DoRotate(dest, count, type, 32);
+        }
+
+        private uint DoRotate(uint dest, uint count, RotateType type, int size)
+        {
+            long tempCount;
             bool tempCF;
-            ushort ret = dest;
+            uint ret = dest;
 
             if (type == RotateType.LeftWithCarry || type == RotateType.RightWithCarry)
             {
                 if (size == 8)
                     tempCount = ((count & 0x1f) % 9);
-                else
+                else if (size == 16)
                     tempCount = ((count & 0x1f) % 17);
+                else
+                    tempCount = (count & 0x1f);
             }
             else
             {
-                if (size == 8)
-                    tempCount = count % 8;
-                else
-                    tempCount = count % 16;
+                tempCount = count % size;
             }
             if (type == RotateType.LeftWithCarry)
             {
@@ -482,8 +721,10 @@ namespace x86CS
                 {
                     if (size == 8)
                         tempCF = ((ret & 0x80) == 0x80);
-                    else
+                    else if(size == 16)
                         tempCF = ((ret & 0x8000) == 0x8000);
+                    else
+                        tempCF = ((ret & 0x80000000) == 0x80000000);
 
                     ret = (ushort)((ret * 2) + (CF ? 1 : 0));
                     
@@ -495,8 +736,10 @@ namespace x86CS
                 {
                     if (size == 8)
                         OF = ((ret & 0x80) ^ (CF ? 1 : 0)) != 0;
-                    else
+                    else if(size == 16)
                         OF = ((ret & 0x8000) ^ (CF ? 1 : 0)) != 0;
+                    else
+                        OF = ((ret & 0x80000000) ^ (CF ? 1 : 0)) != 0;
                 }
             }
             else if (type == RotateType.RightWithCarry)
@@ -505,8 +748,10 @@ namespace x86CS
                 {
                     if (size == 8)
                         OF = ((dest & 0x80) ^ (CF ? 1 : 0)) != 0;
-                    else
+                    else if(size == 16)
                         OF = ((dest & 0x8000) ^ (CF ? 1 : 0)) != 0;
+                    else
+                        OF = ((dest & 0x80000000) ^ (CF ? 1 : 0)) != 0;
                 }
 
                 while (tempCount != 0)
@@ -515,9 +760,11 @@ namespace x86CS
                     ret /= 2;
 
                     if (size == 8)
-                        ret += (ushort)(CF ? 256 : 0);
+                        ret += (uint)(CF ? 256 : 0);
+                    else if(size == 16)
+                        ret += (uint)(CF ? 65536 : 0);
                     else
-                        ret += (ushort)(CF ? 65536 : 0);
+                        ret += (uint)(CF ? 4294967296 : 0);
 
                     CF = tempCF;
 
@@ -530,8 +777,10 @@ namespace x86CS
                 {
                     if (size == 8)
                         tempCF = ((ret & 0x80) == 0x80);
-                    else
+                    else if(size == 16)
                         tempCF = ((ret & 0x8000) == 0x8000);
+                    else
+                        tempCF = ((ret & 0x80000000) == 0x80000000);
 
                     ret = (ushort)((ret * 2) + (CF ? 1 : 0));
                     tempCount--;
@@ -541,8 +790,10 @@ namespace x86CS
                 {
                     if (size == 8)
                         OF = ((dest & 0x80) ^ (CF ? 1 : 0)) != 0;
-                    else
+                    else if(size == 16)
                         OF = ((dest & 0x8000) ^ (CF ? 1 : 0)) != 0;
+                    else
+                        OF = ((dest & 0x80000000) ^ (CF ? 1 : 0)) != 0;
                 }
             }
             else
@@ -552,23 +803,29 @@ namespace x86CS
                     tempCF = ((dest & 0x01) == 0x01);
                     ret /= 2;
                     if (size == 8)
-                        ret += (ushort)(CF ? 256 : 0);
+                        ret += (uint)(CF ? byte.MaxValue + 1 : 0);
+                    else if(size == 16)
+                        ret += (uint)(CF ? ushort.MaxValue + 1 : 0);
                     else
-                        ret += (ushort)(CF ? 65536 : 0);
+                        ret += (uint)(CF ? 4294967296 : 0);
 
                     tempCount--;
                 }
                 if (size == 8)
                     CF = ((ret & 0x80) == 0x80);
-                else
+                else if(size == 32)
                     CF = ((ret & 0x8000) == 0x8000);
+                else
+                    CF = ((ret & 0x80000000) == 0x80000000);
 
                 if (count == 1)
                 {
                     if (size == 8)
                         OF = ((((ret & 0x80) == 0x80) ^ ((ret & 0x40) == 0x40)));
-                    else
+                    else if(size == 16)
                         OF = ((((ret & 0x8000) == 0x8000) ^ ((ret & 0x4000) == 0x4000)));
+                    else
+                        OF = ((((ret & 0x80000000) == 0x80000000) ^ ((ret & 0x40000000) == 0x40000000)));
                 }
             }
 
@@ -656,6 +913,49 @@ namespace x86CS
                     OF = false;
                 else
                     OF = ((tempDest & 0x8000) == 0x8000);
+            }
+
+            return dest;
+        }
+
+        private uint Shift(uint source, uint count, ShiftType type)
+        {
+            uint tempCount, tempDest, dest;
+
+            dest = source;
+
+            tempCount = (uint)(count & 0x1f);
+            tempDest = dest;
+
+            while (tempCount != 0)
+            {
+                if (type == ShiftType.ArithmaticLeft || type == ShiftType.Left)
+                {
+                    CF = ((dest & 0x80000000) == 0x8000000);
+                    dest *= 2;
+                }
+                else
+                {
+                    CF = ((dest & 0x1) == 0x1);
+                    if (type == ShiftType.ArithmaticRight)
+                        dest = (uint)((int)dest / 2);
+                    else
+                        dest /= 2;
+                }
+                tempCount--;
+            }
+
+            if (count == 1)
+            {
+                if (type == ShiftType.ArithmaticLeft || type == ShiftType.Left)
+                {
+                    uint tmp = (uint)((dest & 0x80000000) ^ (CF ? 1 : 0));
+                    OF = (tmp != 0);
+                }
+                else if (type == ShiftType.ArithmaticRight)
+                    OF = false;
+                else
+                    OF = ((tempDest & 0x80000000) == 0x80000000);
             }
 
             return dest;

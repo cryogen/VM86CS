@@ -42,6 +42,9 @@ namespace x86CS
         {
             byte tempAL;
 
+            if (baseNum == 0)
+                throw new Exception("Divide Error");
+
             tempAL = AL;
             AH = (byte)(tempAL / baseNum);
             AL = (byte)(tempAL % baseNum);

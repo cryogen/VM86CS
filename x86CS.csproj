@@ -86,7 +86,8 @@
     <Compile Include="CPU\Decoder.cs" />
     <Compile Include="CPU\Logic.cs" />
     <Compile Include="CPU\Strings.cs" />
-    <Compile Include="Floppy.cs" />
+    <Compile Include="Devices\Floppy.cs" />
+    <Compile Include="Devices\Misc.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -123,7 +124,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="CMOS.cs" />
+    <Compile Include="Devices\CMOS.cs" />
+    <Compile Include="Structs.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -7,328 +7,361 @@ namespace x86CS
 {
     public partial class CPU
     {
-        private void StringInByte(bool repeat)
+        private uint GetCount()
         {
-            byte value;
-
-            if (repeat)
+            if (repeatPrefix == RepeatPrefix.Repeat)
             {
-                while (CX > 0)
-                {
-                    value = (byte)DoIORead(DX);
-                    SegWriteByte(SegmentRegister.ES, DI, value);
-                    if (DF)
-                        DI--;
-                    else
-                        DI++;
-
-                    CX--;
-                }
+                if (opSize == 32)
+                    return ECX;
+                else
+                    return CX;
             }
             else
+                return 1;
+        }
+
+        private void SetCount(uint value)
+        {
+            if (repeatPrefix == RepeatPrefix.None)
+                return;
+
+            if (opSize == 32)
+                ECX = value;
+            else
+                CX = (ushort)value;
+        }
+
+        private void StringInByte()
+        {
+            byte value;
+            uint count;
+
+            count = GetCount();
+
+            while (count > 0)
             {
                 value = (byte)DoIORead(DX);
-                SegWriteByte(SegmentRegister.ES, DI, value);
+                SegWriteByte(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
-                    DI--;
+                    EDI--;
                 else
-                    DI++;
+                    EDI++;
+
+                count--;
             }
+            SetCount(count);
         }
 
-        private void StringOutByte(bool repeat)
-        {
-            byte value;
-
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    value = SegReadByte(overrideSegment, SI);
-                    DoIOWrite(DX, value);
-                    if (DF)
-                        SI--;
-                    else
-                        SI++;
-
-                    CX--;
-                }
-            }
-            else
-            {
-                value = SegReadByte(overrideSegment, SI);
-                DoIOWrite(DX, value);
-                if (DF)
-                    SI--;
-                else
-                    SI++;
-            }
-        }
-
-        private void StringReadByte(bool repeat)
-        {
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    AL = SegReadByte(overrideSegment, SI);
-                    if (DF)
-                        SI--;
-                    else
-                        SI++;
-
-                    CX--;
-                }
-            }
-            else
-            {
-                AL = SegReadByte(overrideSegment, SI);
-                if (DF)
-                    SI--;
-                else
-                    SI++;
-            }
-        }
-
-        private void StringWriteByte(bool repeat)
-        {
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    SegWriteByte(SegmentRegister.ES, DI, AL);
-                    if (DF)
-                        DI--;
-                    else
-                        DI++;
-
-                    CX--;
-                }
-            }
-            else
-            {
-                SegWriteByte(SegmentRegister.ES, DI, AL);
-                if (DF)
-                    DI--;
-                else
-                    DI++;
-            }
-        }
-
-        private void StringScanByte(bool repeat)
-        {
-            byte source;
-
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    source = SegReadByte(SegmentRegister.ES, DI);
-                    Subtract(AL, source);
-                    if (DF)
-                        DI--;
-                    else
-                        DI++;
-
-                    CX--;
-                }
-            }
-            else
-            {
-                source = SegReadByte(SegmentRegister.ES, DI);
-                Subtract(AL, source);
-                if (DF)
-                    DI--;
-                else
-                    DI++;
-            }
-        }
-
-        private void StringCopyByte(bool repeat)
-        {
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    SegWriteByte(SegmentRegister.ES, DI, SegReadByte(overrideSegment, SI));
-                    if (DF)
-                        SI--;
-                    else
-                        SI++;
-
-                    CX--;
-                }
-            }
-            else
-            {
-                SegWriteByte(SegmentRegister.ES, DI, SegReadByte(overrideSegment, SI));
-                if (DF)
-                    SI--;
-                else
-                    SI++;
-            }
-        }
-
-        private void StringInWord(bool repeat)
+        private void StringInWord()
         {
             ushort value;
+            uint count;
 
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    value = DoIORead(DX);
-                    SegWriteWord(SegmentRegister.ES, DI, value);
-                    if (DF)
-                        DI -= 2;
-                    else
-                        DI += 2;
-
-                    CX--;
-                }
-            }
-            else
+            count = GetCount();
+            while (count > 0)
             {
                 value = DoIORead(DX);
-                SegWriteWord(SegmentRegister.ES, DI, value);
+                SegWriteWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
-                    DI -= 2;
+                    EDI -= 2;
                 else
-                    DI += 2;
+                    EDI += 2;
+
+                count--;
             }
+            SetCount(count);
         }
 
-        private void StringOutWord(bool repeat)
+        private void StringInDWord()
         {
-            ushort value;
+            uint value;
+            uint count;
 
-            if (repeat)
+            count = GetCount();
+            while (count > 0)
             {
-                while (CX > 0)
-                {
-                    value = SegReadWord(overrideSegment, SI);
-                    DoIOWrite(DX, value);
-                    if (DF)
-                        SI--;
-                    else
-                        SI++;
+                value = DoIORead(DX);
+                SegWriteDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
+                if (DF)
+                    EDI -= 4;
+                else
+                    EDI += 4;
 
-                    CX--;
-                }
+                count--;
             }
-            else
+            SetCount(count);
+        }
+
+        private void StringOutByte()
+        {
+            byte value;
+            uint count;
+
+            count = GetCount();
+            while (count > 0)
             {
-                value = SegReadWord(overrideSegment, SI);
+                value = SegReadByte(overrideSegment, opSize == 32 ? ESI : SI);
                 DoIOWrite(DX, value);
                 if (DF)
-                    SI--;
+                    ESI--;
                 else
-                    SI++;
+                    ESI++;
+
+                count--;
             }
+            SetCount(count);
         }
 
-        private void StringReadWord(bool repeat)
+        private void StringOutWord()
         {
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    AX = SegReadWord(overrideSegment, SI);
-                    if (DF)
-                        SI -= 2;
-                    else
-                        SI += 2;
+            ushort value;
+            uint count;
 
-                    CX--;
-                }
-            }
-            else
+            count = GetCount();
+
+            while (count > 0)
             {
-                AX = SegReadWord(overrideSegment, SI);
+                value = SegReadWord(overrideSegment, opSize == 32 ? ESI : SI);
+                DoIOWrite(DX, value);
                 if (DF)
-                    SI -= 2;
+                    ESI -= 2;
                 else
-                    SI += 2;
+                    ESI += 2;
+
+                count--;
             }
+            SetCount(count);
         }
 
-        private void StringWriteWord(bool repeat)
+        private void StringOutDWord()
         {
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    SegWriteWord(SegmentRegister.ES, DI, AX);
-                    if (DF)
-                        DI -= 2;
-                    else
-                        DI += 2;
+            uint value;
+            uint count;
 
-                    CX--;
-                }
-            }
-            else
+            count = GetCount();
+
+            while (count > 0)
             {
-                SegWriteWord(SegmentRegister.ES, DI, AX);
+                value = SegReadDWord(overrideSegment, opSize == 32 ? ESI : SI);
+                DoIOWrite(DX, (ushort)value);
                 if (DF)
-                    DI -= 2;
+                    ESI -= 4;
                 else
-                    DI += 2;
+                    ESI += 4;
+
+                count--;
             }
+            SetCount(count);
         }
 
-        private void StringCopyWord(bool repeat)
+        private void StringReadByte()
         {
-            if (repeat)
-            {
-                while (CX > 0)
-                {
-                    SegWriteWord(SegmentRegister.ES, DI, SegReadWord(overrideSegment, SI));
-                    if (DF)
-                        SI -= 2;
-                    else
-                        SI += 2;
+            uint count = GetCount();
 
-                    CX--;
-                }
-            }
-            else
+            while (count > 0)
             {
-                SegWriteWord(SegmentRegister.ES, DI, SegReadWord(overrideSegment, SI));
+                AL = SegReadByte(overrideSegment, opSize == 32 ? ESI : SI);
                 if (DF)
-                    SI -= 2;
+                    ESI--;
                 else
-                    SI += 2;
+                    ESI++;
+
+                count--;
             }
+            SetCount(count);
         }
 
-        private void StringScanWord(bool repeat)
+        private void StringReadWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                AX = SegReadWord(overrideSegment, opSize == 32 ? ESI : SI);
+                if (DF)
+                    ESI -= 2;
+                else
+                    ESI += 2;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringReadDWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                EAX = SegReadDWord(overrideSegment, opSize == 32 ? ESI : SI);
+                if (DF)
+                    ESI -= 4;
+                else
+                    ESI += 4;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringWriteByte()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                SegWriteByte(SegmentRegister.ES, opSize == 32 ? EDI : DI, AL);
+                if (DF)
+                    EDI--;
+                else
+                    EDI++;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringWriteWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                SegWriteWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, AX);
+                if (DF)
+                    EDI -= 2;
+                else
+                    EDI += 2;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringWriteDWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                SegWriteDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, EAX);
+                if (DF)
+                    EDI -= 4;
+                else
+                    EDI += 4;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringScanByte()
+        {
+            byte source;
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                source = SegReadByte(SegmentRegister.ES, opSize == 32 ? EDI :DI);
+                Subtract(AL, source);
+                if (DF)
+                    EDI--;
+                else
+                    EDI++;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringScanWord()
         {
             ushort source;
+            uint count = GetCount();
 
-            if (repeat)
+            while (count > 0)
             {
-                while (CX > 0)
-                {
-                    source = SegReadWord(SegmentRegister.ES, DI);
-                    Subtract(AX, source);
-                    if (DF)
-                        DI--;
-                    else
-                        DI++;
-
-                    CX--;
-                }
-            }
-            else
-            {
-                source = SegReadWord(SegmentRegister.ES, DI);
+                source = SegReadWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
                 Subtract(AX, source);
                 if (DF)
-                    DI--;
+                    EDI -= 2;
                 else
-                    DI++;
+                    EDI += 2;
+
+                count--;
             }
+            SetCount(count);
+        }
+
+        private void StringScanDWord()
+        {
+            uint source;
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                source = SegReadDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
+                Subtract(EAX, source);
+                if (DF)
+                    EDI -= 4;
+                else
+                    EDI += 4;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringCopyByte()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                SegWriteByte(SegmentRegister.ES, opSize == 32 ? EDI : DI, SegReadByte(overrideSegment, opSize == 32 ? ESI : SI));
+                if (DF)
+                    ESI--;
+                else
+                    ESI++;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringCopyWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                SegWriteWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, SegReadWord(overrideSegment, opSize == 32 ? EDI : SI));
+                if (DF)
+                    ESI -= 2;
+                else
+                    ESI += 2;
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        private void StringCopyDWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                SegWriteDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, SegReadWord(overrideSegment, opSize == 32 ? EDI : SI));
+                if (DF)
+                    ESI -= 4;
+                else
+                    ESI += 4;
+
+                count--;
+            }
+            SetCount(count);
         }
     }
 }

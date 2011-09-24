@@ -170,22 +170,22 @@ namespace x86CS
             GS.Text = cpu.GS.ToString("X4");
             SS.Text = cpu.SS.ToString("X4");
 
-            CF.Text = cpu.CF ? "CF" : "NC";
-            PF.Text = cpu.PF ? "PO" : "PE";
-            AF.Text = cpu.AF ? "AC" : "NA";
-            ZF.Text = cpu.ZF ? "ZR" : "NZ";
-            SF.Text = cpu.SF ? "NG" : "PL";
-            TF.Text = cpu.TF ? "TP" : "NT";
-            IF.Text = cpu.IF ? "EI" : "DI";
-            DF.Text = cpu.DF ? "DN" : "UP";
-            OF.Text = cpu.OF ? "OV" : "NV";
+            CF.Text = cpu.CF ? "CF" : "cf";
+            PF.Text = cpu.PF ? "PF" : "pf";
+            AF.Text = cpu.AF ? "AF" : "af";
+            ZF.Text = cpu.ZF ? "ZF" : "zf";
+            SF.Text = cpu.SF ? "SF" : "sf";
+            TF.Text = cpu.TF ? "TF" : "tf";
+            IF.Text = cpu.IF ? "IF" : "if";
+            DF.Text = cpu.DF ? "DF" : "df";
+            OF.Text = cpu.OF ? "OF" : "of";
             IOPL.Text = cpu.IOPL.ToString("X2");
-            AC.Text = cpu.AC ? "AF" : "NA";
-            NT.Text = cpu.NT ? "NT" : "NN";
-            RF.Text = cpu.RF ? "RF" : "NR";
-            VM.Text = cpu.VM ? "VM" : "RM";
-            VIF.Text = cpu.VIF ? "VF" : "NF";
-            VIP.Text = cpu.VIP ? "VP" : "NP";   
+            AC.Text = cpu.AC ? "AC" : "ac";
+            NT.Text = cpu.NT ? "NT" : "nt";
+            RF.Text = cpu.RF ? "RF" : "rf";
+            VM.Text = cpu.VM ? "VM" : "vm";
+            VIF.Text = cpu.VIF ? "VIF" : "vif";
+            VIP.Text = cpu.VIP ? "VIP" : "vip";   
         }
 
         private void runToolStripMenuItem_Click(object sender, EventArgs e)
