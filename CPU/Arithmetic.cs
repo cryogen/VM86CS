@@ -23,17 +23,14 @@ namespace x86CS
 
     public partial class CPU
     {
-        private void CheckOverflow(byte dest, byte source, byte result)
+        private void CheckOverflow(byte dest, byte source, short result)
         {
-            sbyte signedDest, signedSource, signedResult;
+            sbyte signedDest, signedSource;
 
             signedDest = (sbyte)dest;
             signedSource = (sbyte)source;
-            signedResult = (sbyte)result;
 
-            if (signedDest > 0 && signedSource > 0 && signedResult < 0)
-                OF = true;
-            else if (signedDest < 0 && signedSource < 0 && signedResult > 0)
+            if (result > sbyte.MaxValue || result < sbyte.MinValue)
                 OF = true;
             else
                 OF = false;
@@ -302,16 +299,16 @@ namespace x86CS
             sbyte result;
 
             if (borrow && CF)
-                result = (sbyte)(dest - (source + 1));
-            else
-                result = (sbyte)(dest - source);
+                source++;
+
+            result = (sbyte)(dest - source);
 
             if (dest < source)
                 CF = true;
             else
                 CF = false;
 
-            CheckOverflow(dest, source, (byte)result);
+            CheckOverflow(dest, source, (short)(dest - source));
             SetCPUFlags((byte)result);
 
             return (byte)result;

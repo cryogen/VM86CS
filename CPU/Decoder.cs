@@ -281,7 +281,7 @@ namespace x86CS
                             else
                             {
                                 if (ret.Mode == 0x1 || ret.Mode == 0x2)
-                                    ret.Operand = GetPrefixString(SegmentRegister.SS) + "[BP + ";
+                                    ret.Operand = GetPrefixString(SegmentRegister.SS) + "[BP";
                                 else
                                     ret.Operand = GetPrefixString(SegmentRegister.DS) + "[";
                             }
@@ -299,10 +299,10 @@ namespace x86CS
                     if (ret.Mode == 0x1)
                     {
                         byte byteOp;
-                        short tmpDisp;
+                        int tmpDisp;
 
                         byteOp = DecodeReadByte();
-                        tmpDisp = (short)byteOp;
+                        tmpDisp = (int)(sbyte)byteOp;
 
                         if (tmpDisp < 0)
                             ret.Operand += " - " + (-tmpDisp).ToString("X") + "]";
@@ -315,23 +315,33 @@ namespace x86CS
                     else if (ret.Mode == 0x2 && memPrefix)
                     {
                         ushort wordOp;
+                        int tmpDisp;
 
                         wordOp = DecodeReadWord();
+                        tmpDisp = (int)(short)wordOp;
 
-                        ret.Operand += " + " + wordOp.ToString("X") + "]";
+                        if (tmpDisp < 0)
+                            ret.Operand += " - " + (-tmpDisp).ToString("X") + "]";
+                        else
+                            ret.Operand += " + " + wordOp.ToString("X") + "]";
 
-                        ret.Displacement = wordOp;
+                        ret.Displacement = (uint)tmpDisp;
                         ret.HasDisplacement = true;
                     }
                     else if (ret.Mode == 0x2)
                     {
                         uint dWordOp;
+                        int tmpDisp;
 
                         dWordOp = DecodeReadDWord();
+                        tmpDisp = (int)dWordOp;
 
-                        ret.Operand += " + " + dWordOp.ToString("X8") + "]";
+                        if (tmpDisp < 0)
+                            ret.Operand += " - " + (-tmpDisp).ToString("X") + "]";
+                        else
+                            ret.Operand += " + " + dWordOp.ToString("X") + "]";
 
-                        ret.Displacement = dWordOp;
+                        ret.Displacement = (uint)tmpDisp;
                         ret.HasDisplacement = true;
                     }
                     else if (ret.RegMem == 0x5 && memPrefix)
@@ -888,7 +898,7 @@ namespace x86CS
                         switch (rmData.Register)
                         {
                             case 0x0:
-                                grpStr = "AND";
+                                grpStr = "ADD";
                                 break;
                             case 0x1:
                                 grpStr = "OR";

@@ -852,7 +852,15 @@ namespace x86CS
                     if (opSize == 32)
                         address = ESI;
                     else
-                        address = 0;
+                    {
+                        if (rmData.Mode == 0)
+                            address = 0;
+                        else
+                        {
+                            address = BP;
+                            segToUse = SegmentRegister.SS;
+                        }
+                    }
                     break;
                 case 7:
                     if (opSize == 32)
@@ -900,9 +908,9 @@ namespace x86CS
             {
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
-                    address += (ushort)rmData.Displacement;
+                    address += (uint)(int)rmData.Displacement;
 
-                if (segToUse != overrideSegment)
+                if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
                     segToUse = overrideSegment;
 
                 regMemValue = SegReadWord(segToUse, address);
@@ -2930,7 +2938,7 @@ namespace x86CS
                                     destWord = Add(destWord, sourceByte);
                                     break;
                                 case 1:
-                                    destWord = Add(destWord, sourceByte);
+                                    destWord = Or(destWord, sourceByte);
                                     break;
                                 case 2:
                                     destWord = AddWithCarry(destWord, sourceByte);

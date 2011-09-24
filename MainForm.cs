@@ -63,16 +63,16 @@ namespace x86CS
             {
                 if (machine.Running && !stepping)
                 {
+                    machine.RunCycle();
                     if (machine.CheckBreakpoint())
                     {
                         stepping = true;
                         machine.CPU.Debug = true;
-                        this.Invoke((MethodInvoker)delegate { PrintRegisters(); });
+                        this.Invoke((MethodInvoker)delegate { PrintRegisters(); SetCPULabel(machine.Operation); });
                     }
                     else
                         machine.CPU.Debug = false;
 
-                    machine.RunCycle();
                 }
             }
         }

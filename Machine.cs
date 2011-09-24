@@ -221,7 +221,7 @@ namespace x86CS
 
         public bool CheckBreakpoint()
         {
-            uint cpuAddr = (cpu.CS << 4) + cpu.IP;
+            uint cpuAddr = (cpu.CS << 4) + cpu.EIP;
 
             foreach (KeyValuePair<int, int> kvp in breakpoints)
             {
