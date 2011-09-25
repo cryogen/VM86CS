@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Threading;
 using System.Globalization;
+using x86CS.Properties;
 
 namespace x86CS
 {
@@ -21,6 +22,7 @@ namespace x86CS
             machine = new Machine();
             machine.WriteText += MachineWriteText;
             machine.WriteChar += MachineWriteChar;
+            Application.ApplicationExit += ApplicationApplicationExit;
 
             breakpoints.ItemAdded += BreakpointsItemAdded;
             breakpoints.ItemDeleted += BreakpointsItemDeleted;
@@ -42,6 +44,11 @@ namespace x86CS
             }
         }
 
+        void ApplicationApplicationExit(object sender, EventArgs e)
+        {
+            machine.FlushLog();
+        }
+
         void BreakpointsItemDeleted(object sender, IntEventArgs e)
         {
             machine.ClearBreakpoint(e.Number);
@@ -58,7 +65,17 @@ namespace x86CS
             {
                 if (machine.Running && !stepping)
                 {
-                    machine.RunCycle();
+                    try
+                    {
+                        machine.RunCycle();
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(ex.Message, Resources.ErrorTitle);
+                        machine.FlushLog();
+                        return;
+                    }
+
                     if (machine.CheckBreakpoint())
                     {
                         stepping = true;
@@ -254,6 +271,7 @@ namespace x86CS
             }
             catch
             {
+                MessageBox.Show(Resources.Invalid_address, Resources.ErrorTitle);
             }
                 
             var addr = (uint)((seg << 4) + off);

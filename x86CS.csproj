@@ -90,6 +90,7 @@
     <Compile Include="Devices\Floppy.cs" />
     <Compile Include="Devices\Keyboard.cs" />
     <Compile Include="Devices\Misc.cs" />
+    <Compile Include="Devices\PIC8259.cs" />
     <Compile Include="Devices\PIT8253.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MainForm.cs">

@@ -18,10 +18,12 @@ namespace x86CS.Devices
 
     public class Keyboard
     {
-        private byte inputBuffer;
         private readonly Queue<byte> outputBuffer;
+        private byte inputBuffer;
+        private byte commandByte;
         private KeyboardFlags statusRegister;
-        private bool enabled = false;
+        private bool enabled;
+        private bool setCommandByte;
 
         public Keyboard()
         {
@@ -37,22 +39,37 @@ namespace x86CS.Devices
 
         private void ProcessCommand()
         {
-            switch (inputBuffer)
+            if (setCommandByte)
             {
-                case 0xaa:
-                    statusRegister |= KeyboardFlags.SystemFlag;
-                    SetStatusCode(0x55);
-                    break;
-                case 0xab:
-                    SetStatusCode(0x00);
-                    break;
-                case 0xae:
-                    enabled = true;
-                    break;
-                case 0xff:
-                    SetStatusCode(0xfa);
-                    SetStatusCode(0xaa);
-                    break;
+                SetStatusCode(0xfa);
+                setCommandByte = false;
+            }
+            else
+            {
+
+                switch (inputBuffer)
+                {
+                    case 0x60:
+                        setCommandByte = true;
+                        break;
+                    case 0xaa:
+                        statusRegister |= KeyboardFlags.SystemFlag;
+                        SetStatusCode(0x55);
+                        break;
+                    case 0xab:
+                        SetStatusCode(0x00);
+                        break;
+                    case 0xae:
+                        enabled = true;
+                        break;
+                    case 0xf5:
+                        SetStatusCode(0xfa);
+                        break;
+                    case 0xff:
+                        SetStatusCode(0xfa);
+                        SetStatusCode(0xaa);
+                        break;
+                }
             }
         }
 
@@ -61,12 +78,14 @@ namespace x86CS.Devices
             switch (address)
             {
                 case 0x60:
-                    byte ret = outputBuffer.Dequeue();
-                    if(outputBuffer.Count == 0)
+                    byte ret = setCommandByte ? commandByte : outputBuffer.Dequeue();
+
+                    if (outputBuffer.Count == 0)
                         statusRegister &= ~KeyboardFlags.OutputBufferFull;
+                    setCommandByte = false;
                     return ret;
                 case 0x64:
-                    return (ushort)statusRegister;
+                    return (ushort) statusRegister;
                 default:
                     break;
             }
@@ -79,7 +98,11 @@ namespace x86CS.Devices
             switch (address)
             {
                 case 0x60:
-                    inputBuffer = (byte)value;
+                    if (setCommandByte)
+                        commandByte = (byte)value;
+                    else
+                        inputBuffer = (byte)value;
+
                     statusRegister &= ~KeyboardFlags.CommandFlag;
                     ProcessCommand();
                     break;

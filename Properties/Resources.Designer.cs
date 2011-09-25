@@ -70,6 +70,15 @@ namespace x86CS.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Invalid address.
+        /// </summary>
+        internal static string Invalid_address {
+            get {
+                return ResourceManager.GetString("Invalid_address", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Invalid segment/offset.
         /// </summary>
         internal static string Invalid_segment_offset {

@@ -380,6 +380,11 @@ namespace x86CS.CPU
             Reset();
         }
 
+        public void FlushLog()
+        {
+            logFile.Flush();
+        }
+
         public void Reset()
         {
             eFlags = CPUFlags.ZF | CPUFlags.IF;
@@ -423,8 +428,8 @@ namespace x86CS.CPU
             uint virtAddr = GetVirtualAddress(segment, offset);
             byte ret = Memory.ReadByte(virtAddr);
 
-            if(segment != SegmentRegister.CS)
-                logFile.WriteLine(String.Format("Memory Read Byte {0:X} {1:X}", virtAddr, ret)); 
+/*            if(segment != SegmentRegister.CS)
+                logFile.WriteLine(String.Format("Memory Read Byte {0:X} {1:X}", virtAddr, ret)); */
 
             return ret;
         }
@@ -434,8 +439,8 @@ namespace x86CS.CPU
             uint virtAddr = GetVirtualAddress(segment, offset);
             ushort ret = Memory.ReadWord(virtAddr);
 
-            if (segment != SegmentRegister.CS)
-                logFile.WriteLine(String.Format("Memory Read Word {0:X} {1:X}", virtAddr, ret));
+/*            if (segment != SegmentRegister.CS)
+                logFile.WriteLine(String.Format("Memory Read Word {0:X} {1:X}", virtAddr, ret));*/
 
             return ret;
         }
@@ -445,8 +450,8 @@ namespace x86CS.CPU
             uint virtAddr = GetVirtualAddress(segment, offset);
             uint ret = Memory.ReadDWord(virtAddr);
 
-            if (segment != SegmentRegister.CS)
-                logFile.WriteLine(String.Format("Memory Read DWord {0:X} {1:X}", virtAddr, ret));
+/*            if (segment != SegmentRegister.CS)
+                logFile.WriteLine(String.Format("Memory Read DWord {0:X} {1:X}", virtAddr, ret));*/
 
             return ret;
         }
@@ -455,7 +460,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
+//            logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
 
             Memory.WriteByte(virtAddr, value);
         }
@@ -464,7 +469,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
+//            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
 
             Memory.WriteWord(virtAddr, value);
         }
@@ -473,7 +478,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
+            //logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
 
             Memory.WriteDWord(virtAddr, value);
         }
@@ -2286,7 +2291,7 @@ namespace x86CS.CPU
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out destDWord);
-                            sourceDWord = (uint)operands[1];
+                            sourceDWord = (byte)operands[1];
 
                             switch (rmData.Register)
                             {
@@ -2319,7 +2324,7 @@ namespace x86CS.CPU
                         else
                         {
                             memAddress = ProcessRegMem(rmData, out tempWord, out destWord);
-                            sourceWord = (ushort)operands[1];
+                            sourceWord = (byte)operands[1];
 
                             switch (rmData.Register)
                             {
@@ -2718,17 +2723,17 @@ namespace x86CS.CPU
                         if(opSize == 32)
                             EAX = (uint)(short)AX;
                         else
-                            AX = (ushort)(short)(sbyte)AL;
+                            AX = (ushort)(sbyte)AL;
                         break;
                     case 0x99:
                         if (opSize == 32)
                         {
-                            tempDWord = (uint)(int)(short)EAX;
+                            tempDWord = (uint)(short)EAX;
                             DX = (ushort)(tempDWord >> 16);
                         }
                         else
                         {
-                            tempQWord = (ulong)(long)(int)EAX;
+                            tempQWord = (ulong)(int)EAX;
                             EDX = (uint)(tempQWord >> 16);
                         }
                         break;

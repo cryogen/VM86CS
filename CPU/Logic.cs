@@ -26,12 +26,12 @@ namespace x86CS.CPU
 
         private ushort And(ushort dest, byte source)
         {
-            return DoAnd(dest, (ushort)(short)(sbyte)source);
+            return DoAnd(dest, (ushort)(sbyte)source);
         }
 
         private uint And(uint dest, byte source)
         {
-            return DoAnd(dest, (uint)(int)(sbyte)source);
+            return DoAnd(dest, (uint)(sbyte)source);
         }
 
         private ushort And(ushort dest, ushort source)
@@ -102,12 +102,12 @@ namespace x86CS.CPU
 
         private ushort Or(ushort dest, byte source)
         {
-            return DoOr(dest, (ushort)(short)(sbyte)source);
+            return DoOr(dest, (ushort)(sbyte)source);
         }
 
         private uint Or(uint dest, byte source)
         {
-            return DoOr(dest, (uint)(int)(sbyte)source);
+            return DoOr(dest, (uint)(sbyte)source);
         }
 
         private ushort Or(ushort dest, ushort source)
@@ -178,12 +178,12 @@ namespace x86CS.CPU
 
         private ushort Xor(ushort dest, byte source)
         {
-            return DoXor(dest, (ushort)(short)(sbyte)source);
+            return DoXor(dest, (ushort)(sbyte)source);
         }
 
         private uint Xor(uint dest, byte source)
         {
-            return DoXor(dest, (uint)(int)(sbyte)source);
+            return DoXor(dest, (uint)(sbyte)source);
         }
 
         private ushort Xor(ushort dest, ushort source)

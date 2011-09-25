@@ -59,28 +59,8 @@ namespace x86CS
 
     public class Machine
     {
-        private readonly CPU.CPU cpu = new CPU.CPU();
-        private readonly Floppy floppyDrive;
-        private bool running;
         public event EventHandler<TextEventArgs> WriteText;
-
-        public void OnWriteText(TextEventArgs e)
-        {
-            EventHandler<TextEventArgs> handler = WriteText;
-            if (handler != null) 
-                handler(this, e);
-        }
-
         public event EventHandler<CharEventArgs> WriteChar;
-
-        public void OnWriteChar(CharEventArgs e)
-        {
-            EventHandler<CharEventArgs> handler = WriteChar;
-            if (handler != null) 
-                handler(this, e);
-        }
-
-        private Stack<char> keyPresses = new Stack<char>();
         private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
         private Dictionary<ushort, IOEntry> ioPorts;
         private readonly StreamWriter logFile = File.CreateText("machinelog.txt");
@@ -89,52 +69,50 @@ namespace x86CS
         private readonly PIT8253 pit;
         private readonly Keyboard keyboard;
         private readonly DMA dma;
+        private readonly PIC8259 pic;
         private object[] operands;
         private int opLen;
         private byte opCode;
-        private string opStr = "";
 
-        public string Operation
+        public string Operation { get; private set; }
+        public Stack<char> KeyPresses { get; set; }
+        public Floppy FloppyDrive { get; private set; }
+        public bool Running { get; private set; }
+        public CPU.CPU CPU { get; private set; }
+
+        public void OnWriteText(TextEventArgs e)
         {
-            get { return opStr; }
+            var handler = WriteText;
+            if (handler != null)
+                handler(this, e);
         }
 
-        public Stack<char> KeyPresses
+        public void OnWriteChar(CharEventArgs e)
         {
-            get { return keyPresses; }
-            set { keyPresses = value; }
-        }
-
-        public Floppy FloppyDrive
-        {
-            get { return floppyDrive; }
-        }
-
-        public bool Running
-        {
-            get { return running; }
-        }
-
-        public CPU.CPU CPU
-        {
-            get { return cpu; }
+            var handler = WriteChar;
+            if (handler != null)
+                handler(this, e);
         }
 
         public Machine()
         {
-            floppyDrive = new Floppy();
+            CPU = new CPU.CPU();
+            KeyPresses = new Stack<char>();
+            Operation = "";
+            FloppyDrive = new Floppy();
             cmos = new CMOS();
             misc = new Misc();
             pit = new PIT8253();
             keyboard = new Keyboard();
             dma = new DMA();
+            pic = new PIC8259();
 
-            logFile.AutoFlush = true;
+//            logFile.AutoFlush = true;
 
             SetupSystem();
 
-            cpu.IORead += CPUIORead;
-            cpu.IOWrite += CPUIOWrite;
+            CPU.IORead += CPUIORead;
+            CPU.IOWrite += CPUIOWrite;
         }
 
         private void SetupIOEntry(ushort port, ReadCallback read, WriteCallback write)
@@ -174,12 +152,29 @@ namespace x86CS
 
             biosStream.Read(buffer, 0, buffer.Length);
             Memory.BlockWrite(startAddr, buffer, buffer.Length);
+            
+            biosStream.Close();
+            biosStream.Dispose();
+        }
+
+        private void LoadVGABios()
+        {
+            FileStream biosStream = File.OpenRead("VGABIOS-lgpl-latest");
+            var buffer = new byte[biosStream.Length];
+
+            biosStream.Read(buffer, 0, buffer.Length);
+            Memory.BlockWrite(0xc0000, buffer, buffer.Length);
+
+            biosStream.Close();
+            biosStream.Dispose();
         }
 
         private void SetupSystem()
         {
             ioPorts = new Dictionary<ushort, IOEntry>();
 
+            SetupIOEntry(0x20, pic.Read, pic.Write);
+            SetupIOEntry(0x21, pic.Read, pic.Write);
             SetupIOEntry(0x40, pit.Read, pit.Write);
             SetupIOEntry(0x41, pit.Read, pit.Write);
             SetupIOEntry(0x42, pit.Read, pit.Write);
@@ -190,20 +185,23 @@ namespace x86CS
             SetupIOEntry(0x71, cmos.Read, cmos.Write);
             SetupIOEntry(0x80, dma.Read, dma.Write);
             SetupIOEntry(0x92, misc.Read, misc.Write);
+            SetupIOEntry(0xa0, pic.Read, pic.Write);
+            SetupIOEntry(0xa1, pic.Read, pic.Write);
             SetupIOEntry(0x402, misc.Read, misc.Write);
 
             LoadBIOS();
+            LoadVGABios();
 
-            cpu.CS = 0xf000;
-            cpu.IP = 0xfff0;
+            CPU.CS = 0xf000;
+            CPU.IP = 0xfff0;
         }
 
         public void Restart()
         {
-            running = false;
-            cpu.Reset();
+            Running = false;
+            CPU.Reset();
             SetupSystem();
-            running = true;
+            Running = true;
         }
 
         public void SetBreakpoint(int addr)
@@ -224,41 +222,39 @@ namespace x86CS
 
         public bool CheckBreakpoint()
         {
-            uint cpuAddr = (cpu.CS << 4) + cpu.EIP;
+            uint cpuAddr = (CPU.CS << 4) + CPU.EIP;
 
             return breakpoints.Any(kvp => kvp.Value == cpuAddr);
         }
 
-        private byte ToBCD(int value)
-        {
-            int tens = value / 10;
-            int ones = value % 10;
-
-            var ret = (byte)(((byte)tens << 4) + (byte)ones);
-
-            return ret;
-        }
-
         public void Start()
         {
-            opLen = cpu.Decode(cpu.EIP, out opCode, out opStr, out operands);
-            opStr = String.Format("{0:X4}:{1:X} {2}", cpu.CS, cpu.EIP, opStr);
-            running = true;
+            string tempOpStr;
+            opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
+            Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
+            Running = true;
         }
 
         public void Stop()
         {
-            running = false;
+            Running = false;
+            logFile.Flush();
+        }
+
+        public void FlushLog()
+        {
+            logFile.Flush();
         }
 
         public void RunCycle()
         {
-            if (running)
+            if (Running)
             {
-                logFile.WriteLine("{0}", opStr); 
-                cpu.Cycle(opLen, opCode, operands);
-                opLen = cpu.Decode(cpu.EIP, out opCode, out opStr, out operands);
-                opStr = String.Format("{0:X4}:{1:X} {2}", cpu.CS, cpu.EIP, opStr);
+                string tempOpStr;
+                logFile.WriteLine("{0}", Operation); 
+                CPU.Cycle(opLen, opCode, operands);
+                opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
+                Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
             }
         }
     }

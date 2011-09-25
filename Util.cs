@@ -56,5 +56,15 @@ namespace x86CS
         {
             return (ushort)((b >> 8) & 0x00ff);
         }
+
+        public static byte ToBCD(int value)
+        {
+            int tens = value / 10;
+            int ones = value % 10;
+
+            var ret = (byte)(((byte)tens << 4) + (byte)ones);
+
+            return ret;
+        }
     }
 }

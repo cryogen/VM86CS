@@ -704,7 +704,7 @@ namespace x86CS.CPU
                     case 0x6b:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
 
-                        opStr = String.Format("IMUL {0}, {1}, {2:X}", rmData.RegisterName, rmData.Operand, (ushort)((short)(sbyte)operands[1]));
+                        opStr = String.Format("IMUL {0}, {1}, {2:X}", rmData.RegisterName, rmData.Operand, (ushort)((sbyte)operands[1]));
                         break;
                     case 0x6c:
                         opStr = "INSB";
@@ -861,7 +861,7 @@ namespace x86CS.CPU
                                 grpStr = "CMP";
                                 break;
                         }
-                        opStr = opSize == 32 ? String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (uint)((int)(sbyte)(byte)operands[1])) : String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)((short)(sbyte)(byte)operands[1]));
+                        opStr = opSize == 32 ? String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (uint)((sbyte)(byte)operands[1])) : String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)((sbyte)(byte)operands[1]));
                         break;
                     case 0x84:
                     case 0x85:
@@ -1070,7 +1070,7 @@ namespace x86CS.CPU
                                 grpStr = "SAR";
                                 break;
                         }
-                        opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)((short)(sbyte)(byte)operands[1]));
+                        opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)((sbyte)(byte)operands[1]));
                         break;
                     case 0xc2:
                         opStr = String.Format("RETN {0:X}", operands[0]);
@@ -1355,7 +1355,7 @@ namespace x86CS.CPU
                                 opStr = String.Format("CALL {0}", rmData.Operand);
                                 break;
                             case 0x3:
-                                opStr = String.Format("CALL FAR {0:X}:{1:X}", operands[1], operands[0]);
+                                opStr = String.Format("CALL FAR {0:X}", rmData.Operand);
                                 break;
                             case 0x4:
                                 opStr = String.Format("JMP {0}", rmData.Operand);
@@ -1438,7 +1438,7 @@ namespace x86CS.CPU
                 #region Opcode processing
                 switch (opCode)
                 {
-                    case 0x04:          /* byte operand */
+                    case 0x04: /* byte operand */
                     case 0x0c:
                     case 0x14:
                     case 0x1c:
@@ -1487,7 +1487,7 @@ namespace x86CS.CPU
 
                         args.Add(sourceByte);
                         break;
-                    case 0x05:          /* Word operand */
+                    case 0x05: /* Word operand */
                     case 0x0d:
                     case 0x15:
                     case 0x1d:
@@ -1524,14 +1524,14 @@ namespace x86CS.CPU
                             args.Add(sourceWord);
                         }
                         break;
-                    case 0xc8:          /* Word, byte operand */
+                    case 0xc8: /* Word, byte operand */
                         destWord = DecodeReadWord();
                         sourceByte = DecodeReadByte();
 
                         args.Add(destWord);
                         args.Add(sourceByte);
                         break;
-                    case 0x9a:          /* word, word operand */
+                    case 0x9a: /* word, word operand */
                     case 0xea:
                         if (opSize == 32)
                         {
@@ -1550,7 +1550,7 @@ namespace x86CS.CPU
                             args.Add(sourceWord);
                         }
                         break;
-                    case 0x00:          /* reg8/mem8 operand */
+                    case 0x00: /* reg8/mem8 operand */
                     case 0x02:
                     case 0x08:
                     case 0x0a:
@@ -1574,7 +1574,7 @@ namespace x86CS.CPU
 
                         args.Add(rmData);
                         break;
-                    case 0x01:          /* reg16/mem16 operand */
+                    case 0x01: /* reg16/mem16 operand */
                     case 0x03:
                     case 0x09:
                     case 0x0b:
@@ -1604,21 +1604,21 @@ namespace x86CS.CPU
 
                         args.Add(rmData);
                         break;
-                    case 0x6b:          /* reg/mem16, byte operands */
+                    case 0x6b: /* reg/mem16, byte operands */
                         rmData = DecodeRM(true);
                         sourceByte = DecodeReadByte();
 
                         args.Add(rmData);
                         args.Add(sourceByte);
                         break;
-                    case 0x69:          /* reg/mem16, word operands */
+                    case 0x69: /* reg/mem16, word operands */
                         rmData = DecodeRM(true);
                         sourceWord = DecodeReadWord();
 
                         args.Add(rmData);
                         args.Add(sourceWord);
                         break;
-                    case 0x80:          /* Group - imm8 */
+                    case 0x80: /* Group - imm8 */
                     case 0xc0:
                         rmData = DecodeRM(false);
 
@@ -1626,7 +1626,7 @@ namespace x86CS.CPU
                         args.Add(rmData);
                         args.Add(sourceByte);
                         break;
-                    case 0x81:          /* Group - imm16 */
+                    case 0x81: /* Group - imm16 */
                         rmData = DecodeRM(true);
 
                         args.Add(rmData);
@@ -1641,7 +1641,7 @@ namespace x86CS.CPU
                             args.Add(sourceWord);
                         }
                         break;
-                    case 0x8f:          /* Group */
+                    case 0x8f: /* Group */
                         rmData = DecodeRM(true);
 
                         switch (rmData.Register)
@@ -1653,7 +1653,7 @@ namespace x86CS.CPU
                                 break;
                         }
                         break;
-                    case 0x83:          /* Group reg16/32, imm8 (SE) */
+                    case 0x83: /* Group reg16/32, imm8 (SE) */
                     case 0xc1:
                         rmData = DecodeRM(true);
 
@@ -1661,7 +1661,7 @@ namespace x86CS.CPU
                         args.Add(rmData);
                         args.Add(sourceByte);
                         break;
-                    case 0xc6:          /* Group */
+                    case 0xc6: /* Group */
                         rmData = DecodeRM(false);
                         sourceByte = DecodeReadByte();
 
@@ -1673,16 +1673,32 @@ namespace x86CS.CPU
                                 break;
                         }
                         break;
-                    case 0xc7:          /* Group */
-                        rmData = DecodeRM(true);
-                        sourceWord = DecodeReadWord();
-
-                        switch (rmData.Register)
+                    case 0xc7: /* Group */
+                        if (opSize == 32)
                         {
-                            case 0x0:
-                                args.Add(rmData);
-                                args.Add(sourceWord);
-                                break;
+                            rmData = DecodeRM(true);
+                            sourceDWord = DecodeReadDWord();
+
+                            switch (rmData.Register)
+                            {
+                                case 0x0:
+                                    args.Add(rmData);
+                                    args.Add(sourceDWord);
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            rmData = DecodeRM(true);
+                            sourceWord = DecodeReadWord();
+
+                            switch (rmData.Register)
+                            {
+                                case 0x0:
+                                    args.Add(rmData);
+                                    args.Add(sourceWord);
+                                    break;
+                            }
                         }
                         break;
                     case 0xd0:          /* Group reg8 */

@@ -120,4 +120,7 @@
   <data name="ErrorTitle">
     <value xml:space="preserve">Error</value>
   </data>
+  <data name="Invalid_address">
+    <value xml:space="preserve">Invalid address</value>
+  </data>
 </root>

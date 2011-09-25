@@ -78,12 +78,12 @@
 
         private ushort Add(ushort dest, byte source)
         {
-            return DoAdd(dest, (ushort) (short) (sbyte) source, false);
+            return DoAdd(dest, (ushort)(sbyte)source, false);
         }
 
         private uint Add(uint dest, byte source)
         {
-            return DoAdd(dest, (uint) (int) (sbyte) source, false);
+            return DoAdd(dest, (uint)(sbyte)source, false);
         }
 
         private ushort Add(ushort dest, ushort source)
@@ -119,12 +119,12 @@
 
         private ushort AddWithCarry(ushort dest, byte source)
         {
-            return DoAdd(dest, (ushort) (short) (sbyte) source, true);
+            return DoAdd(dest, (ushort)(sbyte)source, true);
         }
 
         private uint AddWithCarry(uint dest, byte source)
         {
-            return DoAdd(dest, (uint) (int) (sbyte) source, true);
+            return DoAdd(dest, (uint)(sbyte)source, true);
         }
 
         private ushort AddWithCarry(ushort dest, ushort source)
@@ -211,12 +211,12 @@
 
         private ushort Subtract(ushort dest, byte source)
         {
-            return DoSub(dest, (ushort) (short) (sbyte) source, false);
+            return DoSub(dest, (ushort)(sbyte)source, false);
         }
 
         private uint Subtract(uint dest, byte source)
         {
-            return DoSub(dest, (uint) (int) (sbyte) source, false);
+            return DoSub(dest, (uint)(sbyte) source, false);
         }
 
         private ushort Subtract(ushort dest, ushort source)
@@ -251,12 +251,12 @@
 
         private ushort SubWithBorrow(ushort dest, byte source)
         {
-            return DoSub(dest, (ushort) (short) (sbyte) source, true);
+            return DoSub(dest, (ushort)(sbyte)source, true);
         }
 
         private uint SubWithBorrow(uint dest, byte source)
         {
-            return DoSub(dest, (uint) (int) (sbyte) source, true);
+            return DoSub(dest, (uint)(sbyte)source, true);
         }
 
         private ushort SubWithBorrow(ushort dest, ushort source)
@@ -453,12 +453,12 @@
 
         private ushort SignedMultiply(ushort dest, byte source)
         {
-            return SignedMultiply(dest, (ushort) (short) (sbyte) source);
+            return SignedMultiply(dest, (ushort)(sbyte)source);
         }
 
         private uint SignedMultiply(uint dest, byte source)
         {
-            return SignedMultiply(dest, (uint) (int) (sbyte) source);
+            return SignedMultiply(dest, (uint)(sbyte)source);
         }
 
         private ushort SignedMultiply(ushort dest, ushort source)
