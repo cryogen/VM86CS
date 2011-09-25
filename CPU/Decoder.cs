@@ -1,11 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Collections;
-using System.IO;
 
-namespace x86CS
+namespace x86CS.CPU
 {
     [Flags]
     public enum OPPrefix
@@ -51,17 +47,16 @@ namespace x86CS
         private OPPrefix setPrefixes = 0;
         private uint currentAddr;
         private SegmentRegister overrideSegment = SegmentRegister.DS;
-        private bool memPrefix = false;
-        private bool extPrefix = false;
+        private bool memPrefix;
+        private bool extPrefix;
         private RepeatPrefix repeatPrefix = RepeatPrefix.None;
         private int opSize = 16;
 
         #region Read Functions
         private byte DecodeReadByte()
         {
-            uint ret;
+            var ret = (uint)(Memory.ReadByte(currentAddr) & 0xff);
 
-            ret = (uint)(Memory.ReadByte(currentAddr) & 0xff);
             currentAddr++;
 
             return (byte)ret;
@@ -69,9 +64,8 @@ namespace x86CS
 
         private ushort DecodeReadWord()
         {
-            uint ret;
+            var ret = (uint)(Memory.ReadWord(currentAddr) & 0xffff);
 
-            ret = (uint)(Memory.ReadWord(currentAddr) & 0xffff);
             currentAddr += 2;
 
             return (ushort)ret;
@@ -79,8 +73,8 @@ namespace x86CS
 
         private uint DecodeReadDWord()
         {
-            uint ret;
-            ret = Memory.ReadDWord(currentAddr);
+            uint ret = Memory.ReadDWord(currentAddr);
+
             currentAddr += 4;
 
             return ret;
@@ -91,34 +85,28 @@ namespace x86CS
         {
             if (overrideSegment == defaultseg)
                 return "";
-            else
-            {
-                if (overrideSegment == SegmentRegister.DS)
-                    return defaultseg.ToString() + ":";
-                else
-                    return overrideSegment.ToString() + ":";
-            }
+            
+            if (overrideSegment == SegmentRegister.DS)
+                return defaultseg + ":";
+            
+            return overrideSegment + ":";
         }
 
         private void DecodePrefixes()
         {
-            bool readPrefix = true;
-            byte opCode;
+            var readPrefix = true;
 
             setPrefixes = 0;
             repeatPrefix = RepeatPrefix.None;
             overrideSegment = SegmentRegister.DS;
-            if (pMode)
-                opSize = 32;
-            else
-                opSize = 16;
+            opSize = PMode ? 32 : 16;
 
             memPrefix = false;
             extPrefix = false;
 
             do
             {
-                opCode = DecodeReadByte();
+                byte opCode = DecodeReadByte();
 
                 switch (opCode)
                 {
@@ -163,7 +151,7 @@ namespace x86CS
                         currentAddr--;
                         break;
                 }
-            } while(readPrefix == true);
+            } while(readPrefix);
 
             if ((setPrefixes & OPPrefix.CSOverride) == OPPrefix.CSOverride)
                  overrideSegment = SegmentRegister.CS;
@@ -180,10 +168,7 @@ namespace x86CS
 
             if ((setPrefixes & OPPrefix.OPSize) == OPPrefix.OPSize)
             {
-                if (PMode)
-                    opSize = 16;
-                else
-                    opSize = 32;
+                opSize = PMode ? 16 : 32;
             }
             if ((setPrefixes & OPPrefix.AddressSize) == OPPrefix.AddressSize)
                 memPrefix = true;
@@ -198,10 +183,9 @@ namespace x86CS
 
         private RegMemData DecodeRM(bool word)
         {
-            RegMemData ret = new RegMemData();
-            byte modRegRm;
+            var ret = new RegMemData();
 
-            modRegRm = DecodeReadByte();
+            byte modRegRm = DecodeReadByte();
 
             ret.Mode = (byte)(modRegRm >> 6);
             ret.Register = (byte)((modRegRm >> 3) & 0x7);
@@ -215,31 +199,31 @@ namespace x86CS
                     switch (ret.RegMem)
                     {
                         case 0x0:
-                            if (pMode)
+                            if (PMode)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[EAX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[BX + SI";
                             break;
                         case 0x1:
-                            if (pMode)
+                            if (PMode)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[ECX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[BX + DI";
                             break;
                         case 0x2:
-                            if (pMode)
+                            if (PMode)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[EDX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.SS) + "[BP + SI";
                             break;
                         case 0x3:
-                            if (pMode)
+                            if (PMode)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[EBX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.SS) + "[BP + DI";
                             break;
                         case 0x4:
-                            if (pMode)
+                            if (PMode)
                             {
                                 byte sib = DecodeReadByte();
 
@@ -265,7 +249,7 @@ namespace x86CS
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[SI";
                             break;
                         case 0x5:
-                            if (pMode)
+                            if (PMode)
                             {
                                 if (ret.Mode == 0x1 || ret.Mode == 0x2)
                                     ret.Operand = GetPrefixString(SegmentRegister.SS) + "[EBP + ";
@@ -276,7 +260,7 @@ namespace x86CS
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[DI";
                             break;
                         case 0x6:
-                            if (pMode)
+                            if (PMode)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[ESI";
                             else
                             {
@@ -287,7 +271,7 @@ namespace x86CS
                             }
                             break;
                         case 0x7:
-                            if (pMode)
+                            if (PMode)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[EDI";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[BX";
@@ -298,11 +282,8 @@ namespace x86CS
                     }
                     if (ret.Mode == 0x1)
                     {
-                        byte byteOp;
-                        int tmpDisp;
-
-                        byteOp = DecodeReadByte();
-                        tmpDisp = (int)(sbyte)byteOp;
+                        byte byteOp = DecodeReadByte();
+                        var tmpDisp = (int)(sbyte)byteOp;
 
                         if (tmpDisp < 0)
                             ret.Operand += " - " + (-tmpDisp).ToString("X") + "]";
@@ -314,11 +295,8 @@ namespace x86CS
                     }
                     else if (ret.Mode == 0x2 && memPrefix)
                     {
-                        ushort wordOp;
-                        int tmpDisp;
-
-                        wordOp = DecodeReadWord();
-                        tmpDisp = (int)(short)wordOp;
+                        ushort wordOp = DecodeReadWord();
+                        int tmpDisp = (short)wordOp;
 
                         if (tmpDisp < 0)
                             ret.Operand += " - " + (-tmpDisp).ToString("X") + "]";
@@ -330,11 +308,8 @@ namespace x86CS
                     }
                     else if (ret.Mode == 0x2)
                     {
-                        uint dWordOp;
-                        int tmpDisp;
-
-                        dWordOp = DecodeReadDWord();
-                        tmpDisp = (int)dWordOp;
+                        uint dWordOp = DecodeReadDWord();
+                        var tmpDisp = (int)dWordOp;
 
                         if (tmpDisp < 0)
                             ret.Operand += " - " + (-tmpDisp).ToString("X") + "]";
@@ -362,10 +337,7 @@ namespace x86CS
                         ret.Operand += "]";
                     break;
                 case 0x03:
-                    if (word)
-                        ret.Operand = GetRegStr(ret.RegMem);
-                    else
-                        ret.Operand = GetByteRegStr(ret.RegMem);
+                    ret.Operand = word ? GetRegStr(ret.RegMem) : GetByteRegStr(ret.RegMem);
 
                     ret.IsRegister = true;
                     break;
@@ -374,10 +346,7 @@ namespace x86CS
                     break;
             }
 
-            if (word)
-                ret.RegisterName = GetRegStr(ret.Register);
-            else
-                ret.RegisterName = GetByteRegStr(ret.Register);
+            ret.RegisterName = word ? GetRegStr(ret.Register) : GetByteRegStr(ret.Register);
 
             return ret;
         }
@@ -420,6 +389,8 @@ namespace x86CS
                 switch (opCode)
                 {
                     case 0x01:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 2:
@@ -433,106 +404,62 @@ namespace x86CS
                         }
                         break;
                     case 0x20:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV E{0}, {1}", rmData.RegisterName, GetControlRegStr(rmData.RegMem));
                         break;
                     case 0x22:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV {0}, E{1}", GetControlRegStr(rmData.RegMem), rmData.RegisterName);
                         break;
                     case 0x80:
-                        if(memPrefix)
-                            opStr = String.Format("JO {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JO {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JO {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x81:
-                        if(memPrefix)
-                            opStr = String.Format("JNO {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JNO {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JNO {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x82:
-                        if(memPrefix)
-                            opStr = String.Format("JB {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JB {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JB {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x83:
-                        if(memPrefix)
-                            opStr = String.Format("JNB {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JNB {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JNB {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x84:
-                        if(memPrefix)
-                            opStr = String.Format("JZ {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JZ {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JZ {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x85:
-                        if(memPrefix)
-                            opStr = String.Format("JNZ {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JNZ {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JNZ {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x86:
-                        if(memPrefix)
-                            opStr = String.Format("JBE {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JBE {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JBE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x87:
-                        if(memPrefix)
-                            opStr = String.Format("JNBE {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JNBE {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JNBE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x88:
-                        if(memPrefix)
-                            opStr = String.Format("JS {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JS {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JS {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x89:
-                        if(memPrefix)
-                            opStr = String.Format("JNS {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JNS {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JNS {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x8a:
-                        if(memPrefix)
-                            opStr = String.Format("JP {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JP {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JP {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x8b:
-                        if(memPrefix)
-                            opStr = String.Format("JS {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JS {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JS {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x8c:
-                        if(memPrefix)
-                            opStr = String.Format("JL {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JL {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JL {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x8d:
-                        if(memPrefix)
-                            opStr = String.Format("JNL {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JNL {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JNL {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x8e:
-                        if(memPrefix)
-                            opStr = String.Format("JLE {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JLE {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JLE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                     case 0x8f:
-                        if(memPrefix)
-                            opStr = String.Format("JNLE {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("JNLE {0:X} ({1:X})", signedWord, offset);
+                        opStr = String.Format("JNLE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
                         break;
                 }
             }
@@ -542,66 +469,98 @@ namespace x86CS
                 {
                     case 0x00:
                     case 0x01:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("ADD {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x08:
                     case 0x09:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("OR {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x10:
                     case 0x11:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("ADC {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x18:
                     case 0x19:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("SBB {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x20:
                     case 0x21:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("AND {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x28:
                     case 0x29:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("SUB {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x30:
                     case 0x31:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("XOR {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x38:
                     case 0x39:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("CMP {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x02:
                     case 0x03:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("ADD {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x0a:
                     case 0x0b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("OR {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x12:
                     case 0x13:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("ADC {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x1a:
                     case 0x1b:
-                        opStr = String.Format("SubWithBorrow {0}, {1}", rmData.RegisterName, rmData.Operand);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        opStr = String.Format("SBB {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x22:
                     case 0x23:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("AND {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x2a:
                     case 0x2b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("SUB {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x32:
                     case 0x33:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("XOR {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x3a:
                     case 0x3b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("CMP {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x04:
@@ -629,52 +588,28 @@ namespace x86CS
                         opStr = String.Format("CMP AL, {0:X}", (byte)operands[0]);
                         break;
                     case 0x05:
-                        if (opSize == 32)
-                            opStr = String.Format("ADD EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("ADD AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("ADD EAX, {0:X}", (uint)operands[0]) : String.Format("ADD AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x0d:
-                        if (opSize == 32)
-                            opStr = String.Format("OR EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("OR AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("OR EAX, {0:X}", (uint)operands[0]) : String.Format("OR AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x15:
-                        if (opSize == 32)
-                            opStr = String.Format("ADC EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("ADC AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("ADC EAX, {0:X}", (uint)operands[0]) : String.Format("ADC AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x1d:
-                        if (opSize == 32)
-                            opStr = String.Format("SBB EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("SBB AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("SBB EAX, {0:X}", (uint)operands[0]) : String.Format("SBB AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x25:
-                        if (opSize == 32)
-                            opStr = String.Format("AND EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("AND AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("AND EAX, {0:X}", (uint)operands[0]) : String.Format("AND AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x2d:
-                        if (opSize == 32)
-                            opStr = String.Format("SUB EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("SUB AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("SUB EAX, {0:X}", (uint)operands[0]) : String.Format("SUB AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x35:
-                        if (opSize == 32)
-                            opStr = String.Format("XOR EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("XOR AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("XOR EAX, {0:X}", (uint)operands[0]) : String.Format("XOR AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x3d:
-                        if (opSize == 32)
-                            opStr = String.Format("CMP EAX, {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("CMP AX, {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("CMP EAX, {0:X}", (uint)operands[0]) : String.Format("CMP AX, {0:X}", (ushort)operands[0]);
                         break;
                     case 0x06:
                         opStr = "PUSH ES";
@@ -756,18 +691,19 @@ namespace x86CS
                         opStr = "POPA";
                         break;
                     case 0x68:
-                        if(opSize == 32)
-                            opStr = String.Format("PUSH {0:X}", (uint)operands[0]);
-                        else
-                            opStr = String.Format("PUSH {0:X}", (ushort)operands[0]);
+                        opStr = opSize == 32 ? String.Format("PUSH {0:X}", (uint)operands[0]) : String.Format("PUSH {0:X}", (ushort)operands[0]);
                         break;
                     case 0x69:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("IMUL {0}, {1}, {2:X}", rmData.RegisterName, rmData.Operand, (ushort)operands[1]);
                         break;
                     case 0x6a:
                         opStr = String.Format("PUSH {0:X}", (byte)operands[0]);
                         break;
                     case 0x6b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("IMUL {0}, {1}, {2:X}", rmData.RegisterName, rmData.Operand, (ushort)((short)(sbyte)operands[1]));
                         break;
                     case 0x6c:
@@ -832,6 +768,8 @@ namespace x86CS
                         break;
                     case 0x80:
                     case 0x82:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -862,6 +800,8 @@ namespace x86CS
                         opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (byte)operands[1]);
                         break;
                     case 0x81:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -889,12 +829,11 @@ namespace x86CS
                                 grpStr = "CMP";
                                 break;
                         }
-                        if(opSize == 32)
-                            opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (uint)operands[1]);
-                        else
-                            opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)operands[1]);
+                        opStr = opSize == 32 ? String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (uint)operands[1]) : String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)operands[1]);
                         break;
                     case 0x83:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -922,37 +861,50 @@ namespace x86CS
                                 grpStr = "CMP";
                                 break;
                         }
-                        if (opSize == 32)
-                            opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (uint)((int)(sbyte)(byte)operands[1]));
-                        else
-                            opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)((short)(sbyte)(byte)operands[1]));
+                        opStr = opSize == 32 ? String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (uint)((int)(sbyte)(byte)operands[1])) : String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, (ushort)((short)(sbyte)(byte)operands[1]));
                         break;
                     case 0x84:
                     case 0x85:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("TEST {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x86:
                     case 0x87:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("XCHG {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x88:
                     case 0x89:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV {0}, {1}", rmData.Operand, rmData.RegisterName);
                         break;
                     case 0x8a:
                     case 0x8b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x8c:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV {0}, {1}", rmData.Operand, ((SegmentRegister)rmData.Register).ToString());
                         break;
                     case 0x8d:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("LEA {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0x8e:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV {0}, {1}", ((SegmentRegister)rmData.Register).ToString(), rmData.Operand);
                         break;
                     case 0x8f:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("POP {0}", rmData.Operand);
                         break;
                     case 0x90:
@@ -1057,6 +1009,8 @@ namespace x86CS
                         opStr = String.Format("MOV {0}, {1:X}", GetRegStr(opCode - 0xb8), operands[0]);
                         break;
                     case 0xc0:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1087,6 +1041,8 @@ namespace x86CS
                         opStr = String.Format("{0} {1}, {2:X}", grpStr, rmData.Operand, operands[1]);
                         break;
                     case 0xc1:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1123,15 +1079,23 @@ namespace x86CS
                         opStr = "RETN";
                         break;
                     case 0xc4:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("LES {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0xc5:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("LDS {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                     case 0xc6:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV {0}, {1:X}", rmData.Operand, operands[1]);
                         break;
                     case 0xc7:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         opStr = String.Format("MOV {0}, {1:X}", rmData.Operand, operands[1]);
                         break;
                     case 0xc8:
@@ -1160,6 +1124,8 @@ namespace x86CS
                         break;
                     case 0xd0:
                     case 0xd1:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1191,6 +1157,8 @@ namespace x86CS
                         break;
                     case 0xd2:
                     case 0xd3:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1251,10 +1219,9 @@ namespace x86CS
                         opStr = String.Format("OUT {0:X}, AX", operands[0]);
                         break;
                     case 0xe8:
-                        if(opSize == 32)
-                            opStr = String.Format("CALL {0:X} ({1:X})", signedDWord, offset);
-                        else
-                            opStr = String.Format("CALL {0:X} ({1:X})", signedWord, offset);
+                        opStr = opSize == 32
+                                    ? String.Format("CALL {0:X} ({1:X})", signedDWord, offset)
+                                    : String.Format("CALL {0:X} ({1:X})", signedWord, offset);
                         break;
                     case 0xe9:
                         opStr = String.Format("JMP {0:X} ({1:X})", signedWord, offset);
@@ -1272,7 +1239,7 @@ namespace x86CS
                         opStr = String.Format("IN AX, DX");
                         break;
                     case 0xee:
-                        opStr = String.Format("OUX DX, AL");
+                        opStr = String.Format("OUT DX, AL");
                         break;
                     case 0xef:
                         opStr = String.Format("OUT DX, AX");
@@ -1284,6 +1251,8 @@ namespace x86CS
                         opStr = "CMC";
                         break;
                     case 0xf6:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1311,6 +1280,8 @@ namespace x86CS
                         }
                         break;
                     case 0xf7:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1356,6 +1327,8 @@ namespace x86CS
                         opStr = "STD";
                         break;
                     case 0xfe:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1368,6 +1341,8 @@ namespace x86CS
                         opStr = String.Format("{0} {1}", grpStr, rmData.Operand);
                         break;
                     case 0xff:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         switch (rmData.Register)
                         {
                             case 0x0:
@@ -1400,17 +1375,16 @@ namespace x86CS
 
         public int Decode(uint eip, out byte opCode, out string opStr, out object[] operands)
         {
-            List<Object> args = new List<object>();
+            var args = new List<object>();
             RegMemData rmData;
-            uint baseAddr;
+// ReSharper disable TooWideLocalVariableScope
             byte sourceByte;
             ushort destWord, sourceWord;
             uint destDWord, sourceDWord;
+            // ReSharper restore TooWideLocalVariableScope
 
-            opCode = 0;
-
-            currentAddr = (uint)(segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + eip); 
-            baseAddr = currentAddr;
+            currentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + eip; 
+            var baseAddr = currentAddr;
 
             DecodePrefixes();
 
@@ -1489,7 +1463,6 @@ namespace x86CS
                     case 0x7e:
                     case 0x7f:
                     case 0xa0:
-                    case 0xa2:
                     case 0xa8:
                     case 0xb0:
                     case 0xb1:
@@ -1526,6 +1499,7 @@ namespace x86CS
                     case 0xe5:
                     case 0xe8:
                     case 0xa1:
+                    case 0xa2:
                     case 0xa3:
                     case 0xa9:
                     case 0xb8:
@@ -1611,6 +1585,7 @@ namespace x86CS
                     case 0x21:
                     case 0x23:
                     case 0x29:
+                    case 0x2b:
                     case 0x31:
                     case 0x33:
                     case 0x39:

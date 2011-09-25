@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.Reflection;
+using System.Linq;
 using System.IO;
 using x86CS.Devices;
 
@@ -10,50 +8,32 @@ namespace x86CS
 {
     public class TextEventArgs : EventArgs
     {
-        private string text;
-
         public TextEventArgs(string textToWrite)
         {
-            text = textToWrite;
+            Text = textToWrite;
         }
 
-        public string Text
-        {
-            get { return text; }
-            set { text = value; }
-        }
+        public string Text { get; set; }
     }
 
     public class CharEventArgs : EventArgs
     {
-        private char ch;
-
         public CharEventArgs(char charToWrite)
         {
-            ch = charToWrite;
+            Char = charToWrite;
         }
 
-        public char Char
-        {
-            get { return ch; }
-            set { ch = value; }
-        }
+        public char Char { get; set; }
     }
 
     public class IntEventArgs : EventArgs
     {
-        private int number;
-
         public IntEventArgs(int num)
         {
-            number = num;
+            Number = num;
         }
 
-        public int Number
-        {
-            get { return number; }
-            set { number = value; }
-        }
+        public int Number { get; set; }
     }
 
     public delegate void InteruptHandler();
@@ -79,17 +59,36 @@ namespace x86CS
 
     public class Machine
     {
-        private CPU cpu = new CPU();
-        private Floppy floppyDrive;
-        private bool running = false;
+        private readonly CPU.CPU cpu = new CPU.CPU();
+        private readonly Floppy floppyDrive;
+        private bool running;
         public event EventHandler<TextEventArgs> WriteText;
+
+        public void OnWriteText(TextEventArgs e)
+        {
+            EventHandler<TextEventArgs> handler = WriteText;
+            if (handler != null) 
+                handler(this, e);
+        }
+
         public event EventHandler<CharEventArgs> WriteChar;
+
+        public void OnWriteChar(CharEventArgs e)
+        {
+            EventHandler<CharEventArgs> handler = WriteChar;
+            if (handler != null) 
+                handler(this, e);
+        }
+
         private Stack<char> keyPresses = new Stack<char>();
-        private Dictionary<int, int> breakpoints = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
         private Dictionary<ushort, IOEntry> ioPorts;
-        private StreamWriter logFile = File.CreateText("machinelog.txt");
-        private CMOS cmos;
-        private Misc misc;
+        private readonly StreamWriter logFile = File.CreateText("machinelog.txt");
+        private readonly CMOS cmos;
+        private readonly Misc misc;
+        private readonly PIT8253 pit;
+        private readonly Keyboard keyboard;
+        private readonly DMA dma;
         private object[] operands;
         private int opLen;
         private byte opCode;
@@ -116,7 +115,7 @@ namespace x86CS
             get { return running; }
         }
 
-        public CPU CPU
+        public CPU.CPU CPU
         {
             get { return cpu; }
         }
@@ -126,41 +125,37 @@ namespace x86CS
             floppyDrive = new Floppy();
             cmos = new CMOS();
             misc = new Misc();
+            pit = new PIT8253();
+            keyboard = new Keyboard();
+            dma = new DMA();
 
             logFile.AutoFlush = true;
 
             SetupSystem();
 
-            cpu.IORead += new ReadCallback(cpu_IORead);
-            cpu.IOWrite += new WriteCallback(cpu_IOWrite);
+            cpu.IORead += CPUIORead;
+            cpu.IOWrite += CPUIOWrite;
         }
 
         private void SetupIOEntry(ushort port, ReadCallback read, WriteCallback write)
         {
-            IOEntry entry = new IOEntry();
-
-            entry.Read = read;
-            entry.Write = write;
+            var entry = new IOEntry {Read = read, Write = write};
 
             ioPorts.Add(port, entry);
         }
 
-        private ushort cpu_IORead(ushort addr)
+        private ushort CPUIORead(ushort addr)
         {
             IOEntry entry;
-            ushort ret;
 
-            if (!ioPorts.TryGetValue(addr, out entry))
-                ret = 0xffff;
-            else
-                ret = entry.Read(addr);
+            var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr));
 
             logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
 
             return ret;
         }
 
-        private void cpu_IOWrite(ushort addr, ushort value)
+        private void CPUIOWrite(ushort addr, ushort value)
         {
             IOEntry entry;
 
@@ -173,7 +168,7 @@ namespace x86CS
         private void LoadBIOS()
         {
             FileStream biosStream = File.OpenRead("BIOS-bochs-latest");
-            byte[] buffer = new byte[biosStream.Length];
+            var buffer = new byte[biosStream.Length];
 
             uint startAddr = (uint)(0xfffff - buffer.Length) + 1;
 
@@ -185,9 +180,17 @@ namespace x86CS
         {
             ioPorts = new Dictionary<ushort, IOEntry>();
 
-            SetupIOEntry(0x70, new ReadCallback(cmos.Read), new WriteCallback(cmos.Write));
-            SetupIOEntry(0x71, new ReadCallback(cmos.Read), new WriteCallback(cmos.Write));
-            SetupIOEntry(0x92, new ReadCallback(misc.Read), new WriteCallback(misc.Write));
+            SetupIOEntry(0x40, pit.Read, pit.Write);
+            SetupIOEntry(0x41, pit.Read, pit.Write);
+            SetupIOEntry(0x42, pit.Read, pit.Write);
+            SetupIOEntry(0x43, pit.Read, pit.Write);
+            SetupIOEntry(0x60, keyboard.Read, keyboard.Write);
+            SetupIOEntry(0x64, keyboard.Read, keyboard.Write);
+            SetupIOEntry(0x70, cmos.Read, cmos.Write);
+            SetupIOEntry(0x71, cmos.Read, cmos.Write);
+            SetupIOEntry(0x80, dma.Read, dma.Write);
+            SetupIOEntry(0x92, misc.Read, misc.Write);
+            SetupIOEntry(0x402, misc.Read, misc.Write);
 
             LoadBIOS();
 
@@ -223,80 +226,17 @@ namespace x86CS
         {
             uint cpuAddr = (cpu.CS << 4) + cpu.EIP;
 
-            foreach (KeyValuePair<int, int> kvp in breakpoints)
-            {
-                if (kvp.Value == cpuAddr)
-                    return true;
-            }
-            return false;
-        }
-
-        private char GetChar()
-        {
-            if (keyPresses.Count > 0)
-                return keyPresses.Pop();
-
-            while (keyPresses.Count == 0)
-                ;
-
-            return keyPresses.Pop();
-        }
-
-        private bool ReadSector()
-        {
-            int count = cpu.AL;
-            byte sector, cyl, head;
-            DisketteParamTable dpt;
-            byte[] buffer = new byte[Marshal.SizeOf(typeof(DisketteParamTable))];          
-            IntPtr p;
-
-            sector = (byte)(cpu.CL & 0x3f);
-            cyl = cpu.CH;
-            head = cpu.DH;
-
-            Console.WriteLine("Sector {0:X2}, Cyl {1:X2}, Head {2:X2}, Count {3:X2}", sector, cyl, head, count);
-
-            Memory.BlockRead((uint)((Memory.ReadWord(0x7a) << 16) + Memory.ReadWord(0x78)), buffer, buffer.Length);
-            p = Marshal.AllocHGlobal(buffer.Length);
-            Marshal.Copy(buffer, 0, p, buffer.Length);
-            dpt = (DisketteParamTable)Marshal.PtrToStructure(p, typeof(DisketteParamTable));
-
-            int addr = (cyl * 2 + head) * dpt.LastTrack + (sector - 1);
-
-            byte[] fileBuffer = floppyDrive.ReadSector(addr);
-
-            Memory.SegBlockWrite(cpu.ES, cpu.BX, fileBuffer, fileBuffer.Length);
-
-            return true;
+            return breakpoints.Any(kvp => kvp.Value == cpuAddr);
         }
 
         private byte ToBCD(int value)
         {
-            byte ret;
-            int tens, ones;
+            int tens = value / 10;
+            int ones = value % 10;
 
-            tens = value / 10;
-            ones = value % 10;
-
-            ret = (byte)(((byte)tens << 4) + (byte)ones);
+            var ret = (byte)(((byte)tens << 4) + (byte)ones);
 
             return ret;
-        }
-
-        private void DoWriteText(string text)
-        {
-            EventHandler<TextEventArgs> textEvent = WriteText;
-
-            if (textEvent != null)
-                textEvent(this, new TextEventArgs(text));
-        }
-
-        private void DoWriteChar(char ch)
-        {
-            EventHandler<CharEventArgs> charEvent = WriteChar;
-
-            if (charEvent != null)
-                charEvent(this, new CharEventArgs(ch));
         }
 
         public void Start()

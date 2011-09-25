@@ -1,48 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.Runtime.InteropServices;
 
-namespace x86CS
+namespace x86CS.Devices
 {
     public class Floppy
     {
         private FileStream floppyStream;
         private BinaryReader floppyReader;
-        bool mounted = false;
-        private DisketteParamTable dpt;
-        private StreamWriter logFile = File.CreateText("floppy.txt");
+        private readonly StreamWriter logFile = File.CreateText("floppy.txt");
 
-        public bool Mounted
-        {
-            get { return mounted; }
-        }
+        public bool Mounted { get; private set; }
 
-        public DisketteParamTable DPT
-        {
-            get { return dpt; }
-        }
-
-        // Most of these default values have been nicked from SeaBIOS, but apparently are the settings for a 1.44M Floppy
         public Floppy()
         {
-            dpt = new DisketteParamTable();
-
-            dpt.HeadUnload = 0x0f;          /* 240ms */
-            dpt.StepRate = 0x0a;            /* 12ms */
-            dpt.HeadLoad = 0x01;            /* 4ms */
-            dpt.DMA = 0x01;
-            dpt.MotorOff = 37;              /* ~2s apparently */
-            dpt.SectorSize = 0x02;          /* 512 byte sectors */
-            dpt.LastTrack = 18;
-            dpt.GapLength = 0x1b;
-            dpt.DataXferLength = 0xff;      /* Not used */
-            dpt.FormatGapLength = 0x6c;     /* 3.5" */
-            dpt.FillChar = 0xf6;            /* default fill byte/char */
-            dpt.HeadSettle = 0x0f;          /* 15ms */
-            dpt.MotorOn = 0x08;             /* 1s */
-
+            Mounted = false;
             logFile.AutoFlush = true;
         }
 
@@ -62,7 +34,7 @@ namespace x86CS
             }
 
             logFile.WriteLine("Mounted image file {0}", imagePath);
-            mounted = true;
+            Mounted = true;
             return true;
         }
 
@@ -86,7 +58,7 @@ namespace x86CS
 
         public byte[] ReadBytes(int count)
         {
-            byte[] ret = floppyReader.ReadBytes(count);;
+            byte[] ret = floppyReader.ReadBytes(count);
 
             logFile.WriteLine(String.Format("Floppy Read Bytes {0:X4} {1}", floppyReader.BaseStream.Position, count));
 

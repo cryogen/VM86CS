@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace x86CS
+﻿namespace x86CS.CPU
 {
     public partial class CPU
     {
@@ -11,13 +6,9 @@ namespace x86CS
         {
             if (repeatPrefix == RepeatPrefix.Repeat)
             {
-                if (opSize == 32)
-                    return ECX;
-                else
-                    return CX;
+                return opSize == 32 ? ECX : CX;
             }
-            else
-                return 1;
+            return 1;
         }
 
         private void SetCount(uint value)
@@ -33,14 +24,12 @@ namespace x86CS
 
         private void StringInByte()
         {
-            byte value;
-            uint count;
-
-            count = GetCount();
+            var count = GetCount();
 
             while (count > 0)
             {
-                value = (byte)DoIORead(DX);
+                var value = (byte)DoIORead(DX);
+
                 SegWriteByte(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
                     EDI--;
@@ -54,13 +43,10 @@ namespace x86CS
 
         private void StringInWord()
         {
-            ushort value;
-            uint count;
-
-            count = GetCount();
+            uint count = GetCount();
             while (count > 0)
             {
-                value = DoIORead(DX);
+                ushort value = DoIORead(DX);
                 SegWriteWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
                     EDI -= 2;
@@ -74,13 +60,10 @@ namespace x86CS
 
         private void StringInDWord()
         {
-            uint value;
-            uint count;
-
-            count = GetCount();
+            uint count = GetCount();
             while (count > 0)
             {
-                value = DoIORead(DX);
+                uint value = DoIORead(DX);
                 SegWriteDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
                     EDI -= 4;
@@ -94,13 +77,11 @@ namespace x86CS
 
         private void StringOutByte()
         {
-            byte value;
-            uint count;
+            uint count = GetCount();
 
-            count = GetCount();
             while (count > 0)
             {
-                value = SegReadByte(overrideSegment, opSize == 32 ? ESI : SI);
+                var value = SegReadByte(overrideSegment, opSize == 32 ? ESI : SI);
                 DoIOWrite(DX, value);
                 if (DF)
                     ESI--;
@@ -114,14 +95,11 @@ namespace x86CS
 
         private void StringOutWord()
         {
-            ushort value;
-            uint count;
-
-            count = GetCount();
+            uint count = GetCount();
 
             while (count > 0)
             {
-                value = SegReadWord(overrideSegment, opSize == 32 ? ESI : SI);
+                var value = SegReadWord(overrideSegment, opSize == 32 ? ESI : SI);
                 DoIOWrite(DX, value);
                 if (DF)
                     ESI -= 2;
@@ -135,14 +113,11 @@ namespace x86CS
 
         private void StringOutDWord()
         {
-            uint value;
-            uint count;
-
-            count = GetCount();
+            uint count = GetCount();
 
             while (count > 0)
             {
-                value = SegReadDWord(overrideSegment, opSize == 32 ? ESI : SI);
+                var value = SegReadDWord(overrideSegment, opSize == 32 ? ESI : SI);
                 DoIOWrite(DX, (ushort)value);
                 if (DF)
                     ESI -= 4;
@@ -258,12 +233,11 @@ namespace x86CS
 
         private void StringScanByte()
         {
-            byte source;
             uint count = GetCount();
 
             while (count > 0)
             {
-                source = SegReadByte(SegmentRegister.ES, opSize == 32 ? EDI :DI);
+                var source = SegReadByte(SegmentRegister.ES, opSize == 32 ? EDI :DI);
                 Subtract(AL, source);
                 if (DF)
                     EDI--;
@@ -277,12 +251,11 @@ namespace x86CS
 
         private void StringScanWord()
         {
-            ushort source;
             uint count = GetCount();
 
             while (count > 0)
             {
-                source = SegReadWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
+                var source = SegReadWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
                 Subtract(AX, source);
                 if (DF)
                     EDI -= 2;
@@ -296,12 +269,11 @@ namespace x86CS
 
         private void StringScanDWord()
         {
-            uint source;
             uint count = GetCount();
 
             while (count > 0)
             {
-                source = SegReadDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
+                var source = SegReadDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
                 Subtract(EAX, source);
                 if (DF)
                     EDI -= 4;

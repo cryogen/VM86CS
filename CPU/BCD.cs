@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-namespace x86CS
+namespace x86CS.CPU
 {
     public partial class CPU
     {
@@ -27,10 +24,8 @@ namespace x86CS
 
         private void ASCIIAdjustAfterDivide(byte baseNum)
         {
-            byte tempAL, tempAH;
-
-            tempAL = AL;
-            tempAH = AH;
+            byte tempAL = AL;
+            byte tempAH = AH;
 
             AL = (byte)((tempAL + (tempAH * baseNum)) & 0xff);
             AH = 0;
@@ -40,12 +35,10 @@ namespace x86CS
 
         private void ASCIIAdjustAfterMultiply(byte baseNum)
         {
-            byte tempAL;
-
             if (baseNum == 0)
                 throw new Exception("Divide Error");
 
-            tempAL = AL;
+            byte tempAL = AL;
             AH = (byte)(tempAL / baseNum);
             AL = (byte)(tempAL % baseNum);
 
@@ -74,10 +67,9 @@ namespace x86CS
         {
             if (((AL & 0xf) > 9) || AF)
             {
-                ushort temp;
                 bool carry = false;
 
-                temp = (ushort)(AL + 6);
+                var temp = (ushort)(AL + 6);
                 if (temp > byte.MaxValue)
                     carry = true;
 

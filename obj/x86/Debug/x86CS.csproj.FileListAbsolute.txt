@@ -1,8 +1,0 @@
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\bin\x86\Debug\x86CS.exe
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\bin\x86\Debug\x86CS.pdb
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\obj\x86\Debug\ResolveAssemblyReference.cache
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\obj\x86\Debug\x86CS.MainForm.resources
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\obj\x86\Debug\x86CS.Properties.Resources.resources
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\obj\x86\Debug\x86CS.csproj.GenerateResource.Cache
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\obj\x86\Debug\x86CS.exe
-C:\Users\stuartr\Documents\Visual Studio 2008\Projects\x86CS\obj\x86\Debug\x86CS.pdb

@@ -1,36 +1,23 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Runtime.InteropServices;
-using System.Collections;
 using System.IO;
 
-namespace x86CS
+namespace x86CS.CPU
 {
     public partial class CPU
     {
-        private Segment[] segments;
-        private Register[] registers;
-        private uint[] controlRegisters;
+        private readonly Segment[] segments;
+        private readonly Register[] registers;
+        private readonly uint[] controlRegisters;
         private CPUFlags eFlags;
-        private bool debug = false;
-        private bool pMode = false;
         public event ReadCallback IORead;
         public event WriteCallback IOWrite;
-        private StreamWriter logFile = File.CreateText("cpulog.txt");
+        private readonly StreamWriter logFile = File.CreateText("cpulog.txt");
         private TableRegister idtRegister, gdtRegister;
-        private GDTEntry realModeEntry;
+        private readonly GDTEntry realModeEntry;
 
-        public bool Debug
-        {
-            get { return debug; }
-            set { debug = value; }
-        }
-
-        public bool PMode
-        {
-            get { return pMode; }
-        }
+        public bool Debug { get; set; }
+        public bool PMode { get; private set; }
 
         #region Registers
 
@@ -372,20 +359,22 @@ namespace x86CS
 
         public CPU()
         {
+            PMode = false;
+            Debug = false;
             segments = new Segment[6];
             registers = new Register[9];
             controlRegisters = new uint[5];
             idtRegister = new TableRegister();
             gdtRegister = new TableRegister();
-            realModeEntry = new GDTEntry();
-
-            realModeEntry.BaseAddress = 0;
-            realModeEntry.Is32Bit = false;
-            realModeEntry.IsAccessed = true;
-            realModeEntry.IsCode = false;
-            realModeEntry.Limit = 0xffff;
-            realModeEntry.IsWritable = true;
-
+            realModeEntry = new GDTEntry
+                                {
+                                    BaseAddress = 0,
+                                    Is32Bit = false,
+                                    IsAccessed = true,
+                                    IsCode = false,
+                                    Limit = 0xffff,
+                                    IsWritable = true
+                                };
             logFile.AutoFlush = true;
 
             Reset();
@@ -431,12 +420,8 @@ namespace x86CS
 
         private byte SegReadByte(SegmentRegister segment, uint offset)
         {
-            uint virtAddr;
-            byte ret;
-
-            virtAddr = GetVirtualAddress(segment, offset);
-
-            ret = Memory.ReadByte(virtAddr);
+            uint virtAddr = GetVirtualAddress(segment, offset);
+            byte ret = Memory.ReadByte(virtAddr);
 
             if(segment != SegmentRegister.CS)
                 logFile.WriteLine(String.Format("Memory Read Byte {0:X} {1:X}", virtAddr, ret)); 
@@ -446,12 +431,8 @@ namespace x86CS
 
         private ushort SegReadWord(SegmentRegister segment, uint offset)
         {
-            uint virtAddr;
-            ushort ret;
-
-            virtAddr = GetVirtualAddress(segment, offset);
-
-            ret = Memory.ReadWord(virtAddr);
+            uint virtAddr = GetVirtualAddress(segment, offset);
+            ushort ret = Memory.ReadWord(virtAddr);
 
             if (segment != SegmentRegister.CS)
                 logFile.WriteLine(String.Format("Memory Read Word {0:X} {1:X}", virtAddr, ret));
@@ -461,12 +442,8 @@ namespace x86CS
 
         private uint SegReadDWord(SegmentRegister segment, uint offset)
         {
-            uint virtAddr;
-            uint ret;
-
-            virtAddr = GetVirtualAddress(segment, offset);
-
-            ret = Memory.ReadDWord(virtAddr);
+            uint virtAddr = GetVirtualAddress(segment, offset);
+            uint ret = Memory.ReadDWord(virtAddr);
 
             if (segment != SegmentRegister.CS)
                 logFile.WriteLine(String.Format("Memory Read DWord {0:X} {1:X}", virtAddr, ret));
@@ -476,9 +453,7 @@ namespace x86CS
 
         private void SegWriteByte(SegmentRegister segment, uint offset, byte value)
         {
-            uint virtAddr;
-
-            virtAddr = GetVirtualAddress(segment, offset);
+            uint virtAddr = GetVirtualAddress(segment, offset);
 
             logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
 
@@ -487,9 +462,7 @@ namespace x86CS
 
         private void SegWriteWord(SegmentRegister segment, uint offset, ushort value)
         {
-            uint virtAddr;
-
-            virtAddr = GetVirtualAddress(segment, offset);
+            uint virtAddr = GetVirtualAddress(segment, offset);
 
             logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
 
@@ -498,9 +471,7 @@ namespace x86CS
 
         private void SegWriteDWord(SegmentRegister segment, uint offset, uint value)
         {
-            uint virtAddr;
-
-            virtAddr = GetVirtualAddress(segment, offset);
+            uint virtAddr = GetVirtualAddress(segment, offset);
 
             logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
 
@@ -646,34 +617,23 @@ namespace x86CS
 
         private void SetCPUFlags(byte operand)
         {
-            sbyte signed = (sbyte)operand;
+            var signed = (sbyte)operand;
 
-            if (operand == 0)
-                ZF = true;
-            else
-                ZF = false;
-
-            if (signed < 0)
-                SF = true;
-            else
-                SF = false;
+            ZF = operand == 0;
+            SF = signed < 0;
 
             SetParity(operand);
         }
 
         private GDTEntry GetSelectorEntry(uint selector)
         {
-            byte[] gdtBytes;
-            IntPtr p;
             int entrySize = Marshal.SizeOf(typeof(GDTEntry));
-            GDTEntry entry;
+            var gdtBytes = new byte[entrySize];
 
-            gdtBytes = new byte[entrySize];
-
-            Memory.BlockRead((uint)(gdtRegister.Base + selector), gdtBytes, gdtBytes.Length);
-            p = Marshal.AllocHGlobal(entrySize);
+            Memory.BlockRead(gdtRegister.Base + selector, gdtBytes, gdtBytes.Length);
+            IntPtr p = Marshal.AllocHGlobal(entrySize);
             Marshal.Copy(gdtBytes, 0, p, entrySize);
-            entry = (GDTEntry)Marshal.PtrToStructure(p, typeof(GDTEntry));
+            var entry = (GDTEntry)Marshal.PtrToStructure(p, typeof(GDTEntry));
             Marshal.FreeHGlobal(p);
 
             return entry;
@@ -681,7 +641,7 @@ namespace x86CS
 
         private void SetSelector(SegmentRegister segment, uint selector)
         {
-            if (pMode)
+            if (PMode)
             {
                 segments[(int)segment].Selector = selector;
                 segments[(int)segment].GDTEntry = GetSelectorEntry(selector);
@@ -843,10 +803,7 @@ namespace x86CS
                         address = SI;
                     break;
                 case 5:
-                    if (opSize == 32)
-                        address = 0;
-                    else
-                        address = DI;
+                    address = (uint) (opSize == 32 ? 0 : DI);
                     break;
                 case 6:
                     if (opSize == 32)
@@ -863,10 +820,7 @@ namespace x86CS
                     }
                     break;
                 case 7:
-                    if (opSize == 32)
-                        address = EDI;
-                    else
-                        address = BX;
+                    address = opSize == 32 ? EDI : BX;
                     break;
             }
             return address;
@@ -875,7 +829,6 @@ namespace x86CS
         private uint ProcessRegMem(RegMemData rmData, out byte registerValue, out byte regMemValue)
         {
             uint address = 0;
-            SegmentRegister segToUse = SegmentRegister.DS;
 
             registerValue = GetByteReg(rmData.Register);
 
@@ -883,11 +836,13 @@ namespace x86CS
                 regMemValue = GetByteReg(rmData.RegMem);
             else
             {
+                SegmentRegister segToUse;
+
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
                     address += (ushort)rmData.Displacement;
 
-                if (segToUse != overrideSegment)
+                if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
                     segToUse = overrideSegment;
 
                 regMemValue = SegReadByte(segToUse, address);
@@ -898,7 +853,6 @@ namespace x86CS
         private uint ProcessRegMem(RegMemData rmData, out ushort registerValue, out ushort regMemValue)
         {
             uint address = 0;
-            SegmentRegister segToUse = SegmentRegister.DS;
 
             registerValue = registers[rmData.Register].Word;
 
@@ -906,6 +860,8 @@ namespace x86CS
                 regMemValue = registers[rmData.RegMem].Word;
             else
             {
+                SegmentRegister segToUse;
+
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
                     address += (uint)(int)rmData.Displacement;
@@ -922,7 +878,6 @@ namespace x86CS
         private uint ProcessRegMem(RegMemData rmData, out uint registerValue, out uint regMemValue)
         {
             uint address = 0;
-            SegmentRegister segToUse = SegmentRegister.DS;
 
             registerValue = registers[rmData.Register].DWord;
 
@@ -930,11 +885,13 @@ namespace x86CS
                 regMemValue = registers[rmData.RegMem].DWord;
             else
             {
+                SegmentRegister segToUse;
+
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
-                    address += (uint)rmData.Displacement;
+                    address += rmData.Displacement;
 
-                if (segToUse != overrideSegment)
+                if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
                     segToUse = overrideSegment;
 
                 regMemValue = SegReadDWord(segToUse, address);
@@ -952,12 +909,7 @@ namespace x86CS
             else
             {
                 if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                {
-                    if (overrideSegment != SegmentRegister.SS)
-                        writeSegment = overrideSegment;
-                    else
-                        writeSegment = SegmentRegister.SS;
-                }
+                    writeSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS;
                 else
                 {
                     if (overrideSegment != SegmentRegister.DS)
@@ -976,12 +928,7 @@ namespace x86CS
             else
             {
                 if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                {
-                    if (overrideSegment != SegmentRegister.SS)
-                        writeSegment = overrideSegment;
-                    else
-                        writeSegment = SegmentRegister.SS;
-                }
+                    writeSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS; 
                 else
                 {
                     if (overrideSegment != SegmentRegister.DS)
@@ -1000,12 +947,7 @@ namespace x86CS
             else
             {
                 if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                {
-                    if (overrideSegment != SegmentRegister.SS)
-                        writeSegment = overrideSegment;
-                    else
-                        writeSegment = SegmentRegister.SS;
-                }
+                    writeSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS;
                 else
                 {
                     if (overrideSegment != SegmentRegister.DS)
@@ -1018,42 +960,25 @@ namespace x86CS
         private void CallRegMem(RegMemData rmData, uint address, bool far, bool call)
         {
             SegmentRegister readSegment = SegmentRegister.DS;
-            uint segment;
             uint offset;
 
+            System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
             if (rmData.IsRegister)
-            {
-                if (opSize == 32)
-                    offset = registers[rmData.RegMem].DWord;
-                else
-                    offset = registers[rmData.RegMem].Word;
-            }
+                offset = opSize == 32 ? registers[rmData.RegMem].DWord : registers[rmData.RegMem].Word;
             else
             {
                 if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                {
-                    if (overrideSegment != SegmentRegister.SS)
-                        readSegment = overrideSegment;
-                    else
-                        readSegment = SegmentRegister.SS;
-                }
+                    readSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS;
                 else
                 {
                     if (overrideSegment != SegmentRegister.DS)
                         readSegment = overrideSegment;
                 }
-
-                if (opSize == 32)
-                    offset = SegReadDWord(readSegment, address);
-                else
-                    offset = SegReadWord(readSegment, address);
+                offset = opSize == 32 ? SegReadDWord(readSegment, address) : SegReadWord(readSegment, address);
             }
 
 
-            if (far)
-                segment = SegReadWord(readSegment, (uint)(address + 2));
-            else
-                segment = CS;
+            uint segment = far ? SegReadWord(readSegment, address + 2) : CS;
 
             if (call)
                 CallProcedure(segment, offset, false);
@@ -1096,11 +1021,10 @@ namespace x86CS
 
         private void ProcedureEnter(ushort size, byte level)
         {
-            ushort nestingLevel = (ushort)(level % 32);
-            ushort frameTemp;
+            var nestingLevel = (ushort)(level % 32);
 
             StackPush(BP);
-            frameTemp = SP;
+            ushort frameTemp = SP;
 
             if (nestingLevel > 0)
             {
@@ -1127,16 +1051,16 @@ namespace x86CS
             Segment codeSegment = segments[(int)SegmentRegister.CS];
             uint tempEIP;
 
-            if (pMode == false && ((CR0 & 0x1) == 0x1))
-                pMode = true;
-            else if (pMode == true && ((CR0 & 0x1) == 0))
-                pMode = false;
+            if (PMode == false && ((CR0 & 0x1) == 0x1))
+                PMode = true;
+            else if (PMode && ((CR0 & 0x1) == 0))
+                PMode = false;
 
             if (segment == CS)
             {
                 if (relative)
                 {
-                    int relOffset = (int)offset;
+                    var relOffset = (int)offset;
 
                     tempEIP = (uint)(EIP + relOffset);
                 }
@@ -1148,17 +1072,15 @@ namespace x86CS
             }
             else
             {
-                if (pMode)
+                if (PMode)
                 {
-                    GDTEntry newEntry;
-
                     if (segment == 0)
                         throw new Exception("Null segment selector");
 
                     if (segment > (gdtRegister.Limit))
                         throw new Exception("Selector out of range");
 
-                    newEntry = GetSelectorEntry(segment);
+                    GDTEntry newEntry = GetSelectorEntry(segment);
 
                     if (!newEntry.IsCode)
                         throw new Exception("Segment is not code");
@@ -1166,7 +1088,7 @@ namespace x86CS
                     CS = segment;
                     if (relative)
                     {
-                        int relOffset = (int)offset;
+                        var relOffset = (int)offset;
 
                         tempEIP = (uint)(EIP + relOffset);
                     }
@@ -1208,6 +1130,7 @@ namespace x86CS
 
         public void Cycle(int len, byte opCode, object[] operands)
         {
+// ReSharper disable TooWideLocalVariableScope
             byte destByte, sourceByte, tempByte;
             ushort destWord, sourceWord, tempWord;
             uint destDWord, sourceDWord, tempDWord;
@@ -1218,6 +1141,7 @@ namespace x86CS
             short signedWord;
             int signedDWord;
             RegMemData rmData = null;
+            // ReSharper restore TooWideLocalVariableScope
              
             EIP += (ushort)len;
 
@@ -1248,11 +1172,12 @@ namespace x86CS
                 {
                     case 0x01:
                         memAddress = ProcessRegMem(rmData, out tempDWord, out sourceDWord);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         switch (rmData.Register)
                         {
                             case 2:
                                 sourceWord = SegReadWord(overrideSegment, memAddress);
-                                sourceDWord = SegReadDWord(overrideSegment, (uint)(memAddress + 2));
+                                sourceDWord = SegReadDWord(overrideSegment, memAddress + 2);
                                 if (opSize == 32)
                                 {
                                     gdtRegister.Limit = sourceWord;
@@ -1260,13 +1185,13 @@ namespace x86CS
                                 }
                                 else
                                 {
-                                    gdtRegister.Limit = (ushort)sourceWord;
+                                    gdtRegister.Limit = sourceWord;
                                     gdtRegister.Base = (sourceDWord & 0x00ffffff);
                                 }
                                 break;
                             case 3:
                                 sourceWord = SegReadWord(overrideSegment, memAddress);
-                                sourceDWord = SegReadDWord(overrideSegment, (uint)(memAddress + 2));
+                                sourceDWord = SegReadDWord(overrideSegment, memAddress + 2);
                                 if (opSize == 32)
                                 {
                                     idtRegister.Limit = sourceWord;
@@ -1274,16 +1199,18 @@ namespace x86CS
                                 }
                                 else
                                 {
-                                    idtRegister.Limit = (ushort)sourceWord;
+                                    idtRegister.Limit = sourceWord;
                                     idtRegister.Base = (sourceDWord & 0x00ffffff);
                                 }
                                 break;
                         }
                         break;
                     case 0x20:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         registers[rmData.Register].DWord = controlRegisters[rmData.RegMem];
                         break;
                     case 0x22:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         controlRegisters[rmData.RegMem] = registers[rmData.Register].DWord;
                         break;
                     case 0x80:
@@ -1377,20 +1304,23 @@ namespace x86CS
                         }
                         break;
                     case 0x12:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = AddWithCarry(destByte, sourceByte);
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x13:
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = AddWithCarry(destDWord, sourceDWord);
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = AddWithCarry(destWord, sourceWord);
                             registers[rmData.Register].Word = destWord;
                         }
@@ -1426,20 +1356,22 @@ namespace x86CS
                         }
                         break;
                     case 0x02:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = Add(destByte, sourceByte);
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x03:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = Add(destDWord, sourceDWord);
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = Add(destWord, sourceWord);
                             registers[rmData.Register].Word = destWord;
                         }
@@ -1475,20 +1407,22 @@ namespace x86CS
                         }
                         break;
                     case 0x1a:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = SubWithBorrow(destByte, sourceByte);
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x1b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = SubWithBorrow(destDWord, sourceDWord);
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = SubWithBorrow(destWord, sourceWord);
                             registers[rmData.Register].Word = destWord;
                         }
@@ -1521,20 +1455,22 @@ namespace x86CS
                         }
                         break;
                     case 0x2a:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = Subtract(destByte, sourceByte);
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x2b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = Subtract(destDWord, sourceDWord);
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = Subtract(destWord, sourceWord);
                             registers[rmData.Register].Word = destWord;
                         }
@@ -1570,20 +1506,22 @@ namespace x86CS
                         }
                         break;
                     case 0x22:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = And(destByte, sourceByte);
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x23:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = And(destDWord, sourceDWord);
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = And(destWord, sourceWord);
                             registers[rmData.Register].Word = destWord;
                         }
@@ -1619,20 +1557,23 @@ namespace x86CS
                         }
                         break;
                     case 0x0a:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = Or(destByte, sourceByte);
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x0b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = Or(destDWord, sourceDWord);
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = Or(destWord, sourceWord);
                             registers[rmData.Register].Word = destWord;
                         }
@@ -1668,20 +1609,22 @@ namespace x86CS
                         }
                         break;
                     case 0x32:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = Xor(destByte, sourceByte);
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x33:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = Xor(destDWord, sourceDWord);
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = Xor(destWord, sourceWord);
                             registers[rmData.Register].Word = destWord;
                         }
@@ -1698,35 +1641,35 @@ namespace x86CS
                     #endregion
                     #region Compare
                     case 0x38:
-                        memAddress = ProcessRegMem(rmData, out sourceByte, out destByte);
-                        destByte = Subtract(destByte, sourceByte);
+                        ProcessRegMem(rmData, out sourceByte, out destByte);
+                        Subtract(destByte, sourceByte);
                         break;
                     case 0x39:
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
-                            destDWord = Subtract(destDWord, sourceDWord);
+                            ProcessRegMem(rmData, out sourceDWord, out destDWord);
+                            Subtract(destDWord, sourceDWord);
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
-                            destWord = Subtract(destWord, sourceWord);
+                            ProcessRegMem(rmData, out sourceWord, out destWord);
+                            Subtract(destWord, sourceWord);
                         }
                         break;
                     case 0x3a:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
-                        destByte = Subtract(destByte, sourceByte);
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
+                        Subtract(destByte, sourceByte);
                         break;
                     case 0x3b:
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
-                            destDWord = Subtract(destDWord, sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            Subtract(destDWord, sourceDWord);
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
-                            destWord = Subtract(destWord, sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
+                            Subtract(destWord, sourceWord);
                         }
                         break;
                     case 0x3c:
@@ -1741,18 +1684,18 @@ namespace x86CS
                     #endregion
                     #region Test
                     case 0x84:
-                        memAddress = ProcessRegMem(rmData, out sourceByte, out destByte);
+                        ProcessRegMem(rmData, out sourceByte, out destByte);
                         And(destByte, sourceByte);
                         break;
                     case 0x85:
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
+                            ProcessRegMem(rmData, out sourceDWord, out destDWord);
                             And(destDWord, sourceDWord);
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
+                            ProcessRegMem(rmData, out sourceWord, out destWord);
                             And(destWord, sourceWord);
                         }
                         break;
@@ -1787,30 +1730,38 @@ namespace x86CS
                         }
                         break;
                     case 0x8a:
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         destByte = sourceByte;
                         SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x8b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
-                            memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             destDWord = sourceDWord;
                             registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
-                            memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
                             destWord = sourceWord;
                             registers[rmData.Register].Word = destWord;
                         }
                         break;
                     case 0x8c:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
                         WriteRegMem(rmData, memAddress, (ushort)segments[rmData.Register].Selector);
                         break;
                     case 0x8e:
-                        memAddress = ProcessRegMem(rmData, out destWord, out sourceWord);
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        ProcessRegMem(rmData, out destWord, out sourceWord);
                         SetSelector((SegmentRegister)rmData.Register, sourceWord);
                         break;
                     case 0xa0:
@@ -1830,8 +1781,16 @@ namespace x86CS
                         }
                         break;
                     case 0xa2:
-                        sourceByte = (byte)operands[0];
-                        SegWriteByte(overrideSegment, sourceByte, AL);
+                        if (opSize == 32)
+                        {
+                            sourceDWord = (uint)operands[0];
+                            SegWriteByte(overrideSegment, sourceDWord, AL);
+                        }
+                        else
+                        {
+                            sourceWord = (ushort)operands[0];
+                            SegWriteByte(overrideSegment, sourceWord, AL);
+                        }
                         break;
                     case 0xa3:
                         if (opSize == 32)
@@ -1887,11 +1846,15 @@ namespace x86CS
                     #endregion
                     #region Exchange
                     case 0x86:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out sourceByte, out destByte);
                         WriteRegMem(rmData, memAddress, destByte);
                         SetByteReg(rmData.Register, sourceByte);
                         break;
                     case 0x87:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
@@ -2247,7 +2210,7 @@ namespace x86CS
                         DS = (ushort)StackPop();
                         break;
                     case 0x6a:
-                        StackPush((ushort)(byte)operands[0]);
+                        StackPush((byte)operands[0]);
                         break;
                     case 0x68:
                         if (opSize == 32)
@@ -2284,6 +2247,8 @@ namespace x86CS
                     #endregion
                     #region Rotate/shift
                     case 0xc0:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
                         sourceByte = (byte)operands[1];
 
@@ -2316,6 +2281,8 @@ namespace x86CS
                         WriteRegMem(rmData, memAddress, destByte);
                         break;
                     case 0xc1:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out destDWord);
@@ -2384,6 +2351,8 @@ namespace x86CS
                         }
                         break;
                     case 0xd0:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
 
                         switch (rmData.Register)
@@ -2415,6 +2384,8 @@ namespace x86CS
                         WriteRegMem(rmData, memAddress, destByte);
                         break;
                     case 0xd1:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out destDWord);
@@ -2481,6 +2452,8 @@ namespace x86CS
                         }
                         break;
                     case 0xd2:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
 
                         switch (rmData.Register)
@@ -2512,6 +2485,8 @@ namespace x86CS
                         WriteRegMem(rmData, memAddress, destByte);
                         break;
                     case 0xd3:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out destDWord);
@@ -2580,6 +2555,8 @@ namespace x86CS
                     #endregion
                     #region Misc
                     case 0x8d:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
@@ -2609,31 +2586,35 @@ namespace x86CS
                             EIP = (ushort)StackPop();
                         break;
                     case 0xc4:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
                             registers[rmData.Register].DWord = SegReadWord(overrideSegment, memAddress);
-                            ES = SegReadWord(overrideSegment, (uint)(memAddress + 2));
+                            ES = SegReadWord(overrideSegment, memAddress + 2);
                         }
                         else
                         {
                             memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
                             registers[rmData.Register].Word = SegReadWord(overrideSegment, memAddress);
-                            ES = SegReadWord(overrideSegment, (uint)(memAddress + 2));
+                            ES = SegReadWord(overrideSegment, memAddress + 2);
                         }
                         break;
                     case 0xc5:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
                             registers[rmData.Register].Word = SegReadWord(overrideSegment, memAddress);
-                            DS = SegReadWord(overrideSegment, (uint)(memAddress + 2));
+                            DS = SegReadWord(overrideSegment, memAddress + 2);
                         }
                         else
                         {
                             memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
                             registers[rmData.Register].Word = SegReadWord(overrideSegment, memAddress);
-                            DS = SegReadWord(overrideSegment, (uint)(memAddress + 2));
+                            DS = SegReadWord(overrideSegment, memAddress + 2);
                         }
                         break;
                     case 0xc9:
@@ -2701,15 +2682,15 @@ namespace x86CS
                         break;
                     case 0xe7:
                         if(opSize == 32)
-                            DoIOWrite((ushort)(byte)operands[0], (ushort)EAX);
+                            DoIOWrite((byte)operands[0], (ushort)EAX);
                         else
-                            DoIOWrite((ushort)(byte)operands[0], AX);
+                            DoIOWrite((byte)operands[0], AX);
                         break;
                     case 0xea:
                         if (opSize == 32)
-                            DoJump((uint)(ushort)operands[1], (uint)operands[0], false);
+                            DoJump((ushort)operands[1], (uint)operands[0], false);
                         else
-                            DoJump((uint)(ushort)operands[1], (uint)(ushort)operands[0], false);
+                            DoJump((ushort)operands[1], (ushort)operands[0], false);
                         break;
                     case 0xe9:
                     case 0xeb:
@@ -2735,7 +2716,7 @@ namespace x86CS
                         break;
                     case 0x98:
                         if(opSize == 32)
-                            EAX = (uint)(int)(short)AX;
+                            EAX = (uint)(short)AX;
                         else
                             AX = (ushort)(short)(sbyte)AL;
                         break;
@@ -2783,6 +2764,8 @@ namespace x86CS
                     #endregion
                     #region Groups
                     case 0x80:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
                         sourceByte = (byte)operands[1];
 
@@ -2817,6 +2800,8 @@ namespace x86CS
                         WriteRegMem(rmData, memAddress, destByte);
                         break;
                     case 0x81:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out destDWord);
@@ -2891,6 +2876,8 @@ namespace x86CS
                         }
                         break;
                     case 0x83:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out destDWord);
@@ -2965,6 +2952,8 @@ namespace x86CS
                         }
                         break;
                     case 0xf6:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out tempByte, out sourceByte);
 
                         switch (rmData.Register)
@@ -2978,10 +2967,7 @@ namespace x86CS
 
                                 break;
                             case 3:
-                                if (sourceByte == 0)
-                                    CF = false;
-                                else
-                                    CF = true;
+                                CF = sourceByte != 0;
 
                                 sourceByte = (byte)-sourceByte;
                                 WriteRegMem(rmData, memAddress, sourceByte);
@@ -3001,6 +2987,8 @@ namespace x86CS
                         }
                         break;
                     case 0xf7:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out sourceDWord);
@@ -3011,15 +2999,12 @@ namespace x86CS
                                     And(sourceDWord, (uint)operands[0]);
                                     break;
                                 case 2:
-                                    sourceDWord = (uint)~sourceDWord;
+                                    sourceDWord = ~sourceDWord;
                                     WriteRegMem(rmData, memAddress, sourceDWord);
 
                                     break;
                                 case 3:
-                                    if (sourceDWord == 0)
-                                        CF = false;
-                                    else
-                                        CF = true;
+                                    CF = sourceDWord != 0;
 
                                     sourceDWord = (uint)-sourceDWord;
                                     WriteRegMem(rmData, memAddress, sourceDWord);
@@ -3053,10 +3038,7 @@ namespace x86CS
 
                                     break;
                                 case 3:
-                                    if (sourceWord == 0)
-                                        CF = false;
-                                    else
-                                        CF = true;
+                                    CF = sourceWord != 0;
 
                                     sourceWord = (ushort)-sourceWord;
                                     WriteRegMem(rmData, memAddress, sourceWord);
@@ -3077,6 +3059,8 @@ namespace x86CS
                         }
                         break;
                     case 0xfe:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
 
                         switch (rmData.Register)
@@ -3092,6 +3076,8 @@ namespace x86CS
                         }
                         break;
                     case 0xff:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out tempDWord, out destDWord);
@@ -3158,7 +3144,7 @@ namespace x86CS
                     #endregion
                 }
             }
-            currentAddr = (uint)(segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP);
+            currentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
         }
     }
 }

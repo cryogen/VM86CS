@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Collections;
+﻿using System.Collections;
 
-namespace x86CS
+namespace x86CS.CPU
 {
     public partial class CPU
     {
@@ -50,7 +46,7 @@ namespace x86CS
 
         private byte DoAnd(byte dest, byte source)
         {
-            byte temp = (byte)(source & dest);
+            var temp = (byte)(source & dest);
 
             SetCPUFlags(temp);
 
@@ -62,7 +58,7 @@ namespace x86CS
 
         private ushort DoAnd(ushort dest, ushort source)
         {
-            ushort temp = (ushort)(source & dest);
+            var temp = (ushort)(source & dest);
 
             SetCPUFlags(temp);
 
@@ -74,7 +70,7 @@ namespace x86CS
 
         private uint DoAnd(uint dest, uint source)
         {
-            uint temp = (uint)(source & dest);
+            var temp = source & dest;
 
             SetCPUFlags(temp);
 
@@ -126,7 +122,7 @@ namespace x86CS
 
         private byte DoOr(byte dest, byte source)
         {
-            byte temp = (byte)(source | dest);
+            var temp = (byte)(source | dest);
 
             SetCPUFlags(temp);
 
@@ -138,7 +134,7 @@ namespace x86CS
 
         private ushort DoOr(ushort dest, ushort source)
         {
-            ushort temp = (ushort)(source | dest);
+            var temp = (ushort)(source | dest);
 
             SetCPUFlags(temp);
 
@@ -150,7 +146,7 @@ namespace x86CS
 
         private uint DoOr(uint dest, uint source)
         {
-            uint temp = (uint)(source | dest);
+            var temp = source | dest;
 
             SetCPUFlags(temp);
 
@@ -202,7 +198,7 @@ namespace x86CS
 
         private byte DoXor(byte dest, byte source)
         {
-            byte temp = (byte)(source ^ dest);
+            var temp = (byte)(source ^ dest);
 
             SetCPUFlags(temp);
 
@@ -214,7 +210,7 @@ namespace x86CS
 
         private ushort DoXor(ushort dest, ushort source)
         {
-            ushort temp = (ushort)(source ^ dest);
+            var temp = (ushort)(source ^ dest);
 
             SetCPUFlags(temp);
 
@@ -226,7 +222,7 @@ namespace x86CS
 
         private uint DoXor(uint dest, uint source)
         {
-            uint temp = (uint)(source ^ dest);
+            var temp = source ^ dest;
 
             SetCPUFlags(temp);
 
@@ -238,46 +234,31 @@ namespace x86CS
 
         private void SetCPUFlags(ushort operand)
         {
-            short signed = (short)operand;
+            var signed = (short)operand;
 
-            if (operand == 0)
-                ZF = true;
-            else
-                ZF = false;
+            ZF = operand == 0;
 
-            if (signed < 0)
-                SF = true;
-            else
-                SF = false;
+            SF = signed < 0;
 
             SetParity(operand);
         }
 
         private void SetCPUFlags(uint operand)
         {
-            int signed = (int)operand;
+            var signed = (int)operand;
 
-            if (operand == 0)
-                ZF = true;
-            else
-                ZF = false;
+            ZF = operand == 0;
 
-            if (signed < 0)
-                SF = true;
-            else
-                SF = false;
+            SF = signed < 0;
 
             SetParity((int)operand);
         }
 
         private void SetParity(int value)
         {
-            BitArray bitCount = new BitArray(new int[] { value });
+            var bitCount = new BitArray(new[] { value });
 
-            if (bitCount.CountSet() % 2 == 0)
-                PF = true;
-            else
-                PF = false;
+            PF = bitCount.CountSet() % 2 == 0;
         }
-   }
+    }
 }

@@ -86,8 +86,11 @@
     <Compile Include="CPU\Decoder.cs" />
     <Compile Include="CPU\Logic.cs" />
     <Compile Include="CPU\Strings.cs" />
+    <Compile Include="Devices\DMA.cs" />
     <Compile Include="Devices\Floppy.cs" />
+    <Compile Include="Devices\Keyboard.cs" />
     <Compile Include="Devices\Misc.cs" />
+    <Compile Include="Devices\PIT8253.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
@@ -114,6 +117,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

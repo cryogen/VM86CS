@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using System.Threading;
 using System.Globalization;
@@ -12,23 +8,22 @@ namespace x86CS
 {
     public partial class MainForm : Form
     {
-        private Machine machine;
-        private string[] screenText = new string[25];
+        private readonly Machine machine;
+        private readonly string[] screenText = new string[25];
         private int currLine, currPos;
-        Font panelFont = new Font("Courier New", 9.64f);
-        bool clearDebug = true;
-        bool stepping = false;
-        Thread machineThread;
-        Breakpoints breakpoints = new Breakpoints();
+        readonly Font panelFont = new Font("Courier New", 9.64f);
+        bool stepping;
+        readonly Thread machineThread;
+        readonly Breakpoints breakpoints = new Breakpoints();
 
         public MainForm()
         {
             machine = new Machine();
-            machine.WriteText += new EventHandler<TextEventArgs>(machine_WriteText);
-            machine.WriteChar += new EventHandler<CharEventArgs>(machine_WriteChar);
+            machine.WriteText += MachineWriteText;
+            machine.WriteChar += MachineWriteChar;
 
-            breakpoints.ItemAdded += new EventHandler<IntEventArgs>(breakpoints_ItemAdded);
-            breakpoints.ItemDeleted += new EventHandler<IntEventArgs>(breakpoints_ItemDeleted);
+            breakpoints.ItemAdded += BreakpointsItemAdded;
+            breakpoints.ItemDeleted += BreakpointsItemDeleted;
 
             currLine = currPos = 0;
 
@@ -38,7 +33,7 @@ namespace x86CS
 
             mainPanel.Select();
 
-            machineThread = new Thread(new ThreadStart(RunMachine));
+            machineThread = new Thread(RunMachine);
             machineThread.Start();
 
             for (int i = 0; i < screenText.Length; i++)
@@ -47,12 +42,12 @@ namespace x86CS
             }
         }
 
-        void breakpoints_ItemDeleted(object sender, IntEventArgs e)
+        void BreakpointsItemDeleted(object sender, IntEventArgs e)
         {
             machine.ClearBreakpoint(e.Number);
         }
 
-        void breakpoints_ItemAdded(object sender, IntEventArgs e)
+        void BreakpointsItemAdded(object sender, IntEventArgs e)
         {
             machine.SetBreakpoint(e.Number);
         }
@@ -68,7 +63,7 @@ namespace x86CS
                     {
                         stepping = true;
                         machine.CPU.Debug = true;
-                        this.Invoke((MethodInvoker)delegate { PrintRegisters(); SetCPULabel(machine.Operation); });
+                        Invoke((MethodInvoker)delegate { PrintRegisters(); SetCPULabel(machine.Operation); });
                     }
                     else
                         machine.CPU.Debug = false;
@@ -77,7 +72,7 @@ namespace x86CS
             }
         }
 
-        void machine_WriteChar(object sender, CharEventArgs e)
+        void MachineWriteChar(object sender, CharEventArgs e)
         {
             switch (e.Char)
             {
@@ -117,12 +112,7 @@ namespace x86CS
             cpuLabel.Text = text;
         }
 
-        void CPU_DebugText(object sender, TextEventArgs e)
-        {
-            this.Invoke((MethodInvoker)delegate { SetCPULabel(e.Text); });
-        }
-
-        void mainPanel_Paint(object sender, PaintEventArgs e)
+        void MainPanelPaint(object sender, PaintEventArgs e)
         {
             if (e.ClipRectangle.Height == 0)
                 return;
@@ -135,7 +125,7 @@ namespace x86CS
             }
         }
 
-        void machine_WriteText(object sender, TextEventArgs e)
+        void MachineWriteText(object sender, TextEventArgs e)
         {
             screenText[currLine++] = e.Text;
             if (currLine >= 25)
@@ -144,7 +134,7 @@ namespace x86CS
             mainPanel.Invalidate();
         }
 
-        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        private void ExitToolStripMenuItemClick(object sender, EventArgs e)
         {
             machine.Stop();
             machineThread.Abort();
@@ -153,7 +143,7 @@ namespace x86CS
 
         private void PrintRegisters()
         {
-            CPU cpu = machine.CPU;
+            CPU.CPU cpu = machine.CPU;
 
             EAX.Text = cpu.EAX.ToString("X8");
             EBX.Text = cpu.EBX.ToString("X8");
@@ -188,21 +178,21 @@ namespace x86CS
             VIP.Text = cpu.VIP ? "VIP" : "vip";   
         }
 
-        private void runToolStripMenuItem_Click(object sender, EventArgs e)
+        private void RunToolStripMenuItemClick(object sender, EventArgs e)
         {
             runToolStripMenuItem.Enabled = false;
             stopToolStripMenuItem.Enabled = true;
             machine.Start();
         }
 
-        private void stopToolStripMenuItem_Click(object sender, EventArgs e)
+        private void StopToolStripMenuItemClick(object sender, EventArgs e)
         {
             stopToolStripMenuItem.Enabled = false;
             runToolStripMenuItem.Enabled = true;
             machine.Stop();
         }
 
-        private void mountToolStripMenuItem_Click(object sender, EventArgs e)
+        private void MountToolStripMenuItemClick(object sender, EventArgs e)
         {
             if (floppyOpen.ShowDialog() != DialogResult.OK)
                 return;
@@ -210,7 +200,7 @@ namespace x86CS
             machine.FloppyDrive.MountImage(floppyOpen.FileName);
         }
 
-        private void stepButton_Click(object sender, EventArgs e)
+        private void StepButtonClick(object sender, EventArgs e)
         {
             stepping = true;
 
@@ -228,7 +218,7 @@ namespace x86CS
             PrintRegisters();
         }
 
-        private void goButton_Click(object sender, EventArgs e)
+        private void GoButtonClick(object sender, EventArgs e)
         {
             if (!machine.Running)
                 machine.Start();
@@ -237,26 +227,25 @@ namespace x86CS
             stepping = false;
         }
 
-        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        private void MainFormFormClosed(object sender, FormClosedEventArgs e)
         {
             machineThread.Abort();
         }
 
-        private void mainPanel_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        private void MainPanelPreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
             machine.KeyPresses.Push((char)e.KeyValue);
         }
 
-        private void mainPanel_Click(object sender, EventArgs e)
+        private void MainPanelClick(object sender, EventArgs e)
         {
             mainPanel.Select();
         }
 
-        private void memoryButton_Click(object sender, EventArgs e)
+        private void MemoryButtonClick(object sender, EventArgs e)
         {
             ushort seg = 0;
             ushort off = 0;
-            uint addr;
 
             try
             {
@@ -267,18 +256,18 @@ namespace x86CS
             {
             }
                 
-            addr = (uint)((seg << 4) + off);
+            var addr = (uint)((seg << 4) + off);
 
             memByte.Text = Memory.ReadByte(addr).ToString("X2");
             memWord.Text = Memory.ReadWord(addr).ToString("X4");
         }
 
-        private void breakpointsToolStripMenuItem_Click(object sender, EventArgs e)
+        private void BreakpointsToolStripMenuItemClick(object sender, EventArgs e)
         {
             breakpoints.ShowDialog();
         }
 
-        private void restartToolStripMenuItem_Click(object sender, EventArgs e)
+        private void RestartToolStripMenuItemClick(object sender, EventArgs e)
         {
             machine.Restart();
 

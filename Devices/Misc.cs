@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace x86CS.Devices
 {
@@ -30,10 +27,10 @@ namespace x86CS.Devices
             {
                 case 0x92:
                     controlPortA = (sbyte)value;
-                    if ((controlPortA & 0x2) == 0x2)
-                        Memory.A20 = true;
-                    else
-                        Memory.A20 = false;
+                    Memory.A20 = (controlPortA & 0x2) == 0x2;
+                    break;
+                case 0x402:
+                    Console.Write((char)(byte)value);
                     break;
             }
         }

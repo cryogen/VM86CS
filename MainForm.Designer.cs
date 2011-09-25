@@ -133,7 +133,7 @@
             this.runToolStripMenuItem.Name = "runToolStripMenuItem";
             this.runToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.runToolStripMenuItem.Text = "&Run";
-            this.runToolStripMenuItem.Click += new System.EventHandler(this.runToolStripMenuItem_Click);
+            this.runToolStripMenuItem.Click += new System.EventHandler(this.RunToolStripMenuItemClick);
             // 
             // stopToolStripMenuItem
             // 
@@ -141,14 +141,14 @@
             this.stopToolStripMenuItem.Name = "stopToolStripMenuItem";
             this.stopToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.stopToolStripMenuItem.Text = "&Stop";
-            this.stopToolStripMenuItem.Click += new System.EventHandler(this.stopToolStripMenuItem_Click);
+            this.stopToolStripMenuItem.Click += new System.EventHandler(this.StopToolStripMenuItemClick);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
-            this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
+            this.exitToolStripMenuItem.Click += new System.EventHandler(this.ExitToolStripMenuItemClick);
             // 
             // floppyToolStripMenuItem
             // 
@@ -163,7 +163,7 @@
             this.mountToolStripMenuItem.Name = "mountToolStripMenuItem";
             this.mountToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.mountToolStripMenuItem.Text = "&Mount";
-            this.mountToolStripMenuItem.Click += new System.EventHandler(this.mountToolStripMenuItem_Click);
+            this.mountToolStripMenuItem.Click += new System.EventHandler(this.MountToolStripMenuItemClick);
             // 
             // debugToolStripMenuItem
             // 
@@ -178,7 +178,7 @@
             this.breakpointsToolStripMenuItem.Name = "breakpointsToolStripMenuItem";
             this.breakpointsToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.breakpointsToolStripMenuItem.Text = "&Breakpoints";
-            this.breakpointsToolStripMenuItem.Click += new System.EventHandler(this.breakpointsToolStripMenuItem_Click);
+            this.breakpointsToolStripMenuItem.Click += new System.EventHandler(this.BreakpointsToolStripMenuItemClick);
             // 
             // mainPanel
             // 
@@ -188,9 +188,9 @@
             this.mainPanel.Name = "mainPanel";
             this.mainPanel.Size = new System.Drawing.Size(640, 400);
             this.mainPanel.TabIndex = 1;
-            this.mainPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.mainPanel_Paint);
-            this.mainPanel.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.mainPanel_PreviewKeyDown);
-            this.mainPanel.Click += new System.EventHandler(this.mainPanel_Click);
+            this.mainPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.MainPanelPaint);
+            this.mainPanel.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.MainPanelPreviewKeyDown);
+            this.mainPanel.Click += new System.EventHandler(this.MainPanelClick);
             // 
             // registersGroup
             // 
@@ -642,7 +642,7 @@
             this.stepButton.TabIndex = 0;
             this.stepButton.Text = "&Step";
             this.stepButton.UseVisualStyleBackColor = true;
-            this.stepButton.Click += new System.EventHandler(this.stepButton_Click);
+            this.stepButton.Click += new System.EventHandler(this.StepButtonClick);
             // 
             // goButton
             // 
@@ -652,7 +652,7 @@
             this.goButton.TabIndex = 1;
             this.goButton.Text = "&Go";
             this.goButton.UseVisualStyleBackColor = true;
-            this.goButton.Click += new System.EventHandler(this.goButton_Click);
+            this.goButton.Click += new System.EventHandler(this.GoButtonClick);
             // 
             // cpuGroup
             // 
@@ -730,7 +730,7 @@
             this.memoryButton.TabIndex = 2;
             this.memoryButton.Text = "&Lookup";
             this.memoryButton.UseVisualStyleBackColor = true;
-            this.memoryButton.Click += new System.EventHandler(this.memoryButton_Click);
+            this.memoryButton.Click += new System.EventHandler(this.MemoryButtonClick);
             // 
             // memSegment
             // 
@@ -746,7 +746,7 @@
             this.restartToolStripMenuItem.Name = "restartToolStripMenuItem";
             this.restartToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.restartToolStripMenuItem.Text = "R&estart";
-            this.restartToolStripMenuItem.Click += new System.EventHandler(this.restartToolStripMenuItem_Click);
+            this.restartToolStripMenuItem.Click += new System.EventHandler(this.RestartToolStripMenuItemClick);
             // 
             // MainForm
             // 
@@ -763,7 +763,7 @@
             this.MainMenuStrip = this.mainMenu;
             this.Name = "MainForm";
             this.Text = "x86 CS";
-            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainForm_FormClosed);
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainFormFormClosed);
             this.mainMenu.ResumeLayout(false);
             this.mainMenu.PerformLayout();
             this.registersGroup.ResumeLayout(false);

@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace x86CS
+﻿namespace x86CS.Devices
 {
     public class CMOS
     {
-        private byte[] registers = new byte[0x10];
+        private readonly byte[] registers = new byte[0x10];
         private byte currentReg;
 
         public CMOS()
@@ -42,9 +37,7 @@ namespace x86CS
 
         public void Write(ushort addr, ushort value)
         {
-            ushort tmp;
-
-            tmp = (ushort)(value & 0x7f);
+            var tmp = (ushort)(value & 0x7f);
 
             switch (addr)
             {
