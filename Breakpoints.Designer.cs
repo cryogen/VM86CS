@@ -41,16 +41,16 @@
             // 
             // segment
             // 
-            this.segment.Location = new System.Drawing.Point(61, 145);
+            this.segment.Location = new System.Drawing.Point(53, 146);
             this.segment.Name = "segment";
             this.segment.Size = new System.Drawing.Size(34, 20);
             this.segment.TabIndex = 1;
             // 
             // offset
             // 
-            this.offset.Location = new System.Drawing.Point(137, 145);
+            this.offset.Location = new System.Drawing.Point(129, 146);
             this.offset.Name = "offset";
-            this.offset.Size = new System.Drawing.Size(34, 20);
+            this.offset.Size = new System.Drawing.Size(75, 20);
             this.offset.TabIndex = 2;
             // 
             // breakpointList
@@ -79,7 +79,7 @@
             // offsetLabel
             // 
             this.offsetLabel.AutoSize = true;
-            this.offsetLabel.Location = new System.Drawing.Point(101, 148);
+            this.offsetLabel.Location = new System.Drawing.Point(93, 149);
             this.offsetLabel.Name = "offsetLabel";
             this.offsetLabel.Size = new System.Drawing.Size(35, 13);
             this.offsetLabel.TabIndex = 4;
@@ -88,7 +88,7 @@
             // segmentLabel
             // 
             this.segmentLabel.AutoSize = true;
-            this.segmentLabel.Location = new System.Drawing.Point(12, 148);
+            this.segmentLabel.Location = new System.Drawing.Point(4, 149);
             this.segmentLabel.Name = "segmentLabel";
             this.segmentLabel.Size = new System.Drawing.Size(49, 13);
             this.segmentLabel.TabIndex = 5;
@@ -96,7 +96,7 @@
             // 
             // addButton
             // 
-            this.addButton.Location = new System.Drawing.Point(197, 143);
+            this.addButton.Location = new System.Drawing.Point(210, 144);
             this.addButton.Name = "addButton";
             this.addButton.Size = new System.Drawing.Size(75, 23);
             this.addButton.TabIndex = 6;
@@ -106,7 +106,7 @@
             // 
             // deleteButton
             // 
-            this.deleteButton.Location = new System.Drawing.Point(294, 143);
+            this.deleteButton.Location = new System.Drawing.Point(307, 144);
             this.deleteButton.Name = "deleteButton";
             this.deleteButton.Size = new System.Drawing.Size(75, 23);
             this.deleteButton.TabIndex = 8;

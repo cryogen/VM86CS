@@ -33,26 +33,20 @@ namespace x86CS
 
         private void AddButtonClick(object sender, EventArgs e)
         {
-            ushort seg, off;
+            uint seg, off;
 
-            try
-            {
-                seg = ushort.Parse(segment.Text, NumberStyles.HexNumber);
-                off = ushort.Parse(offset.Text, NumberStyles.HexNumber);
-            }
-            catch
-            {
-                MessageBox.Show(Resources.Invalid_segment_offset, Resources.ErrorTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
+            if (!uint.TryParse(segment.Text, NumberStyles.HexNumber, null, out seg))
+                seg = 0;
+            if (!uint.TryParse(offset.Text, NumberStyles.HexNumber, null, out off))
+                off = 0;
 
-            var item = new ListViewItem {Text = seg.ToString("X4")};
-            item.SubItems.Add(off.ToString("X4"));
+            var item = new ListViewItem {Text = seg.ToString("X")};
+            item.SubItems.Add(off.ToString("X"));
             breakpointList.Items.Add(item);
 
             var addr = (seg << 4) + off;
 
-            OnItemAdded(addr);
+            OnItemAdded((int)addr);
         }
 
         private void DeleteButtonClick(object sender, EventArgs e)

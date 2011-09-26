@@ -239,7 +239,7 @@ namespace x86CS
 
         public bool CheckBreakpoint()
         {
-            uint cpuAddr = (CPU.CS << 4) + CPU.EIP;
+            uint cpuAddr = (uint)(CPU.CurrentAddr - opLen);
 
             return breakpoints.Any(kvp => kvp.Value == cpuAddr);
         }

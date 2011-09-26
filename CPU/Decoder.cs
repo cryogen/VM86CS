@@ -45,7 +45,6 @@ namespace x86CS.CPU
     public partial class CPU
     {
         private OPPrefix setPrefixes = 0;
-        private uint currentAddr;
         private SegmentRegister overrideSegment = SegmentRegister.DS;
         private bool memPrefix;
         private bool extPrefix;
@@ -55,27 +54,27 @@ namespace x86CS.CPU
         #region Read Functions
         private byte DecodeReadByte()
         {
-            var ret = (uint)(Memory.ReadByte(currentAddr) & 0xff);
+            var ret = (uint)(Memory.ReadByte(CurrentAddr) & 0xff);
 
-            currentAddr++;
+            CurrentAddr++;
 
             return (byte)ret;
         }
 
         private ushort DecodeReadWord()
         {
-            var ret = (uint)(Memory.ReadWord(currentAddr) & 0xffff);
+            var ret = (uint)(Memory.ReadWord(CurrentAddr) & 0xffff);
 
-            currentAddr += 2;
+            CurrentAddr += 2;
 
             return (ushort)ret;
         }
 
         private uint DecodeReadDWord()
         {
-            uint ret = Memory.ReadDWord(currentAddr);
+            uint ret = Memory.ReadDWord(CurrentAddr);
 
-            currentAddr += 4;
+            CurrentAddr += 4;
 
             return ret;
         }
@@ -148,7 +147,7 @@ namespace x86CS.CPU
                         break;
                     default:
                         readPrefix = false;
-                        currentAddr--;
+                        CurrentAddr--;
                         break;
                 }
             } while(readPrefix);
@@ -293,7 +292,7 @@ namespace x86CS.CPU
                         ret.Displacement = (uint)tmpDisp;
                         ret.HasDisplacement = true;
                     }
-                    else if (ret.Mode == 0x2 && !memPrefix)
+                    else if (ret.Mode == 0x2 && opSize == 16)
                     {
                         ushort wordOp = DecodeReadWord();
                         int tmpDisp = (short)wordOp;
@@ -368,19 +367,28 @@ namespace x86CS.CPU
                 if (operands[0] is byte)
                 {
                     signedByte = (sbyte)(byte)operands[0];
-                    offset = (ushort)(currentAddr + signedByte);
+                    if(opSize == 32)
+                        offset = (uint)(CurrentAddr + signedByte);
+                    else
+                        offset = (ushort)(CurrentAddr + signedByte);
                 }
 
                 if (operands[0] is ushort)
                 {
                     signedWord = (short)(ushort)operands[0];
-                    offset = (ushort)(currentAddr + signedWord);
+                    if(opSize == 32)
+                        offset = (uint)(CurrentAddr + signedWord);
+                    else
+                        offset = (ushort)(CurrentAddr + signedWord);
                 }
 
                 if (operands[0] is uint)
                 {
                     signedDWord = (int)(uint)operands[0];
-                    offset = (uint)(currentAddr + signedDWord);
+                    if(opSize == 32)
+                        offset = (uint)(CurrentAddr + signedDWord);
+                    else
+                        offset = (ushort)(CurrentAddr + signedDWord);
                 }
             }
 
@@ -460,6 +468,11 @@ namespace x86CS.CPU
                         break;
                     case 0x8f:
                         opStr = String.Format("JNLE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        break;
+                    case 0xb6:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        opStr = String.Format("MOVZX {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
                 }
             }
@@ -1383,13 +1396,10 @@ namespace x86CS.CPU
             uint destDWord, sourceDWord;
             // ReSharper restore TooWideLocalVariableScope
 
-            currentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + eip; 
-            var baseAddr = currentAddr;
+            CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + eip; 
+            var baseAddr = CurrentAddr;
 
             DecodePrefixes();
-
-            if (memPrefix)
-                System.Diagnostics.Debugger.Break();
 
             opCode = DecodeReadByte();
 
@@ -1401,6 +1411,7 @@ namespace x86CS.CPU
                     case 0x01:          /* R/M ops */
                     case 0x20:
                     case 0x22:
+                    case 0xb6:
                         rmData = DecodeRM(true);
                         args.Add(rmData);
                         break;
@@ -1418,7 +1429,7 @@ namespace x86CS.CPU
                     case 0x8d:
                     case 0x8e:
                     case 0x8f:
-                        if (memPrefix)
+                        if (opSize == 32)
                         {
                             sourceDWord = DecodeReadDWord();
                             args.Add(sourceDWord);
@@ -1823,7 +1834,7 @@ namespace x86CS.CPU
 
             opStr = DecodeOpString(opCode, operands);
 
-            return (int)(currentAddr - baseAddr);
+            return (int)(CurrentAddr - baseAddr);
         }
     }
 }

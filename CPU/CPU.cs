@@ -15,7 +15,8 @@ namespace x86CS.CPU
         private readonly StreamWriter logFile = File.CreateText("cpulog.txt");
         private TableRegister idtRegister, gdtRegister;
         private readonly GDTEntry realModeEntry;
-
+        
+        public uint CurrentAddr { get; private set; }
         public bool Debug { get; set; }
         public bool PMode { get; private set; }
 
@@ -375,8 +376,6 @@ namespace x86CS.CPU
                                     Limit = 0xffff,
                                     IsWritable = true
                                 };
-            logFile.AutoFlush = true;
-
             Reset();
         }
 
@@ -460,7 +459,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-//            logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
+            logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
 
             Memory.WriteByte(virtAddr, value);
         }
@@ -469,7 +468,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-//            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
+            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
 
             Memory.WriteWord(virtAddr, value);
         }
@@ -478,7 +477,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            //logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
+            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
 
             Memory.WriteDWord(virtAddr, value);
         }
@@ -808,7 +807,15 @@ namespace x86CS.CPU
                         address = SI;
                     break;
                 case 5:
-                    address = (uint) (opSize == 32 ? 0 : DI);
+                    if (opSize == 32)
+                    {
+                        if (rmData.Mode == 1 || rmData.Mode == 2)
+                            address = EBP;
+                        else
+                            address = 0;
+                    }
+                    else
+                        address = DI;
                     break;
                 case 6:
                     if (opSize == 32)
@@ -1148,7 +1155,7 @@ namespace x86CS.CPU
             RegMemData rmData = null;
             // ReSharper restore TooWideLocalVariableScope
              
-            EIP += (ushort)len;
+            EIP += (uint)len;
 
             if (operands.Length > 0)
             {
@@ -1157,27 +1164,38 @@ namespace x86CS.CPU
                 if (operands[0] is byte)
                 {
                     signedByte = (sbyte)(byte)operands[0];
-                    offset = (ushort)(EIP + signedByte);
+                    if (opSize == 32)
+                        offset = (uint)(EIP + signedByte);
+                    else
+                        offset = (ushort)(IP + signedByte);
                 }
-                else if (operands[0] is ushort)
+
+                if (operands[0] is ushort)
                 {
                     signedWord = (short)(ushort)operands[0];
-                    offset = (ushort)(EIP + signedWord);
+                    if (opSize == 32)
+                        offset = (uint)(EIP + signedWord);
+                    else
+                        offset = (ushort)(IP + signedWord);
                 }
-                else if (operands[0] is uint)
+
+                if (operands[0] is uint)
                 {
                     signedDWord = (int)(uint)operands[0];
-                    offset = (uint)(EIP + signedDWord);
+                    if (opSize == 32)
+                        offset = (uint)(EIP + signedDWord);
+                    else
+                        offset = (ushort)(IP + signedDWord);
                 }
             }
 
             if (extPrefix)
-            {  
+            {
                 switch (opCode)
                 {
                     case 0x01:
-                        memAddress = ProcessRegMem(rmData, out tempDWord, out sourceDWord);
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        memAddress = ProcessRegMem(rmData, out tempDWord, out sourceDWord);
                         switch (rmData.Register)
                         {
                             case 2:
@@ -1281,6 +1299,16 @@ namespace x86CS.CPU
                     case 0x8f:
                         if (!ZF && SF == OF)
                             EIP = offset;
+                        break;
+                    case 0xb6:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        if (opSize == 32)
+                            registers[rmData.Register].DWord = (uint)(sbyte)sourceByte;
+                        else
+                            registers[rmData.Register].Word = (ushort)(sbyte)sourceByte;
+                        break;
+                    default:
                         break;
                 }
             }
@@ -3149,7 +3177,7 @@ namespace x86CS.CPU
                     #endregion
                 }
             }
-            currentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
+            CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
         }
     }
 }
