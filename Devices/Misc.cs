@@ -30,6 +30,7 @@ namespace x86CS.Devices
                     Memory.A20 = (controlPortA & 0x2) == 0x2;
                     break;
                 case 0x402:
+                case 0x500:
                     Console.Write((char)(byte)value);
                     break;
             }

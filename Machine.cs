@@ -70,6 +70,7 @@ namespace x86CS
         private readonly Keyboard keyboard;
         private readonly DMA dma;
         private readonly PIC8259 pic;
+        private readonly VGA vga = new VGA();
         private object[] operands;
         private int opLen;
         private byte opCode;
@@ -106,8 +107,7 @@ namespace x86CS
             keyboard = new Keyboard();
             dma = new DMA();
             pic = new PIC8259();
-
-//            logFile.AutoFlush = true;
+            vga = new VGA();
 
             SetupSystem();
 
@@ -187,7 +187,24 @@ namespace x86CS
             SetupIOEntry(0x92, misc.Read, misc.Write);
             SetupIOEntry(0xa0, pic.Read, pic.Write);
             SetupIOEntry(0xa1, pic.Read, pic.Write);
+            SetupIOEntry(0x3b4, vga.Read, vga.Write);
+            SetupIOEntry(0x3b5, vga.Read, vga.Write);
+            SetupIOEntry(0x3ba, vga.Read, vga.Write);
+            SetupIOEntry(0x3c0, vga.Read, vga.Write);
+            SetupIOEntry(0x3c1, vga.Read, vga.Write);
+            SetupIOEntry(0x3c2, vga.Read, vga.Write);
+            SetupIOEntry(0x3c4, vga.Read, vga.Write);
+            SetupIOEntry(0x3c5, vga.Read, vga.Write);
+            SetupIOEntry(0x3c7, vga.Read, vga.Write);
+            SetupIOEntry(0x3c8, vga.Read, vga.Write);
+            SetupIOEntry(0x3c9, vga.Read, vga.Write);
+            SetupIOEntry(0x3ca, vga.Read, vga.Write);
+            SetupIOEntry(0x3cc, vga.Read, vga.Write);
+            SetupIOEntry(0x3d4, vga.Read, vga.Write);
+            SetupIOEntry(0x3d5, vga.Read, vga.Write);
+            SetupIOEntry(0x3da, vga.Read, vga.Write);
             SetupIOEntry(0x402, misc.Read, misc.Write);
+            SetupIOEntry(0x500, misc.Read, misc.Write);
 
             LoadBIOS();
             LoadVGABios();

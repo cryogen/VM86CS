@@ -845,7 +845,7 @@ namespace x86CS.CPU
 
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
-                    address += (ushort)rmData.Displacement;
+                    address += (uint)(int)rmData.Displacement;
 
                 if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
                     segToUse = overrideSegment;
@@ -913,8 +913,8 @@ namespace x86CS.CPU
                 SetByteReg(rmData.RegMem, value);
             else
             {
-                if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                    writeSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS;
+                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem ==6))
+                    writeSegment = SegmentRegister.SS;
                 else
                 {
                     if (overrideSegment != SegmentRegister.DS)
@@ -932,8 +932,8 @@ namespace x86CS.CPU
                 registers[rmData.RegMem].Word = value;
             else
             {
-                if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                    writeSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS; 
+                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
+                    writeSegment = SegmentRegister.SS; 
                 else
                 {
                     if (overrideSegment != SegmentRegister.DS)
@@ -951,8 +951,8 @@ namespace x86CS.CPU
                 registers[rmData.RegMem].DWord = value;
             else
             {
-                if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                    writeSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS;
+                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
+                    writeSegment = SegmentRegister.SS;
                 else
                 {
                     if (overrideSegment != SegmentRegister.DS)

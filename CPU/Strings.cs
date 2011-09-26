@@ -4,7 +4,7 @@
     {
         private uint GetCount()
         {
-            if (repeatPrefix == RepeatPrefix.Repeat)
+            if (repeatPrefix == RepeatPrefix.Repeat || repeatPrefix == RepeatPrefix.RepeatNotZero)
             {
                 return opSize == 32 ? ECX : CX;
             }
@@ -245,6 +245,8 @@
                     EDI++;
 
                 count--;
+                if (repeatPrefix == RepeatPrefix.RepeatNotZero && ZF)
+                    break;
             }
             SetCount(count);
         }

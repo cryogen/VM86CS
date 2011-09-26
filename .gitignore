@@ -10,3 +10,5 @@ obj/x86/Debug/x86CS.csproj.FileListAbsolute.txt
 bin/x86/Debug/x86CS.vshost.exe.manifest
 obj/x86/Debug/x86CS.csproj.FileListAbsolute.txt
 _ReSharper.x86CS
+x86CS.6.0.ReSharper.user
+x86CS.csproj.ReSharper.user

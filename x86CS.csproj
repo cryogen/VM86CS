@@ -92,6 +92,7 @@
     <Compile Include="Devices\Misc.cs" />
     <Compile Include="Devices\PIC8259.cs" />
     <Compile Include="Devices\PIT8253.cs" />
+    <Compile Include="Devices\VGA.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

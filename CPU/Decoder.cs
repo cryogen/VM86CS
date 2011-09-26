@@ -252,7 +252,7 @@ namespace x86CS.CPU
                             if (PMode)
                             {
                                 if (ret.Mode == 0x1 || ret.Mode == 0x2)
-                                    ret.Operand = GetPrefixString(SegmentRegister.SS) + "[EBP + ";
+                                    ret.Operand = GetPrefixString(SegmentRegister.SS) + "[EBP";
                                 else
                                     ret.Operand = GetPrefixString(SegmentRegister.DS) + "[";
                             }
@@ -293,7 +293,7 @@ namespace x86CS.CPU
                         ret.Displacement = (uint)tmpDisp;
                         ret.HasDisplacement = true;
                     }
-                    else if (ret.Mode == 0x2 && memPrefix)
+                    else if (ret.Mode == 0x2 && !memPrefix)
                     {
                         ushort wordOp = DecodeReadWord();
                         int tmpDisp = (short)wordOp;
@@ -1404,7 +1404,9 @@ namespace x86CS.CPU
                         rmData = DecodeRM(true);
                         args.Add(rmData);
                         break;
-                    case 0x84:          /* Word ops */
+                    case 0x82:          /* Word ops */
+                    case 0x83:
+                    case 0x84:
                     case 0x85:
                     case 0x86:
                     case 0x87:
