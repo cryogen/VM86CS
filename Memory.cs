@@ -8,7 +8,7 @@ namespace x86CS
     {
         private static IntPtr realMemBase;
         private const uint MemorySize = 0xFFFFF;
-        private static readonly StreamWriter LogFile = File.CreateText("memlog.txt");
+        private static readonly TextWriter LogFile = TextWriter.Synchronized(File.CreateText("memlog.txt"));
 
         public static bool A20 { get; set; }
 

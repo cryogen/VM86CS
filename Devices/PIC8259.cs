@@ -9,7 +9,6 @@ namespace x86CS.Devices
         private byte dataRegister;
         private byte currentICW;
         private bool expectICW4;
-        private byte vectorBase;
         private byte linkIRQ;
 
         public PIController()
@@ -21,6 +20,7 @@ namespace x86CS.Devices
             DataRegister = 0;
         }
 
+        public byte VectorBase { get; private set; }
         public byte MaskRegister { get; set; }
         public bool Init { get; set; }
         public byte CommandRegister { get; set; }
@@ -35,7 +35,7 @@ namespace x86CS.Devices
                     expectICW4 = (icw & 0x1) != 0;
                     break;
                 case 1:
-                    vectorBase = icw;
+                    VectorBase = icw;
                     break;
                 case 2:
                     linkIRQ = (byte)(icw & 0x7);
@@ -106,6 +106,16 @@ namespace x86CS.Devices
                 controller.CommandRegister = (byte)value;
             else
                 controller.MaskRegister = (byte)value;
+        }
+
+        public int FindInterruptVector(int irq)
+        {
+            PIController controller = irq < 8 ? controllers[0] : controllers[1];
+
+            if (((controller.MaskRegister >> irq) & 0x1) == 0x0)
+                return controller.VectorBase + irq;
+     
+            return -1;
         }
     }
 }

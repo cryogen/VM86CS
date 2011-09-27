@@ -112,6 +112,8 @@ namespace x86CS
             pic = new PIC8259();
             vga = new VGA();
 
+            pit.InteruptRequested += PITInteruptRequested;
+
             SetupSystem();
 
             CPU.IORead += CPUIORead;
@@ -120,6 +122,16 @@ namespace x86CS
             machineForm.Paint += MachineFormPaint;
             machineForm.Show();
             machineForm.BringToFront();
+        }
+
+        void PITInteruptRequested(object sender, EventArgs e)
+        {
+            int vector = pic.FindInterruptVector(0);
+
+            if (vector == -1)
+                return;
+
+            CPU.Interrupt(vector, 0);
         }
 
         private void MachineFormPaint(object sender, PaintEventArgs e)
@@ -140,7 +152,10 @@ namespace x86CS
 
             var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr));
 
-            logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
+            lock (logFile)
+            {
+                logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
+            }
 
             return ret;
         }
@@ -152,7 +167,10 @@ namespace x86CS
             if (ioPorts.TryGetValue(addr, out entry))
                 entry.Write(addr, value);
 
-            logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
+            lock (logFile)
+            {
+                logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
+            }
         }
 
         private void LoadBIOS()
@@ -280,7 +298,10 @@ namespace x86CS
             if (Running)
             {
                 string tempOpStr;
-                logFile.WriteLine("{0}", Operation); 
+                lock (logFile)
+                {
+                    logFile.WriteLine("{0} {1}", DateTime.Now, Operation);
+                }
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);

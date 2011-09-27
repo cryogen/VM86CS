@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.IO;
+using System.Threading;
 
 namespace x86CS.CPU
 {
@@ -15,6 +16,11 @@ namespace x86CS.CPU
         private readonly StreamWriter logFile = File.CreateText("cpulog.txt");
         private TableRegister idtRegister, gdtRegister;
         private readonly GDTEntry realModeEntry;
+        private bool inInterrupt;
+        private byte interruptToRun;
+        private readonly AutoResetEvent waitEvent;
+        private readonly Mutex interruptMutex;
+        private bool externalInt;
         
         public uint CurrentAddr { get; private set; }
         public bool Debug { get; set; }
@@ -376,6 +382,10 @@ namespace x86CS.CPU
                                     Limit = 0xffff,
                                     IsWritable = true
                                 };
+
+            waitEvent = new AutoResetEvent(false);
+            interruptMutex = new Mutex();
+            externalInt = false;
             Reset();
         }
 
@@ -400,6 +410,7 @@ namespace x86CS.CPU
             ES = 0;
             FS = 0;
             GS = 0;
+            inInterrupt = false;
         }
 
         private bool GetFlag(CPUFlags flag)
@@ -1129,6 +1140,8 @@ namespace x86CS.CPU
 
         private void CallInterrupt(byte vector)
         {
+            interruptMutex.WaitOne();
+
             StackPush((ushort)Flags);
             IF = false;
             TF = false;
@@ -1138,6 +1151,19 @@ namespace x86CS.CPU
 
             CS = Memory.ReadWord((uint)(vector * 4) + 2);
             EIP = Memory.ReadWord((uint)(vector * 4));
+        }
+
+        public void Interrupt(int vector, int irq)
+        {
+            if(!IF)
+                return;
+
+            interruptMutex.WaitOne();
+            inInterrupt = true;
+            externalInt = true;
+            interruptToRun = (byte)vector;
+            waitEvent.Set();
+            interruptMutex.ReleaseMutex();
         }
 
         public void Cycle(int len, byte opCode, object[] operands)
@@ -1154,7 +1180,13 @@ namespace x86CS.CPU
             int signedDWord;
             RegMemData rmData = null;
             // ReSharper restore TooWideLocalVariableScope
-             
+
+            if(inInterrupt)
+            {
+                CallInterrupt(interruptToRun);
+                inInterrupt = false;
+                return;
+            }
             EIP += (uint)len;
 
             if (operands.Length > 0)
@@ -1191,6 +1223,7 @@ namespace x86CS.CPU
 
             if (extPrefix)
             {
+                #region extended opcodes
                 switch (opCode)
                 {
                     case 0x01:
@@ -1302,7 +1335,7 @@ namespace x86CS.CPU
                         break;
                     case 0xb6:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
-                        memAddress = ProcessRegMem(rmData, out destByte, out sourceByte);
+                        ProcessRegMem(rmData, out destByte, out sourceByte);
                         if (opSize == 32)
                             registers[rmData.Register].DWord = (uint)(sbyte)sourceByte;
                         else
@@ -1311,6 +1344,7 @@ namespace x86CS.CPU
                     default:
                         break;
                 }
+                #endregion
             }
             else
             {
@@ -1798,11 +1832,19 @@ namespace x86CS.CPU
                         SetSelector((SegmentRegister)rmData.Register, sourceWord);
                         break;
                     case 0xa0:
-                        sourceByte = (byte)operands[0];
-                        AL = SegReadByte(overrideSegment, sourceByte);
+                        if(memSize == 32)
+                        {
+                            sourceDWord = (uint)operands[0];
+                            AL = SegReadByte(overrideSegment, sourceDWord);   
+                        }
+                        else
+                        {
+                            sourceWord = (ushort)operands[0];
+                            AL = SegReadByte(overrideSegment, sourceWord);                            
+                        }
                         break;
                     case 0xa1:
-                        if (opSize == 32)
+                        if (memSize == 32)
                         {
                             sourceDWord = (uint)operands[0];
                             EAX = SegReadDWord(overrideSegment, sourceDWord);
@@ -1814,7 +1856,7 @@ namespace x86CS.CPU
                         }
                         break;
                     case 0xa2:
-                        if (opSize == 32)
+                        if (memSize == 32)
                         {
                             sourceDWord = (uint)operands[0];
                             SegWriteByte(overrideSegment, sourceDWord, AL);
@@ -1826,7 +1868,7 @@ namespace x86CS.CPU
                         }
                         break;
                     case 0xa3:
-                        if (opSize == 32)
+                        if (memSize == 32)
                         {
                             sourceDWord = (uint)operands[0];
                             SegWriteDWord(overrideSegment, sourceDWord, EAX);
@@ -2685,6 +2727,8 @@ namespace x86CS.CPU
                             EIP = (ushort)StackPop();
                         CS = (ushort)StackPop();
                         eFlags = (CPUFlags)StackPop();
+                        interruptMutex.ReleaseMutex();
+
                         break;
                     case 0xe0:
                         CX--;
@@ -2772,7 +2816,8 @@ namespace x86CS.CPU
                         ProcedureEnter(destWord, sourceByte);
                         break;
                     case 0xf4:
-                        throw new Exception("Halt");
+                        waitEvent.WaitOne();
+                        break;
                     case 0xf5:
                         CF = !CF;
                         break;

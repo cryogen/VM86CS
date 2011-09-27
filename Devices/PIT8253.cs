@@ -1,4 +1,8 @@
-﻿namespace x86CS.Devices
+﻿using System;
+using System.Threading;
+using System.Diagnostics;
+
+namespace x86CS.Devices
 {
     public enum OperatingMode
     {
@@ -26,6 +30,11 @@
         private bool setHiByte;
         private byte reloadLow;
         private byte reloadHigh;
+        private readonly Thread timerThread;
+        private readonly Stopwatch stopwatch;
+        private ulong counter;
+
+        public event EventHandler TimerCycle;
 
         public OperatingMode OperatingMode { get; set; }
 
@@ -40,19 +49,71 @@
         public ushort Reload
         {
             get { return (ushort)((reloadHigh << 8) + reloadLow); }
-            set 
+            set
             {
                 if (accessMode == AccessMode.HibyteOnly || (accessMode == AccessMode.LoByteHiByte && setHiByte))
                 {
                     reloadHigh = (byte)value;
                     setHiByte = false;
+                    if (Reload == 0)
+                        counter = 1193182 / 0x10000;
+                    else
+                        counter = (ulong)1193182 / Reload;
+                    stopwatch.Start();
                 }
                 else if (accessMode == AccessMode.LoByteOnly || accessMode == AccessMode.LoByteHiByte)
                 {
                     reloadLow = (byte)value;
                     setHiByte = true;
+                    if (accessMode == AccessMode.LoByteOnly)
+                    {
+                        if (Reload == 0)
+                            counter = 1193182 / 0x10000;
+                        else
+                            counter = (ulong)1193182 / Reload;
+                        stopwatch.Start();
+                    }
                 }
             }
+        }
+
+        public Counter()
+        {
+            stopwatch = new Stopwatch();
+            counter = 0;
+            timerThread = new Thread(TimerRun);
+            timerThread.Start();
+        }
+
+        private void TimerRun()
+        {
+            while (true)
+            {
+                if(!stopwatch.IsRunning)
+                    Thread.Sleep(100);
+                else
+                {
+                    if (stopwatch.ElapsedTicks > 9)
+                        counter--;
+                    if (counter == 1)
+                    {
+                        OnTimerCycle(new EventArgs());
+                        if (Reload == 0)
+                            counter = 1193182 / 0x10000;
+                        else
+                            counter = (ulong)1193182 / Reload;
+                        stopwatch.Reset();
+                        stopwatch.Start();
+                    }
+                }
+            }
+        }
+
+        private void OnTimerCycle(EventArgs e)
+        {
+            EventHandler handler = TimerCycle;
+            if (handler != null) 
+                handler(this, e);
         }
     }
 
@@ -60,12 +121,27 @@
     {
         private readonly Counter[] counters;
 
+        public event EventHandler InteruptRequested;
+
+        public void OnInteruptRequested(EventArgs e)
+        {
+            EventHandler handler = InteruptRequested;
+            if (handler != null) 
+                handler(this, e);
+        }
+
         public PIT8253()
         {
             counters = new Counter[3];
             counters[0] = new Counter();
+            counters[0].TimerCycle += PIT8253TimerCycle;
             counters[1] = new Counter();
             counters[2] = new Counter();
+        }
+
+        void PIT8253TimerCycle(object sender, EventArgs e)
+        {
+            OnInteruptRequested(e);
         }
 
         public ushort Read(ushort address)

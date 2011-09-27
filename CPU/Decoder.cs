@@ -46,10 +46,10 @@ namespace x86CS.CPU
     {
         private OPPrefix setPrefixes = 0;
         private SegmentRegister overrideSegment = SegmentRegister.DS;
-        private bool memPrefix;
         private bool extPrefix;
         private RepeatPrefix repeatPrefix = RepeatPrefix.None;
         private int opSize = 16;
+        private int memSize = 16;
 
         #region Read Functions
         private byte DecodeReadByte()
@@ -100,7 +100,6 @@ namespace x86CS.CPU
             overrideSegment = SegmentRegister.DS;
             opSize = PMode ? 32 : 16;
 
-            memPrefix = false;
             extPrefix = false;
 
             do
@@ -166,11 +165,9 @@ namespace x86CS.CPU
                 overrideSegment = SegmentRegister.SS;
 
             if ((setPrefixes & OPPrefix.OPSize) == OPPrefix.OPSize)
-            {
                 opSize = PMode ? 16 : 32;
-            }
             if ((setPrefixes & OPPrefix.AddressSize) == OPPrefix.AddressSize)
-                memPrefix = true;
+                memSize = PMode ? 16 : 32;
             if ((setPrefixes & OPPrefix.Extended) == OPPrefix.Extended)
                 extPrefix = true;
 
@@ -198,31 +195,31 @@ namespace x86CS.CPU
                     switch (ret.RegMem)
                     {
                         case 0x0:
-                            if (PMode)
+                            if (memSize == 32)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[EAX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[BX + SI";
                             break;
                         case 0x1:
-                            if (PMode)
+                            if (memSize == 32)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[ECX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[BX + DI";
                             break;
                         case 0x2:
-                            if (PMode)
+                            if (memSize == 32)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[EDX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.SS) + "[BP + SI";
                             break;
                         case 0x3:
-                            if (PMode)
+                            if (memSize == 32)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[EBX";
                             else
                                 ret.Operand = GetPrefixString(SegmentRegister.SS) + "[BP + DI";
                             break;
                         case 0x4:
-                            if (PMode)
+                            if (memSize == 32)
                             {
                                 byte sib = DecodeReadByte();
 
@@ -248,7 +245,7 @@ namespace x86CS.CPU
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[SI";
                             break;
                         case 0x5:
-                            if (PMode)
+                            if (memSize == 32)
                             {
                                 if (ret.Mode == 0x1 || ret.Mode == 0x2)
                                     ret.Operand = GetPrefixString(SegmentRegister.SS) + "[EBP";
@@ -259,7 +256,7 @@ namespace x86CS.CPU
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[DI";
                             break;
                         case 0x6:
-                            if (PMode)
+                            if (memSize == 32)
                                 ret.Operand = GetPrefixString(SegmentRegister.DS) + "[ESI";
                             else
                             {
@@ -292,7 +289,7 @@ namespace x86CS.CPU
                         ret.Displacement = (uint)tmpDisp;
                         ret.HasDisplacement = true;
                     }
-                    else if (ret.Mode == 0x2 && opSize == 16)
+                    else if (ret.Mode == 0x2 && memSize == 16)
                     {
                         ushort wordOp = DecodeReadWord();
                         int tmpDisp = (short)wordOp;
@@ -318,14 +315,14 @@ namespace x86CS.CPU
                         ret.Displacement = (uint)tmpDisp;
                         ret.HasDisplacement = true;
                     }
-                    else if (ret.RegMem == 0x5 && memPrefix)
+                    else if (ret.RegMem == 0x5 && memSize == 32)
                     {
                         ret.Displacement = DecodeReadWord();
                         ret.HasDisplacement = true;
 
                         ret.Operand += "+" + ret.Displacement.ToString("X") + "]";
                     }
-                    else if (ret.RegMem == 0x6 && !memPrefix)
+                    else if (ret.RegMem == 0x6 && memSize == 16)
                     {
                         ret.Displacement = DecodeReadWord();
                         ret.HasDisplacement = true;
@@ -422,52 +419,52 @@ namespace x86CS.CPU
                         opStr = String.Format("MOV {0}, E{1}", GetControlRegStr(rmData.RegMem), rmData.RegisterName);
                         break;
                     case 0x80:
-                        opStr = String.Format("JO {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JO {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x81:
-                        opStr = String.Format("JNO {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JNO {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x82:
-                        opStr = String.Format("JB {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JB {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x83:
-                        opStr = String.Format("JNB {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JNB {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x84:
-                        opStr = String.Format("JZ {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JZ {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x85:
-                        opStr = String.Format("JNZ {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JNZ {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x86:
-                        opStr = String.Format("JBE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JBE {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x87:
-                        opStr = String.Format("JNBE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JNBE {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x88:
-                        opStr = String.Format("JS {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JS {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x89:
-                        opStr = String.Format("JNS {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JNS {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x8a:
-                        opStr = String.Format("JP {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JP {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x8b:
-                        opStr = String.Format("JS {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JS {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x8c:
-                        opStr = String.Format("JL {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JL {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x8d:
-                        opStr = String.Format("JNL {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JNL {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x8e:
-                        opStr = String.Format("JLE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JLE {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0x8f:
-                        opStr = String.Format("JNLE {0:X} ({1:X})", memPrefix ? signedDWord : signedWord, offset);
+                        opStr = String.Format("JNLE {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
                     case 0xb6:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
@@ -1475,7 +1472,6 @@ namespace x86CS.CPU
                     case 0x7d:
                     case 0x7e:
                     case 0x7f:
-                    case 0xa0:
                     case 0xa8:
                     case 0xb0:
                     case 0xb1:
@@ -1511,9 +1507,6 @@ namespace x86CS.CPU
                     case 0x68:
                     case 0xe5:
                     case 0xe8:
-                    case 0xa1:
-                    case 0xa2:
-                    case 0xa3:
                     case 0xa9:
                     case 0xb8:
                     case 0xb9:
@@ -1537,6 +1530,22 @@ namespace x86CS.CPU
                             args.Add(sourceWord);
                         }
                         break;
+
+                    case 0xa0:
+                    case 0xa1: /* Word, memory op */
+                    case 0xa2:
+                    case 0xa3:
+                        if (memSize == 32)
+                        {
+                            sourceDWord = DecodeReadDWord();
+                            args.Add(sourceDWord);
+                        }
+                        else
+                        {
+                            sourceWord = DecodeReadWord();
+                            args.Add(sourceWord);
+                        }
+                        break;                        
                     case 0xc8: /* Word, byte operand */
                         destWord = DecodeReadWord();
                         sourceByte = DecodeReadByte();
