@@ -94,6 +94,12 @@
     <Compile Include="Devices\PIT8253.cs" />
     <Compile Include="Devices\VGA.cs" />
     <Compile Include="Machine.cs" />
+    <Compile Include="MachineForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MachineForm.Designer.cs">
+      <DependentUpon>MachineForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -105,6 +111,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Breakpoints.resx">
       <DependentUpon>Breakpoints.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MachineForm.resx">
+      <DependentUpon>MachineForm.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">

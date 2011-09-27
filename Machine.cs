@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.IO;
 using x86CS.Devices;
+using System.Windows.Forms;
 
 namespace x86CS
 {
@@ -74,6 +76,7 @@ namespace x86CS
         private object[] operands;
         private int opLen;
         private byte opCode;
+        private readonly MachineForm machineForm = new MachineForm();
 
         public string Operation { get; private set; }
         public Stack<char> KeyPresses { get; set; }
@@ -113,6 +116,15 @@ namespace x86CS
 
             CPU.IORead += CPUIORead;
             CPU.IOWrite += CPUIOWrite;
+
+            machineForm.Paint += MachineFormPaint;
+            machineForm.Show();
+            machineForm.BringToFront();
+        }
+
+        private void MachineFormPaint(object sender, PaintEventArgs e)
+        {
+           vga.GDIDraw(e.Graphics);
         }
 
         private void SetupIOEntry(ushort port, ReadCallback read, WriteCallback write)
@@ -145,7 +157,7 @@ namespace x86CS
 
         private void LoadBIOS()
         {
-            FileStream biosStream = File.OpenRead("BIOS-bochs-latest");
+            FileStream biosStream = File.OpenRead("BIOS-bochs-legacy");
             var buffer = new byte[biosStream.Length];
 
             uint startAddr = (uint)(0xfffff - buffer.Length) + 1;
@@ -239,7 +251,7 @@ namespace x86CS
 
         public bool CheckBreakpoint()
         {
-            uint cpuAddr = (uint)(CPU.CurrentAddr - opLen);
+            var cpuAddr = (uint)(CPU.CurrentAddr - opLen);
 
             return breakpoints.Any(kvp => kvp.Value == cpuAddr);
         }
@@ -272,6 +284,7 @@ namespace x86CS
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
+                machineForm.Invalidate();
             }
         }
     }

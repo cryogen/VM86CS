@@ -52,9 +52,6 @@
                     reloadLow = (byte)value;
                     setHiByte = true;
                 }
-                else
-                {
-                }
             }
         }
     }

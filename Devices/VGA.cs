@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace x86CS.Devices
 {
@@ -85,7 +86,7 @@ namespace x86CS.Devices
                     sequencer[(int)sequencerAddress] = (byte)value;
                     break;
                 case 0x3c0:
-                    if(attributeControlFlipFlop)
+                    if (attributeControlFlipFlop)
                     {
                         attributeControl[attributeControlAddress] = (byte)value;
                         attributeControlFlipFlop = false;
@@ -102,7 +103,7 @@ namespace x86CS.Devices
                     break;
                 case 0x3c9:
                     dacColour[currColor] = (byte)(value & 0x3f);
-                    if(++currColor == 3)
+                    if (++currColor == 3)
                     {
                         currColor = 0;
                         dacPalette[dacAddress] = Color.FromArgb(dacColour[0], dacColour[1], dacColour[2]);
@@ -114,5 +115,39 @@ namespace x86CS.Devices
             }
         }
 
+        public void GDIDraw(Graphics g)
+        {
+            var screenBitmap = new Bitmap(720, 420, PixelFormat.Format32bppRgb);
+
+            var fontBuffer = new byte[0x1000];
+            var displayBuffer = new byte[0xfa0];
+
+            Memory.BlockRead(0xa0000, fontBuffer, fontBuffer.Length);
+            Memory.BlockRead(0xb8000, displayBuffer, displayBuffer.Length);
+
+            for (var i = 0; i < displayBuffer.Length; i += 2)
+            {
+                int currChar = displayBuffer[i];
+                int fontOffset = currChar * 32;
+                byte attribute = displayBuffer[i + 1];
+                int y = i / 160 * 16;
+
+                Color foreColour = dacPalette[attribute & 0xf];
+                Color backColour = dacPalette[(attribute >> 4) & 0xf];
+
+                for (var f = fontOffset; f < fontOffset + 16; f++)
+                {
+                    int x = ((i % 160) / 2) * 8;
+
+                    for (var j = 7; j > 0; j--)
+                    {
+                        screenBitmap.SetPixel(x++, y, ((fontBuffer[f] >> j) & 0x1) != 0 ? foreColour : backColour);
+                    }
+                    y++;
+                }
+            }
+
+            g.DrawImage(screenBitmap, 0, 0);
+        }
     }
 }

@@ -62,7 +62,10 @@ namespace x86CS
             IntPtr realOffset = GetRealAddress(addr);
 
             byte ret = Marshal.ReadByte(realOffset);
-            LogFile.WriteLine(String.Format("Mem Read Byte: {0:X} {1:X}", addr, ret));
+            lock (LogFile)
+            {
+                LogFile.WriteLine(String.Format("Mem Read Byte: {0:X} {1:X}", addr, ret));
+            }
 
             return ret;
         }
