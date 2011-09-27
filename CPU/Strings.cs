@@ -295,9 +295,15 @@
             {
                 SegWriteByte(SegmentRegister.ES, opSize == 32 ? EDI : DI, SegReadByte(overrideSegment, opSize == 32 ? ESI : SI));
                 if (DF)
+                {
                     ESI--;
+                    EDI--;
+                }
                 else
+                {
                     ESI++;
+                    EDI++;
+                }
 
                 count--;
             }
@@ -312,9 +318,15 @@
             {
                 SegWriteWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, SegReadWord(overrideSegment, opSize == 32 ? EDI : SI));
                 if (DF)
+                {
                     ESI -= 2;
+                    EDI -= 2;
+                }
                 else
+                {
                     ESI += 2;
+                    EDI += 2;
+                }
 
                 count--;
             }
@@ -329,9 +341,15 @@
             {
                 SegWriteDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, SegReadWord(overrideSegment, opSize == 32 ? EDI : SI));
                 if (DF)
+                {
                     ESI -= 4;
+                    EDI -= 4;
+                }
                 else
+                {
                     ESI += 4;
+                    EDI += 4;
+                }
 
                 count--;
             }
