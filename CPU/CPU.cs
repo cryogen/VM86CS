@@ -19,7 +19,7 @@ namespace x86CS.CPU
         private bool inInterrupt;
         private byte interruptToRun;
         private readonly AutoResetEvent waitEvent;
-        private readonly Mutex interruptMutex;
+        private readonly Mutex interruptMutex, ifMutex;
         private bool externalInt;
         
         public uint CurrentAddr { get; private set; }
@@ -298,8 +298,19 @@ namespace x86CS.CPU
 
         public bool IF
         {
-            get { return GetFlag(CPUFlags.IF); }
-            set { SetFlag(CPUFlags.OF, value); }
+            get
+            {
+                ifMutex.WaitOne();
+                bool temp = GetFlag(CPUFlags.IF);
+                ifMutex.ReleaseMutex();
+                return temp;
+            }
+            set
+            {
+                ifMutex.WaitOne();
+                SetFlag(CPUFlags.OF, value);
+                ifMutex.ReleaseMutex();
+            }
         }
 
         public bool DF
@@ -385,6 +396,7 @@ namespace x86CS.CPU
 
             waitEvent = new AutoResetEvent(false);
             interruptMutex = new Mutex();
+            ifMutex = new Mutex();
             externalInt = false;
             Reset();
         }
@@ -2314,10 +2326,12 @@ namespace x86CS.CPU
                             StackPush((ushort)Flags);
                         break;
                     case 0x9d:
+                        ifMutex.WaitOne();
                         if (opSize == 32)
                             eFlags = (CPUFlags)StackPop();
                         else
                             eFlags = (CPUFlags)(ushort)StackPop();
+                        ifMutex.ReleaseMutex();
                         break;
                     #endregion
                     #region Rotate/shift
@@ -2721,6 +2735,7 @@ namespace x86CS.CPU
                             CallInterrupt(4);
                         break;
                     case 0xcf:
+                        ifMutex.WaitOne();
                         if (opSize == 32)
                             EIP = StackPop();
                         else
@@ -2728,7 +2743,8 @@ namespace x86CS.CPU
                         CS = (ushort)StackPop();
                         eFlags = (CPUFlags)StackPop();
                         interruptMutex.ReleaseMutex();
-
+                        ifMutex.ReleaseMutex();
+                        IF = true;
                         break;
                     case 0xe0:
                         CX--;
