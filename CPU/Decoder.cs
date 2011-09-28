@@ -1725,11 +1725,17 @@ namespace x86CS.CPU
                         break;
                     case 0xd0:          /* Group reg8 */
                     case 0xd2:
-                    case 0xf6:
                     case 0xfe:
                         rmData = DecodeRM(false);
 
                         args.Add(rmData);
+                        break;
+                    case 0xf6:          /* Special */
+                        rmData = DecodeRM(false);
+
+                        args.Add(rmData);
+                        if(rmData.Register == 0 || rmData.Register == 1)
+                            args.Add(DecodeReadByte());
                         break;
                     case 0xd1:          /* Group reg16 */
                     case 0xd3:

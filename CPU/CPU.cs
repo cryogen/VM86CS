@@ -3033,7 +3033,7 @@ namespace x86CS.CPU
                         switch (rmData.Register)
                         {
                             case 0:
-                                And(sourceByte, (byte)operands[0]);
+                                And(sourceByte, (byte)operands[1]);
                                 break;
                             case 2:
                                 sourceByte = (byte)~sourceByte;

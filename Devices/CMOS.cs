@@ -4,7 +4,7 @@ namespace x86CS.Devices
 {
     public class CMOS
     {
-        private readonly byte[] registers = new byte[0x20];
+        private readonly byte[] registers = new byte[0x7b];
         private byte currentReg;
 
         public CMOS()
@@ -22,6 +22,8 @@ namespace x86CS.Devices
             registers[0x0c] = 0x00;  /* all int flags cleared */
             registers[0x0d] = 0x80;  /* VRT */
             registers[0x14] = 0x05;  /* Machine config byte */
+            registers[0x3d] = 0x21;  /* 1st and 2nd boot devices */
+            registers[0x38] = 0x00;  /* 3rd boot device */
         }
 
         public ushort Read(ushort addr)

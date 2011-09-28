@@ -112,12 +112,12 @@ namespace x86CS.CPU
 
         private ushort Or(ushort dest, ushort source)
         {
-            return DoAnd(dest, source);
+            return DoOr(dest, source);
         }
 
         private uint Or(uint dest, uint source)
         {
-            return DoAnd(dest, source);
+            return DoOr(dest, source);
         }
 
         private byte DoOr(byte dest, byte source)
