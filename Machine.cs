@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.IO;
 using x86CS.Devices;
@@ -65,7 +64,7 @@ namespace x86CS
         public event EventHandler<CharEventArgs> WriteChar;
         private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
         private Dictionary<ushort, IOEntry> ioPorts;
-        private readonly StreamWriter logFile = File.CreateText("machinelog.txt");
+        private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("machinelog.txt"));
         private readonly CMOS cmos;
         private readonly Misc misc;
         private readonly PIT8253 pit;
@@ -152,10 +151,7 @@ namespace x86CS
 
             var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr));
 
-            lock (logFile)
-            {
-                logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
-            }
+            logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
 
             return ret;
         }
@@ -167,10 +163,7 @@ namespace x86CS
             if (ioPorts.TryGetValue(addr, out entry))
                 entry.Write(addr, value);
 
-            lock (logFile)
-            {
-                logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
-            }
+            logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
         }
 
         private void LoadBIOS()
@@ -298,13 +291,10 @@ namespace x86CS
             if (Running)
             {
                 string tempOpStr;
-                lock (logFile)
-                {
-                    logFile.WriteLine("{0} {1}", DateTime.Now, Operation);
-                }
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
+                logFile.WriteLine(Operation);
                 machineForm.Invalidate();
             }
         }
