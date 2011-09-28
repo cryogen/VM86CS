@@ -32,12 +32,12 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.runToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.stopToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.restartToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.exitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.floppyToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mountToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.debugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.breakpointsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.mainPanel = new System.Windows.Forms.Panel();
             this.registersGroup = new System.Windows.Forms.GroupBox();
             this.EBP = new System.Windows.Forms.TextBox();
             this.ebpLabel = new System.Windows.Forms.Label();
@@ -97,7 +97,7 @@
             this.memDWord = new System.Windows.Forms.TextBox();
             this.memoryButton = new System.Windows.Forms.Button();
             this.memSegment = new System.Windows.Forms.TextBox();
-            this.restartToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.cpuList = new System.Windows.Forms.ListBox();
             this.mainMenu.SuspendLayout();
             this.registersGroup.SuspendLayout();
             this.segmentGroup.SuspendLayout();
@@ -114,7 +114,7 @@
             this.debugToolStripMenuItem});
             this.mainMenu.Location = new System.Drawing.Point(0, 0);
             this.mainMenu.Name = "mainMenu";
-            this.mainMenu.Size = new System.Drawing.Size(856, 24);
+            this.mainMenu.Size = new System.Drawing.Size(630, 24);
             this.mainMenu.TabIndex = 0;
             // 
             // fileToolStripMenuItem
@@ -131,7 +131,7 @@
             // runToolStripMenuItem
             // 
             this.runToolStripMenuItem.Name = "runToolStripMenuItem";
-            this.runToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.runToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.runToolStripMenuItem.Text = "&Run";
             this.runToolStripMenuItem.Click += new System.EventHandler(this.RunToolStripMenuItemClick);
             // 
@@ -139,14 +139,21 @@
             // 
             this.stopToolStripMenuItem.Enabled = false;
             this.stopToolStripMenuItem.Name = "stopToolStripMenuItem";
-            this.stopToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.stopToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.stopToolStripMenuItem.Text = "&Stop";
             this.stopToolStripMenuItem.Click += new System.EventHandler(this.StopToolStripMenuItemClick);
+            // 
+            // restartToolStripMenuItem
+            // 
+            this.restartToolStripMenuItem.Name = "restartToolStripMenuItem";
+            this.restartToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
+            this.restartToolStripMenuItem.Text = "R&estart";
+            this.restartToolStripMenuItem.Click += new System.EventHandler(this.RestartToolStripMenuItemClick);
             // 
             // exitToolStripMenuItem
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.exitToolStripMenuItem.Text = "E&xit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.ExitToolStripMenuItemClick);
             // 
@@ -180,20 +187,9 @@
             this.breakpointsToolStripMenuItem.Text = "&Breakpoints";
             this.breakpointsToolStripMenuItem.Click += new System.EventHandler(this.BreakpointsToolStripMenuItemClick);
             // 
-            // mainPanel
-            // 
-            this.mainPanel.BackColor = System.Drawing.Color.Black;
-            this.mainPanel.ForeColor = System.Drawing.Color.White;
-            this.mainPanel.Location = new System.Drawing.Point(0, 27);
-            this.mainPanel.Name = "mainPanel";
-            this.mainPanel.Size = new System.Drawing.Size(640, 400);
-            this.mainPanel.TabIndex = 1;
-            this.mainPanel.Paint += new System.Windows.Forms.PaintEventHandler(this.MainPanelPaint);
-            this.mainPanel.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.MainPanelPreviewKeyDown);
-            this.mainPanel.Click += new System.EventHandler(this.MainPanelClick);
-            // 
             // registersGroup
             // 
+            this.registersGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.registersGroup.Controls.Add(this.EBP);
             this.registersGroup.Controls.Add(this.ebpLabel);
             this.registersGroup.Controls.Add(this.ESP);
@@ -210,7 +206,7 @@
             this.registersGroup.Controls.Add(this.EDX);
             this.registersGroup.Controls.Add(this.ECX);
             this.registersGroup.Controls.Add(this.EAX);
-            this.registersGroup.Location = new System.Drawing.Point(646, 27);
+            this.registersGroup.Location = new System.Drawing.Point(420, 27);
             this.registersGroup.Name = "registersGroup";
             this.registersGroup.Size = new System.Drawing.Size(205, 100);
             this.registersGroup.TabIndex = 2;
@@ -355,6 +351,7 @@
             // 
             // segmentGroup
             // 
+            this.segmentGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.segmentGroup.Controls.Add(this.ssLabel);
             this.segmentGroup.Controls.Add(this.SS);
             this.segmentGroup.Controls.Add(this.gsLabel);
@@ -367,7 +364,7 @@
             this.segmentGroup.Controls.Add(this.DS);
             this.segmentGroup.Controls.Add(this.csLabel);
             this.segmentGroup.Controls.Add(this.CS);
-            this.segmentGroup.Location = new System.Drawing.Point(646, 133);
+            this.segmentGroup.Location = new System.Drawing.Point(420, 133);
             this.segmentGroup.Name = "segmentGroup";
             this.segmentGroup.Size = new System.Drawing.Size(205, 59);
             this.segmentGroup.TabIndex = 3;
@@ -478,6 +475,7 @@
             // 
             // flagsGroup
             // 
+            this.flagsGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.flagsGroup.Controls.Add(this.VIP);
             this.flagsGroup.Controls.Add(this.VIF);
             this.flagsGroup.Controls.Add(this.AC);
@@ -494,7 +492,7 @@
             this.flagsGroup.Controls.Add(this.AF);
             this.flagsGroup.Controls.Add(this.PF);
             this.flagsGroup.Controls.Add(this.CF);
-            this.flagsGroup.Location = new System.Drawing.Point(646, 198);
+            this.flagsGroup.Location = new System.Drawing.Point(420, 198);
             this.flagsGroup.Name = "flagsGroup";
             this.flagsGroup.Size = new System.Drawing.Size(204, 64);
             this.flagsGroup.TabIndex = 4;
@@ -656,10 +654,11 @@
             // 
             // cpuGroup
             // 
+            this.cpuGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.cpuGroup.Controls.Add(this.cpuLabel);
             this.cpuGroup.Controls.Add(this.stepButton);
             this.cpuGroup.Controls.Add(this.goButton);
-            this.cpuGroup.Location = new System.Drawing.Point(647, 268);
+            this.cpuGroup.Location = new System.Drawing.Point(421, 268);
             this.cpuGroup.Name = "cpuGroup";
             this.cpuGroup.Size = new System.Drawing.Size(204, 75);
             this.cpuGroup.TabIndex = 5;
@@ -676,15 +675,16 @@
             // 
             // memoryGroup
             // 
+            this.memoryGroup.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.memoryGroup.Controls.Add(this.memOffset);
             this.memoryGroup.Controls.Add(this.memByte);
             this.memoryGroup.Controls.Add(this.memWord);
             this.memoryGroup.Controls.Add(this.memDWord);
             this.memoryGroup.Controls.Add(this.memoryButton);
             this.memoryGroup.Controls.Add(this.memSegment);
-            this.memoryGroup.Location = new System.Drawing.Point(650, 349);
+            this.memoryGroup.Location = new System.Drawing.Point(424, 349);
             this.memoryGroup.Name = "memoryGroup";
-            this.memoryGroup.Size = new System.Drawing.Size(201, 78);
+            this.memoryGroup.Size = new System.Drawing.Size(201, 71);
             this.memoryGroup.TabIndex = 6;
             this.memoryGroup.TabStop = false;
             this.memoryGroup.Text = "Memory";
@@ -741,24 +741,27 @@
             this.memSegment.TabIndex = 0;
             this.memSegment.Text = "0000";
             // 
-            // restartToolStripMenuItem
+            // cpuList
             // 
-            this.restartToolStripMenuItem.Name = "restartToolStripMenuItem";
-            this.restartToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.restartToolStripMenuItem.Text = "R&estart";
-            this.restartToolStripMenuItem.Click += new System.EventHandler(this.RestartToolStripMenuItemClick);
+            this.cpuList.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+                        | System.Windows.Forms.AnchorStyles.Right)));
+            this.cpuList.FormattingEnabled = true;
+            this.cpuList.Location = new System.Drawing.Point(0, 27);
+            this.cpuList.Name = "cpuList";
+            this.cpuList.Size = new System.Drawing.Size(419, 394);
+            this.cpuList.TabIndex = 7;
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(856, 428);
+            this.ClientSize = new System.Drawing.Size(630, 421);
+            this.Controls.Add(this.cpuList);
             this.Controls.Add(this.memoryGroup);
             this.Controls.Add(this.cpuGroup);
             this.Controls.Add(this.flagsGroup);
             this.Controls.Add(this.segmentGroup);
             this.Controls.Add(this.registersGroup);
-            this.Controls.Add(this.mainPanel);
             this.Controls.Add(this.mainMenu);
             this.MainMenuStrip = this.mainMenu;
             this.Name = "MainForm";
@@ -784,7 +787,6 @@
         #endregion
 
         private System.Windows.Forms.MenuStrip mainMenu;
-        private System.Windows.Forms.Panel mainPanel;
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem exitToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem runToolStripMenuItem;
@@ -853,6 +855,7 @@
         private System.Windows.Forms.ToolStripMenuItem debugToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem breakpointsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem restartToolStripMenuItem;
+        private System.Windows.Forms.ListBox cpuList;
     }
 }
 

@@ -15,5 +15,10 @@ namespace x86CS
         {
             InitializeComponent();
         }
+
+        private void MachineForm_Load(object sender, EventArgs e)
+        {
+            BringToFront();
+        }
     }
 }

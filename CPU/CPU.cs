@@ -18,9 +18,8 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
         private byte interruptToRun;
-        private readonly AutoResetEvent waitEvent;
-        private readonly Mutex interruptMutex, ifMutex;
         private bool externalInt;
+        public bool Halted { get; private set; }
         
         public uint CurrentAddr { get; private set; }
         public bool Debug { get; set; }
@@ -298,19 +297,8 @@ namespace x86CS.CPU
 
         public bool IF
         {
-            get
-            {
-                ifMutex.WaitOne();
-                bool temp = GetFlag(CPUFlags.IF);
-                ifMutex.ReleaseMutex();
-                return temp;
-            }
-            set
-            {
-                ifMutex.WaitOne();
-                SetFlag(CPUFlags.OF, value);
-                ifMutex.ReleaseMutex();
-            }
+            get { return GetFlag(CPUFlags.IF); }
+            set { SetFlag(CPUFlags.OF, value); }
         }
 
         public bool DF
@@ -394,10 +382,8 @@ namespace x86CS.CPU
                                     IsWritable = true
                                 };
 
-            waitEvent = new AutoResetEvent(false);
-            interruptMutex = new Mutex();
-            ifMutex = new Mutex();
             externalInt = false;
+            Halted = false;
             Reset();
         }
 
@@ -1152,8 +1138,6 @@ namespace x86CS.CPU
 
         private void CallInterrupt(byte vector)
         {
-            interruptMutex.WaitOne();
-
             StackPush((ushort)Flags);
             IF = false;
             TF = false;
@@ -1170,12 +1154,9 @@ namespace x86CS.CPU
             if(!IF)
                 return;
 
-            interruptMutex.WaitOne();
             inInterrupt = true;
             externalInt = true;
             interruptToRun = (byte)vector;
-            waitEvent.Set();
-            interruptMutex.ReleaseMutex();
         }
 
         public void Cycle(int len, byte opCode, object[] operands)
@@ -1197,8 +1178,13 @@ namespace x86CS.CPU
             {
                 CallInterrupt(interruptToRun);
                 inInterrupt = false;
+                Halted = false;
                 return;
             }
+
+            if (Halted)
+                return;
+
             EIP += (uint)len;
 
             if (operands.Length > 0)
@@ -2326,12 +2312,10 @@ namespace x86CS.CPU
                             StackPush((ushort)Flags);
                         break;
                     case 0x9d:
-                        ifMutex.WaitOne();
                         if (opSize == 32)
                             eFlags = (CPUFlags)StackPop();
                         else
                             eFlags = (CPUFlags)(ushort)StackPop();
-                        ifMutex.ReleaseMutex();
                         break;
                     #endregion
                     #region Rotate/shift
@@ -2735,15 +2719,12 @@ namespace x86CS.CPU
                             CallInterrupt(4);
                         break;
                     case 0xcf:
-                        ifMutex.WaitOne();
                         if (opSize == 32)
                             EIP = StackPop();
                         else
                             EIP = (ushort)StackPop();
                         CS = (ushort)StackPop();
                         eFlags = (CPUFlags)StackPop();
-                        interruptMutex.ReleaseMutex();
-                        ifMutex.ReleaseMutex();
                         IF = true;
                         break;
                     case 0xe0:
@@ -2832,7 +2813,7 @@ namespace x86CS.CPU
                         ProcedureEnter(destWord, sourceByte);
                         break;
                     case 0xf4:
-                        waitEvent.WaitOne();
+                        Halted = true;
                         break;
                     case 0xf5:
                         CF = !CF;

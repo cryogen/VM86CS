@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Drawing;
+using System.Diagnostics;
 using System.Windows.Forms;
 using System.Threading;
 using System.Globalization;
@@ -11,30 +11,26 @@ namespace x86CS
     {
         private readonly Machine machine;
         private readonly string[] screenText = new string[25];
-        private int currLine, currPos;
-        readonly Font panelFont = new Font("Courier New", 9.64f);
-        bool stepping;
-        readonly Thread machineThread;
-        readonly Breakpoints breakpoints = new Breakpoints();
+        private bool stepping;
+        private readonly Thread machineThread;
+        private readonly Breakpoints breakpoints = new Breakpoints();
+        private double frequency = 100000.0f;
+        private ulong timerTicks;
 
         public MainForm()
         {
+            timerTicks = 0;
             machine = new Machine();
-            machine.WriteText += MachineWriteText;
-            machine.WriteChar += MachineWriteChar;
             Application.ApplicationExit += ApplicationApplicationExit;
 
             breakpoints.ItemAdded += BreakpointsItemAdded;
             breakpoints.ItemDeleted += BreakpointsItemDeleted;
 
-            currLine = currPos = 0;
-
             InitializeComponent();
 
             PrintRegisters();
 
-            mainPanel.Select();
-
+            
             machineThread = new Thread(RunMachine);
             machineThread.Start();
 
@@ -61,94 +57,47 @@ namespace x86CS
 
         private void RunMachine()
         {
+            var stopwatch = new Stopwatch();
+            double lastSeconds = 0;
+
+            stopwatch.Start();
+
             while (true)
             {
-                if (machine.Running && !stepping)
+                timerTicks++;
+
+                if(timerTicks % 10000 == 0)
                 {
-                    try
-                    {
-                        machine.RunCycle();
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageBox.Show(ex.Message, Resources.ErrorTitle);
-                        machine.FlushLog();
-                        return;
-                    }
-
-                    if (machine.CheckBreakpoint())
-                    {
-                        stepping = true;
-                        machine.CPU.Debug = true;
-                        Invoke((MethodInvoker)delegate { PrintRegisters(); SetCPULabel(machine.Operation); });
-                    }
-                    else
-                        machine.CPU.Debug = false;
-
+                    frequency = 10000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
+                    lastSeconds = stopwatch.Elapsed.TotalSeconds;
                 }
+                if (!machine.Running || stepping) 
+                    continue;
+                try
+                {
+                    machine.RunCycle(frequency, timerTicks);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, Resources.ErrorTitle);
+                    machine.FlushLog();
+                    return;
+                }
+
+                if (machine.CheckBreakpoint())
+                {
+                    stepping = true;
+                    machine.CPU.Debug = true;
+                    Invoke((MethodInvoker)delegate { PrintRegisters(); SetCPULabel(machine.Operation); });
+                }
+                else
+                    machine.CPU.Debug = false;
             }
-        }
-
-        void MachineWriteChar(object sender, CharEventArgs e)
-        {
-            switch (e.Char)
-            {
-                case '\r':
-                    currPos = 0;
-                    break;
-                case '\n':
-                    currLine++;
-                    break;
-                default:
-                    char[] chars = screenText[currLine].ToCharArray();
-
-                    chars[currPos] = e.Char;
-
-                    screenText[currLine] = new string(chars);
-                    currPos++;
-                    break;
-            }
-
-            if (currPos == 80)
-            {
-                currPos = 0;
-                currLine++;
-            }
-
-            if (currLine >= 24)
-            {
-                currLine = 0;
-                currPos = 0;
-            }
-
-            mainPanel.Invalidate();
         }
 
         private void SetCPULabel(string text)
         {
             cpuLabel.Text = text;
-        }
-
-        void MainPanelPaint(object sender, PaintEventArgs e)
-        {
-            if (e.ClipRectangle.Height == 0)
-                return;
-            for (int i = 0; i < 25; i++)
-            {
-                string line = screenText[i];
-                if (String.IsNullOrEmpty(line))
-                    continue;
-                e.Graphics.DrawString(line, panelFont, Brushes.White, new PointF(0, i * panelFont.Height * 1.06f));
-            }
-        }
-
-        void MachineWriteText(object sender, TextEventArgs e)
-        {
-            screenText[currLine++] = e.Text;
-            if (currLine >= 25)
-                currLine = 0;
-
-            mainPanel.Invalidate();
         }
 
         private void ExitToolStripMenuItemClick(object sender, EventArgs e)
@@ -230,7 +179,7 @@ namespace x86CS
             }
 
             machine.CPU.Debug = true;
-            machine.RunCycle();
+            machine.RunCycle(frequency, timerTicks);
             SetCPULabel(machine.Operation);
             PrintRegisters();
         }
@@ -247,16 +196,6 @@ namespace x86CS
         private void MainFormFormClosed(object sender, FormClosedEventArgs e)
         {
             machineThread.Abort();
-        }
-
-        private void MainPanelPreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
-        {
-            machine.KeyPresses.Push((char)e.KeyValue);
-        }
-
-        private void MainPanelClick(object sender, EventArgs e)
-        {
-            mainPanel.Select();
         }
 
         private void MemoryButtonClick(object sender, EventArgs e)

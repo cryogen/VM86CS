@@ -76,6 +76,7 @@ namespace x86CS
         private int opLen;
         private byte opCode;
         private readonly MachineForm machineForm = new MachineForm();
+        private ulong timerTicks;
 
         public string Operation { get; private set; }
         public Stack<char> KeyPresses { get; set; }
@@ -286,15 +287,18 @@ namespace x86CS
             logFile.Flush();
         }
 
-        public void RunCycle()
+        public void RunCycle(double frequency, ulong timerTicks)
         {
             if (Running)
             {
                 string tempOpStr;
+
+                pit.Cycle(frequency, timerTicks);
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
-                logFile.WriteLine(Operation);
+                if(!CPU.Halted)
+                    logFile.WriteLine(Operation);
                 machineForm.Invalidate();
             }
         }

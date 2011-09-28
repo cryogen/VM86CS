@@ -30,11 +30,10 @@ namespace x86CS.Devices
         private bool setHiByte;
         private byte reloadLow;
         private byte reloadHigh;
-        private readonly Thread timerThread;
-        private readonly Stopwatch stopwatch;
-        private ulong counter;
+        private ulong counter, lastTicks;
+        private bool running;
 
-        public event EventHandler TimerCycle;
+        public event EventHandler TimerTick;
 
         public OperatingMode OperatingMode { get; set; }
 
@@ -59,7 +58,7 @@ namespace x86CS.Devices
                         counter = 1193182 / 0x10000;
                     else
                         counter = (ulong)1193182 / Reload;
-                    stopwatch.Start();
+                    running = true;
                 }
                 else if (accessMode == AccessMode.LoByteOnly || accessMode == AccessMode.LoByteHiByte)
                 {
@@ -71,7 +70,7 @@ namespace x86CS.Devices
                             counter = 1193182 / 0x10000;
                         else
                             counter = (ulong)1193182 / Reload;
-                        stopwatch.Start();
+                        running = true;
                     }
                 }
             }
@@ -79,40 +78,38 @@ namespace x86CS.Devices
 
         public Counter()
         {
-            stopwatch = new Stopwatch();
             counter = 0;
-            timerThread = new Thread(TimerRun);
-            timerThread.Start();
+            running = false;
         }
 
-        private void TimerRun()
+        public void Cycle(double frequency, ulong timerTicks)
         {
-            while (true)
+            if (!running)
+                return;
+
+            double pulse = 1193182 / frequency;
+            double ticks = timerTicks - lastTicks;
+
+            if(ticks > pulse)
             {
-                if(!stopwatch.IsRunning)
-                    Thread.Sleep(100);
+                counter--;
+                lastTicks = timerTicks;
+            }
+
+            if (counter == 1)
+            {
+                OnTimerTick(new EventArgs());
+                if (Reload == 0)
+                    counter = 1193182 / 0x10000;
                 else
-                {
-                    if (stopwatch.ElapsedTicks > 9)
-                        counter--;
-                    if (counter == 1)
-                    {
-                        OnTimerCycle(new EventArgs());
-                        if (Reload == 0)
-                            counter = 1193182 / 0x10000;
-                        else
-                            counter = (ulong)1193182 / Reload;
-                        stopwatch.Reset();
-                        stopwatch.Start();
-                    }
-                }
+                    counter = (ulong)1193182 / Reload;
             }
         }
 
-        private void OnTimerCycle(EventArgs e)
+        private void OnTimerTick(EventArgs e)
         {
-            EventHandler handler = TimerCycle;
-            if (handler != null) 
+            EventHandler handler = TimerTick;
+            if (handler != null)
                 handler(this, e);
         }
     }
@@ -134,9 +131,17 @@ namespace x86CS.Devices
         {
             counters = new Counter[3];
             counters[0] = new Counter();
-            counters[0].TimerCycle += PIT8253TimerCycle;
+            counters[0].TimerTick += PIT8253TimerCycle;
             counters[1] = new Counter();
             counters[2] = new Counter();
+        }
+
+        public void Cycle(double frequency, ulong timerTicks)
+        {
+            foreach(Counter counter in counters)
+            {
+                counter.Cycle(frequency, timerTicks);
+            }
         }
 
         void PIT8253TimerCycle(object sender, EventArgs e)
