@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace x86CS.Devices
 {
@@ -11,6 +12,14 @@ namespace x86CS.Devices
         private bool expectICW4;
         private byte linkIRQ;
 
+        public byte VectorBase { get; private set; }
+        public byte MaskRegister { get; set; }
+        public bool Init { get; set; }
+        public byte CommandRegister { get; set; }
+        public byte StatusRegister { get; private set; }
+        public byte DataRegister { get; private set; }
+        public bool EOIPending { get; set; }
+
         public PIController()
         {
             MaskRegister = 0xff;
@@ -18,14 +27,9 @@ namespace x86CS.Devices
             Init = false;
             StatusRegister = 0;
             DataRegister = 0;
+            EOIPending = false;
         }
 
-        public byte VectorBase { get; private set; }
-        public byte MaskRegister { get; set; }
-        public bool Init { get; set; }
-        public byte CommandRegister { get; set; }
-        public byte StatusRegister { get; private set; }
-        public byte DataRegister { get; private set;  }
 
         public void ProcessICW(byte icw)
         {
@@ -102,8 +106,12 @@ namespace x86CS.Devices
             Debug.Assert(controller != null, "controller != null");
             if (!controller.Init)
                 controller.ProcessICW((byte)value);
-            else if (addr % 10 == 0)
+            else if (addr % 0x10 == 0)
+            {
+                if (value == 0x20)
+                    controller.EOIPending = false;
                 controller.CommandRegister = (byte)value;
+            }
             else
                 controller.MaskRegister = (byte)value;
         }
@@ -113,9 +121,21 @@ namespace x86CS.Devices
             PIController controller = irq < 8 ? controllers[0] : controllers[1];
 
             if (((controller.MaskRegister >> irq) & 0x1) == 0x0)
+            {
+                if (controller.EOIPending)
+                    return -1;
+
+                controller.EOIPending = true;
                 return controller.VectorBase + irq;
-     
+            }
+
             return -1;
+        }
+
+        public void AckAll()
+        {
+            controllers[0].EOIPending = false;
+            controllers[1].EOIPending = false;
         }
     }
 }

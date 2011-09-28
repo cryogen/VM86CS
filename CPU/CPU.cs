@@ -298,7 +298,7 @@ namespace x86CS.CPU
         public bool IF
         {
             get { return GetFlag(CPUFlags.IF); }
-            set { SetFlag(CPUFlags.OF, value); }
+            set { SetFlag(CPUFlags.IF, value); }
         }
 
         public bool DF
@@ -1151,9 +1151,6 @@ namespace x86CS.CPU
 
         public void Interrupt(int vector, int irq)
         {
-            if(!IF)
-                return;
-
             inInterrupt = true;
             externalInt = true;
             interruptToRun = (byte)vector;
@@ -2813,6 +2810,8 @@ namespace x86CS.CPU
                         ProcedureEnter(destWord, sourceByte);
                         break;
                     case 0xf4:
+                        if(!IF)
+                            throw new Exception("HLT with interrupt disabled");
                         Halted = true;
                         break;
                     case 0xf5:

@@ -76,7 +76,6 @@ namespace x86CS
         private int opLen;
         private byte opCode;
         private readonly MachineForm machineForm = new MachineForm();
-        private ulong timerTicks;
 
         public string Operation { get; private set; }
         public Stack<char> KeyPresses { get; set; }
@@ -131,7 +130,12 @@ namespace x86CS
             if (vector == -1)
                 return;
 
-            CPU.Interrupt(vector, 0);
+            if(!CPU.IF)
+            {
+                pic.AckAll();
+            }
+            else
+                CPU.Interrupt(vector, 0);
         }
 
         private void MachineFormPaint(object sender, PaintEventArgs e)
@@ -294,11 +298,11 @@ namespace x86CS
                 string tempOpStr;
 
                 pit.Cycle(frequency, timerTicks);
+                if (!CPU.Halted)
+                    logFile.WriteLine(Operation);
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
-                if(!CPU.Halted)
-                    logFile.WriteLine(Operation);
                 machineForm.Invalidate();
             }
         }
