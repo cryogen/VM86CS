@@ -66,6 +66,7 @@ namespace x86CS.Devices
         public void AckInterrupt(byte irq)
         {
             requestRegister &= (byte)~(1 << irq);
+            inServiceRegister |= (byte)(1 << irq);
         }
 
         public void EOI()
