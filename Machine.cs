@@ -60,8 +60,6 @@ namespace x86CS
 
     public class Machine
     {
-        public event EventHandler<TextEventArgs> WriteText;
-        public event EventHandler<CharEventArgs> WriteChar;
         private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
         private Dictionary<ushort, IOEntry> ioPorts;
         private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("machinelog.txt"));
@@ -82,20 +80,6 @@ namespace x86CS
         public Floppy FloppyDrive { get; private set; }
         public bool Running { get; private set; }
         public CPU.CPU CPU { get; private set; }
-
-        public void OnWriteText(TextEventArgs e)
-        {
-            var handler = WriteText;
-            if (handler != null)
-                handler(this, e);
-        }
-
-        public void OnWriteChar(CharEventArgs e)
-        {
-            var handler = WriteChar;
-            if (handler != null)
-                handler(this, e);
-        }
 
         public Machine()
         {
@@ -303,7 +287,8 @@ namespace x86CS
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
-                machineForm.Invalidate();
+                if(timerTicks % 10000 == 0)
+                    machineForm.Invalidate();
             }
         }
     }

@@ -885,7 +885,12 @@ namespace x86CS.CPU
 
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
-                    address += (uint)(int)rmData.Displacement;
+                {
+                    if (address + (int)rmData.Displacement < 0)
+                        address += (ushort)(int)rmData.Displacement;
+                    else
+                        address += (uint)(int)rmData.Displacement;
+                }
 
                 if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
                     segToUse = overrideSegment;

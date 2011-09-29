@@ -17,6 +17,7 @@ namespace x86CS.Devices
             registers[0x06] = Util.ToBCD((int)currTime.DayOfWeek);
             registers[0x08] = Util.ToBCD(currTime.Month);
             registers[0x09] = Util.ToBCD(currTime.Year);
+            registers[0x10] = 0x40;  /* 1.44M floppy drive */
             registers[0x0a] = 0x26;  /* default 32.768 divider and default rate selection */
             registers[0x0b] = 0x02;  /* no DST, 24 hour clock, BCD, all flags cleared */
             registers[0x0c] = 0x00;  /* all int flags cleared */
