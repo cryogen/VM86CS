@@ -1,12 +1,39 @@
-﻿namespace x86CS.Devices
+﻿using System;
+
+namespace x86CS.Devices
 {
-    public class DMA
+    public class DMA : IDevice
     {
+        private readonly int[] portsUsed = {0x80};
         private readonly byte[] extraPageRegisters;
+
+        private const int IrqNumber = -1;
+        private const int DmaChannel = -1;
 
         public DMA()
         {
             extraPageRegisters = new byte[16];
+        }
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return IrqNumber; }
+        }
+
+        public int DMAChannel
+        {
+            get { return DmaChannel; }
+        }
+
+        public event EventHandler IRQ;
+
+        public void Cycle(double frequency, ulong tickCount)
+        {
         }
 
         public ushort Read(ushort address)

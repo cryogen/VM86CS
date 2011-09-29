@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 
 namespace x86CS.Devices
@@ -57,15 +58,40 @@ namespace x86CS.Devices
         }
     }
 
-    public class PIC8259
+    public class PIC8259 : IDevice
     {
+        private readonly int[] portsUsed = { 0x20, 0x21, 0xa0, 0xa1 };
         private readonly PIController[] controllers;
+
+        private const int IrqNumber = -1;
+        private const int DmaChannel = -1;
 
         public PIC8259()
         {
             controllers = new PIController[2];
             controllers[0] = new PIController();
             controllers[1] = new PIController();
+        }
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return IrqNumber; }
+        }
+
+        public int DMAChannel
+        {
+            get { return DmaChannel; }
+        }
+
+        public event EventHandler IRQ;
+
+        public void Cycle(double frequency, ulong tickCount)
+        {
         }
 
         public ushort Read(ushort addr)

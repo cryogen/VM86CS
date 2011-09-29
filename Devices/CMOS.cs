@@ -2,10 +2,14 @@
 
 namespace x86CS.Devices
 {
-    public class CMOS
+    public class CMOS : IDevice
     {
+        private readonly int[] portsUsed = {0x70, 0x71};
         private readonly byte[] registers = new byte[0x7b];
         private byte currentReg;
+
+        private const int IrqNumber = -1;
+        private const int DmaChannel = -1;
 
         public CMOS()
         {
@@ -25,6 +29,27 @@ namespace x86CS.Devices
             registers[0x14] = 0x05;  /* Machine config byte */
             registers[0x3d] = 0x21;  /* 1st and 2nd boot devices */
             registers[0x38] = 0x00;  /* 3rd boot device */
+        }
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return IrqNumber; }
+        }
+
+        public int DMAChannel
+        {
+            get { return DmaChannel; }
+        }
+
+        public event EventHandler IRQ;
+
+        public void Cycle(double frequency, ulong tickCount)
+        {
         }
 
         public ushort Read(ushort addr)

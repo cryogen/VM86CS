@@ -2,9 +2,36 @@
 
 namespace x86CS.Devices
 {
-    public class Misc
+    public class Misc : IDevice
     {
+        private readonly int[] portsUsed = { 0x92, 0x402, 0x500 };
         private sbyte controlPortA;
+
+// ReSharper disable InconsistentNaming
+        private const int irqNumber = -1;
+        private const int dmaChannel = -1;
+        // ReSharper restore InconsistentNaming
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return irqNumber; }
+        }
+
+        public int DMAChannel
+        {
+            get { return dmaChannel; }
+        }
+
+        public event EventHandler IRQ;
+
+        public void Cycle(double frequency, ulong tickCount)
+        {
+        }
 
         public ushort Read(ushort addr)
         {

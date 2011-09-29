@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Threading;
-using System.Diagnostics;
 
 namespace x86CS.Devices
 {
@@ -114,18 +112,21 @@ namespace x86CS.Devices
         }
     }
 
-    public class PIT8253
+    public class PIT8253 : IDevice
     {
+        private readonly int[] portsUsed = {0x40, 0x41, 0x42, 0x43};
         private readonly Counter[] counters;
 
-        public event EventHandler InteruptRequested;
+        private int irqNumber;
+        private int dmaChannel;
 
-        public void OnInteruptRequested(EventArgs e)
+        public int DMAChannel
         {
-            EventHandler handler = InteruptRequested;
-            if (handler != null) 
-                handler(this, e);
+            get { return dmaChannel; }
+            set { dmaChannel = value; }
         }
+
+        public event EventHandler IRQ;
 
         public PIT8253()
         {
@@ -146,7 +147,24 @@ namespace x86CS.Devices
 
         void PIT8253TimerCycle(object sender, EventArgs e)
         {
-            OnInteruptRequested(e);
+            OnIRQ(e);
+        }
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return irqNumber; }
+        }
+
+        public void OnIRQ(EventArgs e)
+        {
+            EventHandler handler = IRQ;
+            if (handler != null) 
+                handler(this, e);
         }
 
         public ushort Read(ushort address)

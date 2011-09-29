@@ -4,18 +4,19 @@ using System.Runtime.InteropServices;
 
 namespace x86CS.Devices
 {
-    public class Floppy
+    public class Floppy : IDevice
     {
         private FileStream floppyStream;
         private BinaryReader floppyReader;
-        private readonly StreamWriter logFile = File.CreateText("floppy.txt");
+        private readonly int[] portsUsed = { 0x3f0, 0x3f1, 0x3f2, 0x3f4, 0x3f5, 0x3f7 };
 
+        private const int IrqNumber = 6;
+        private const int DmaChannel = 2;
         public bool Mounted { get; private set; }
 
         public Floppy()
         {
             Mounted = false;
-            logFile.AutoFlush = true;
         }
 
         public bool MountImage(string imagePath)
@@ -33,90 +34,48 @@ namespace x86CS.Devices
                 return false;
             }
 
-            logFile.WriteLine("Mounted image file {0}", imagePath);
             Mounted = true;
             return true;
         }
 
-        public byte ReadByte()
+        #region IDevice Members
+
+        public void Cycle(double frequency, ulong tickCount)
         {
-            byte ret = floppyReader.ReadByte();
-
-            logFile.WriteLine(String.Format("Floppy Read Byte {0:X4} {1:X2}", floppyReader.BaseStream.Position, ret));
-
-            return ret;
+            
         }
 
-        public ushort ReadWord()
+        public ushort Read(ushort addr)
         {
-            ushort ret = floppyReader.ReadUInt16();
-
-            logFile.WriteLine(String.Format("Floppy Read Word {0:X4} {1:X4}", floppyReader.BaseStream.Position, ret));
-
-            return ret;
+            return 0;
         }
 
-        public byte[] ReadBytes(int count)
+        public void Write(ushort addr, ushort value)
         {
-            byte[] ret = floppyReader.ReadBytes(count);
-
-            logFile.WriteLine(String.Format("Floppy Read Bytes {0:X4} {1}", floppyReader.BaseStream.Position, count));
-
-            return ret;
+            
         }
 
-        public void Reset()
+        #endregion
+
+        #region IDevice Members
+
+        public int[] PortsUsed
         {
-            logFile.WriteLine("Floppy RESET");
-            floppyStream.Seek(0, SeekOrigin.Begin);
+            get { return portsUsed; }
         }
 
-        public byte[] ReadSector(int offset)
+        public int IRQNumber
         {
-            floppyStream.Seek(offset * 512, SeekOrigin.Begin);
-            logFile.WriteLine("Floppy Read Sector {0:X4}", offset);
-            return floppyReader.ReadBytes(512);
-        }
-    }
-
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct DisketteParamTable
-    {
-        private byte stepRateHeadUnload;
-        private byte dmaHeadLoad;
-
-        public byte StepRate
-        {
-            get { return stepRateHeadUnload.GetHigh(); }
-            set { stepRateHeadUnload = stepRateHeadUnload.SetHigh(value); }
+            get { return IrqNumber; }
         }
 
-        public byte HeadUnload
+        public int DMAChannel
         {
-            get { return stepRateHeadUnload.GetLow(); }
-            set { stepRateHeadUnload = stepRateHeadUnload.SetLow(value); }
+            get { return DmaChannel; }
         }
 
-        public byte HeadLoad
-        {
-            get { return (byte)((dmaHeadLoad >> 2) & 0x3f); }
-            set { dmaHeadLoad = (byte)(((value & 0x3f) << 2) + (dmaHeadLoad & 0x01)); }
-        }
+        public event EventHandler IRQ;
 
-        public byte DMA
-        {
-            get { return (byte)(dmaHeadLoad & 0x01); }
-            set { dmaHeadLoad = (byte)((dmaHeadLoad & 0xfc) + (value & 0x01)); }
-        }
-
-        public byte MotorOff;
-        public byte SectorSize;
-        public byte LastTrack;
-        public byte GapLength;
-        public byte DataXferLength;
-        public byte FormatGapLength;
-        public byte FillChar;
-        public byte HeadSettle;
-        public byte MotorOn;
+        #endregion
     }
 }

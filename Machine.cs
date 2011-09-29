@@ -61,41 +61,35 @@ namespace x86CS
     public class Machine
     {
         private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
-        private Dictionary<ushort, IOEntry> ioPorts;
         private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("machinelog.txt"));
-        private readonly CMOS cmos;
-        private readonly Misc misc;
-        private readonly PIT8253 pit;
-        private readonly Keyboard keyboard;
-        private readonly DMA dma;
-        private readonly PIC8259 pic;
-        private readonly VGA vga = new VGA();
+        private readonly MachineForm machineForm = new MachineForm();
+        private readonly IDevice[] devices;
+        private readonly PIC8259 picDevice;
+        private readonly VGA vgaDevice;
+
+        private Dictionary<ushort, IOEntry> ioPorts;
         private object[] operands;
         private int opLen;
         private byte opCode;
-        private readonly MachineForm machineForm = new MachineForm();
 
         public string Operation { get; private set; }
-        public Stack<char> KeyPresses { get; set; }
         public Floppy FloppyDrive { get; private set; }
         public bool Running { get; private set; }
         public CPU.CPU CPU { get; private set; }
 
         public Machine()
         {
-            CPU = new CPU.CPU();
-            KeyPresses = new Stack<char>();
-            Operation = "";
-            FloppyDrive = new Floppy();
-            cmos = new CMOS();
-            misc = new Misc();
-            pit = new PIT8253();
-            keyboard = new Keyboard();
-            dma = new DMA();
-            pic = new PIC8259();
-            vga = new VGA();
+            picDevice = new PIC8259();
+            vgaDevice = new VGA();
 
-            pit.InteruptRequested += PITInteruptRequested;
+            devices = new IDevice[]
+                          {
+                              new Floppy(), new CMOS(), new Misc(), new PIT8253(), picDevice, new Keyboard(), new DMA(),
+                              vgaDevice
+                          };
+
+            CPU = new CPU.CPU();
+            Operation = "";
 
             SetupSystem();
 
@@ -107,24 +101,30 @@ namespace x86CS
             machineForm.BringToFront();
         }
 
-        void PITInteruptRequested(object sender, EventArgs e)
+        void IRQRaised(object sender, EventArgs e)
         {
-            int vector = pic.FindInterruptVector(0);
+            IDevice device = sender as IDevice;
+
+            if (device == null)
+                return;
+
+            int vector = picDevice.FindInterruptVector(device.IRQNumber);
 
             if (vector == -1)
                 return;
 
             if(!CPU.IF)
             {
-                pic.AckAll();
+                picDevice.AckAll();
+                return;
             }
-            else
-                CPU.Interrupt(vector, 0);
+
+            CPU.Interrupt(vector, device.IRQNumber);
         }
 
         private void MachineFormPaint(object sender, PaintEventArgs e)
         {
-           vga.GDIDraw(e.Graphics);
+           vgaDevice.GDIDraw(e.Graphics);
         }
 
         private void SetupIOEntry(ushort port, ReadCallback read, WriteCallback write)
@@ -185,41 +185,15 @@ namespace x86CS
         {
             ioPorts = new Dictionary<ushort, IOEntry>();
 
-            SetupIOEntry(0x20, pic.Read, pic.Write);
-            SetupIOEntry(0x21, pic.Read, pic.Write);
-            SetupIOEntry(0x40, pit.Read, pit.Write);
-            SetupIOEntry(0x41, pit.Read, pit.Write);
-            SetupIOEntry(0x42, pit.Read, pit.Write);
-            SetupIOEntry(0x43, pit.Read, pit.Write);
-            SetupIOEntry(0x60, keyboard.Read, keyboard.Write);
-            SetupIOEntry(0x64, keyboard.Read, keyboard.Write);
-            SetupIOEntry(0x70, cmos.Read, cmos.Write);
-            SetupIOEntry(0x71, cmos.Read, cmos.Write);
-            SetupIOEntry(0x80, dma.Read, dma.Write);
-            SetupIOEntry(0x92, misc.Read, misc.Write);
-            SetupIOEntry(0xa0, pic.Read, pic.Write);
-            SetupIOEntry(0xa1, pic.Read, pic.Write);
-            SetupIOEntry(0x3b4, vga.Read, vga.Write);
-            SetupIOEntry(0x3b5, vga.Read, vga.Write);
-            SetupIOEntry(0x3ba, vga.Read, vga.Write);
-            SetupIOEntry(0x3c0, vga.Read, vga.Write);
-            SetupIOEntry(0x3c1, vga.Read, vga.Write);
-            SetupIOEntry(0x3c2, vga.Read, vga.Write);
-            SetupIOEntry(0x3c4, vga.Read, vga.Write);
-            SetupIOEntry(0x3c5, vga.Read, vga.Write);
-            SetupIOEntry(0x3c7, vga.Read, vga.Write);
-            SetupIOEntry(0x3c8, vga.Read, vga.Write);
-            SetupIOEntry(0x3c9, vga.Read, vga.Write);
-            SetupIOEntry(0x3ca, vga.Read, vga.Write);
-            SetupIOEntry(0x3cc, vga.Read, vga.Write);
-            SetupIOEntry(0x3d4, vga.Read, vga.Write);
-            SetupIOEntry(0x3d5, vga.Read, vga.Write);
-            SetupIOEntry(0x3da, vga.Read, vga.Write);
-            SetupIOEntry(0x402, misc.Read, misc.Write);
-            SetupIOEntry(0x500, misc.Read, misc.Write);
-
             LoadBIOS();
             LoadVGABios();
+
+            foreach(IDevice device in devices)
+            {
+                device.IRQ += IRQRaised;
+                foreach(int port in device.PortsUsed)
+                    SetupIOEntry((ushort)port, device.Read, device.Write);
+            }
 
             CPU.CS = 0xf000;
             CPU.IP = 0xfff0;
@@ -281,7 +255,8 @@ namespace x86CS
             {
                 string tempOpStr;
 
-                pit.Cycle(frequency, timerTicks);
+                foreach(IDevice device in devices)
+                    device.Cycle(frequency, timerTicks);
                 if (!CPU.Halted)
                     logFile.WriteLine(Operation);
                 CPU.Cycle(opLen, opCode, operands);

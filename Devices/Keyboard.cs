@@ -16,14 +16,18 @@ namespace x86CS.Devices
         ParityError = 0x80
     }
 
-    public class Keyboard
+    public class Keyboard : IDevice
     {
+        private readonly int[] portsUsed = {0x60, 0x64};
         private readonly Queue<byte> outputBuffer;
         private byte inputBuffer;
         private byte commandByte;
         private KeyboardFlags statusRegister;
         private bool enabled;
         private bool setCommandByte;
+
+        private const int IrqNumber = -1;
+        private const int DmaChannel = -1;
 
         public Keyboard()
         {
@@ -71,6 +75,27 @@ namespace x86CS.Devices
                         break;
                 }
             }
+        }
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return IrqNumber; }
+        }
+
+        public int DMAChannel
+        {
+            get { return DmaChannel; }
+        }
+
+        public event EventHandler IRQ;
+
+        public void Cycle(double frequency, ulong tickCount)
+        {
         }
 
         public ushort Read(ushort address)

@@ -88,6 +88,7 @@
     <Compile Include="CPU\Strings.cs" />
     <Compile Include="Devices\DMA.cs" />
     <Compile Include="Devices\Floppy.cs" />
+    <Compile Include="Devices\IDevice.cs" />
     <Compile Include="Devices\Keyboard.cs" />
     <Compile Include="Devices\Misc.cs" />
     <Compile Include="Devices\PIC8259.cs" />
