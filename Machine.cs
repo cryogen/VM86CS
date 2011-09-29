@@ -81,10 +81,11 @@ namespace x86CS
         {
             picDevice = new PIC8259();
             vgaDevice = new VGA();
+            FloppyDrive = new Floppy();
 
             devices = new IDevice[]
                           {
-                              new Floppy(), new CMOS(), new Misc(), new PIT8253(), picDevice, new Keyboard(), new DMA(),
+                              FloppyDrive, new CMOS(), new Misc(), new PIT8253(), picDevice, new Keyboard(), new DMA(),
                               vgaDevice
                           };
 
@@ -108,18 +109,7 @@ namespace x86CS
             if (device == null)
                 return;
 
-            int vector = picDevice.FindInterruptVector(device.IRQNumber);
-
-            if (vector == -1)
-                return;
-
-            if(!CPU.IF)
-            {
-                picDevice.AckAll();
-                return;
-            }
-
-            CPU.Interrupt(vector, device.IRQNumber);
+            picDevice.RequestInterrupt((byte)device.IRQNumber);
         }
 
         private void MachineFormPaint(object sender, PaintEventArgs e)
@@ -254,11 +244,21 @@ namespace x86CS
             if (Running)
             {
                 string tempOpStr;
+                int irq, vector;
 
                 foreach(IDevice device in devices)
                     device.Cycle(frequency, timerTicks);
                 if (!CPU.Halted)
                     logFile.WriteLine(Operation);
+
+                if(picDevice.InterruptService(out irq, out vector))
+                {
+                    if(CPU.IF)
+                    {
+                        CPU.Interrupt(vector, irq);
+                        picDevice.AckInterrupt((byte)irq);
+                    }
+                }
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);

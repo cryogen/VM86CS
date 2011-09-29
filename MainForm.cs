@@ -10,7 +10,6 @@ namespace x86CS
     public partial class MainForm : Form
     {
         private readonly Machine machine;
-        private readonly string[] screenText = new string[25];
         private bool stepping;
         private readonly Thread machineThread;
         private readonly Breakpoints breakpoints = new Breakpoints();
@@ -30,14 +29,10 @@ namespace x86CS
 
             PrintRegisters();
 
+            machine.FloppyDrive.MountImage(@"C:\Downloads\Apps\MS-DOS 6.22\Disk 1.img");
             
             machineThread = new Thread(RunMachine);
             machineThread.Start();
-
-            for (int i = 0; i < screenText.Length; i++)
-            {
-                screenText[i] = new string(' ', 80);
-            }
         }
 
         void ApplicationApplicationExit(object sender, EventArgs e)

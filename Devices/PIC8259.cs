@@ -19,7 +19,6 @@ namespace x86CS.Devices
         public byte CommandRegister { get; set; }
         public byte StatusRegister { get; private set; }
         public byte DataRegister { get; private set; }
-        public bool EOIPending { get; set; }
 
         public PIController()
         {
@@ -28,9 +27,51 @@ namespace x86CS.Devices
             Init = false;
             StatusRegister = 0;
             DataRegister = 0;
-            EOIPending = false;
+            inServiceRegister = 0;
         }
 
+        public bool RequestInterrupt(byte irq)
+        {
+            if (((inServiceRegister >> irq) & 0x1) != 0)
+                return false;
+
+            if(((requestRegister >> irq) & 0x1) != 0)
+                return false;
+
+            requestRegister |= (byte)(1 << irq);
+
+            return true;
+        }
+
+        public int LowestRunning()
+        {
+            for(int i = 0; i < 8; i++)
+            {
+                if(((inServiceRegister >> i) & 0x1) == 0x1)
+                    return i;
+            }
+            return -1;
+        }
+
+        public int LowestPending()
+        {
+            for(int i = 0; i < 8; i++)
+            {
+                if(((requestRegister >> i) & 0x1) == 0x1)
+                    return i;
+            }
+            return -1;
+        }
+
+        public void AckInterrupt(byte irq)
+        {
+            requestRegister &= (byte)~(1 << irq);
+        }
+
+        public void EOI()
+        {
+            inServiceRegister = 0;
+        }
 
         public void ProcessICW(byte icw)
         {
@@ -90,8 +131,66 @@ namespace x86CS.Devices
 
         public event EventHandler IRQ;
 
+        public bool RequestInterrupt(byte irq)
+        {
+            PIController controller = irq < 8 ? controllers[0] : controllers[1];
+
+            if (((controller.MaskRegister >> irq & 0x1)) != 0)
+                return false;
+
+            return controller.RequestInterrupt(irq);
+        }
+
         public void Cycle(double frequency, ulong tickCount)
         {
+        }
+
+        private int LowestRunningInt()
+        {
+            int ret = controllers[0].LowestRunning();
+            return ret == -1 ? controllers[1].LowestRunning() : ret;
+        }
+
+        private int LowestPending()
+        {
+            int ret = controllers[0].LowestPending();
+            return ret == -1 ? controllers[1].LowestPending() : ret;
+        }
+
+        public bool InterruptService(out int irq, out int vector)
+        {
+            int runningIRQ = LowestRunningInt();
+            int pendingIRQ = LowestPending();
+
+            if(pendingIRQ == -1)
+            {
+                irq = 0;
+                vector = 0;
+                return false;
+            }
+
+            if(runningIRQ < 0)
+            {
+                irq = pendingIRQ;
+                if(irq < 8)
+                    vector = controllers[0].VectorBase + irq;
+                else
+                    vector = controllers[1].VectorBase + irq;
+
+                return true;
+            }
+
+            irq = 0;
+            vector = 0;
+            return false;
+        }
+
+        public void AckInterrupt(byte irq)
+        {
+            if(irq < 8)
+                controllers[0].AckInterrupt(irq);
+            else
+                controllers[1].AckInterrupt(irq);
         }
 
         public ushort Read(ushort addr)
@@ -135,33 +234,11 @@ namespace x86CS.Devices
             else if (addr % 0x10 == 0)
             {
                 if (value == 0x20)
-                    controller.EOIPending = false;
+                    controller.EOI();
                 controller.CommandRegister = (byte)value;
             }
             else
                 controller.MaskRegister = (byte)value;
-        }
-
-        public int FindInterruptVector(int irq)
-        {
-            PIController controller = irq < 8 ? controllers[0] : controllers[1];
-
-            if (((controller.MaskRegister >> irq) & 0x1) == 0x0)
-            {
-                if (controller.EOIPending)
-                    return -1;
-
-                controller.EOIPending = true;
-                return controller.VectorBase + irq;
-            }
-
-            return -1;
-        }
-
-        public void AckAll()
-        {
-            controllers[0].EOIPending = false;
-            controllers[1].EOIPending = false;
         }
     }
 }
