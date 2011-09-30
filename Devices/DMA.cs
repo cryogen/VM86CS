@@ -48,9 +48,9 @@ namespace x86CS.Devices
         public void DoTransfer(int channel, byte[] data)
         {
             ushort address = memAddress[channel];
-            ushort length = count[channel];
+            ushort length = count[channel+1];
 
-            Memory.BlockWrite(address, data, length);
+            Memory.BlockWrite(address, data, length+1);
         }
 
         public void Cycle(double frequency, ulong tickCount)

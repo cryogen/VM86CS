@@ -80,6 +80,7 @@ namespace x86CS.Devices
             sector = floppyReader.ReadBytes(512);
 
             resultCount = 7;
+            resultIdx = 0;
             data[0] = 0;
             data[1] = 0;
             data[2] = 0;
@@ -90,8 +91,8 @@ namespace x86CS.Devices
 
             OnDMA(new Util.ByteArrayEventArgs(sector));
 
-            statusZero = 0x20;
-            interruptInProgress = true;
+            mainStatus |= MainStatus.DIO;
+            statusZero = 0;
 
             OnIRQ(new EventArgs());
         }
