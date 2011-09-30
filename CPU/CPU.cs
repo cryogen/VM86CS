@@ -13,7 +13,7 @@ namespace x86CS.CPU
         private CPUFlags eFlags;
         public event ReadCallback IORead;
         public event WriteCallback IOWrite;
-        private readonly StreamWriter logFile = File.CreateText("cpulog.txt");
+        private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("cpulog.txt"));
         private TableRegister idtRegister, gdtRegister;
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
@@ -468,7 +468,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
+//            logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
 
             Memory.WriteByte(virtAddr, value);
         }
@@ -477,7 +477,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
+//            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
 
             Memory.WriteWord(virtAddr, value);
         }
@@ -486,7 +486,7 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
+//            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
 
             Memory.WriteDWord(virtAddr, value);
         }
@@ -1143,6 +1143,9 @@ namespace x86CS.CPU
 
         private void CallInterrupt(byte vector)
         {
+            //if(externalInt)
+                logFile.WriteLine("Calling interrupt {0:X}, CS {1:X} EIP {2:X} ESP {3:X}", vector, CS, EIP, ESP);
+
             StackPush((ushort)Flags);
             IF = false;
             TF = false;
@@ -2721,6 +2724,8 @@ namespace x86CS.CPU
                             CallInterrupt(4);
                         break;
                     case 0xcf:
+                  //      if(externalInt)
+                            logFile.WriteLine("returning from interrupt CS {0:X} EIP {1:X} ESP {2:X}", CS, EIP, ESP);
                         if (opSize == 32)
                             EIP = StackPop();
                         else
@@ -2728,6 +2733,9 @@ namespace x86CS.CPU
                         CS = (ushort)StackPop();
                         eFlags = (CPUFlags)StackPop();
                         IF = true;
+                   //     if(externalInt)
+                            logFile.WriteLine("popped stack CS {0:X} EIP {1:X} ESP {2:X}", CS, EIP, ESP);
+                       // externalInt = false;
                         break;
                     case 0xe0:
                         CX--;

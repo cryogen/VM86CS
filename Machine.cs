@@ -230,6 +230,7 @@ namespace x86CS
         public void FlushLog()
         {
             logFile.Flush();
+            CPU.FlushLog();
         }
 
         public void RunCycle(double frequency, ulong timerTicks)
