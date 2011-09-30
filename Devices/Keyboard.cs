@@ -16,7 +16,7 @@ namespace x86CS.Devices
         ParityError = 0x80
     }
 
-    public class Keyboard : IDevice
+    public class Keyboard : IDevice, INeedsIRQ
     {
         private readonly int[] portsUsed = {0x60, 0x64};
         private readonly Queue<byte> outputBuffer;
@@ -26,13 +26,31 @@ namespace x86CS.Devices
         private bool enabled;
         private bool setCommandByte;
 
-        private const int IrqNumber = -1;
-        private const int DmaChannel = -1;
+        private const int IrqNumber = 1;
+
+        public event EventHandler IRQ;
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return IrqNumber; }
+        }
 
         public Keyboard()
         {
             statusRegister |= KeyboardFlags.UnLocked;
             outputBuffer = new Queue<byte>();
+        }
+
+        public void OnIRQ(EventArgs e)
+        {
+            EventHandler handler = IRQ;
+            if (handler != null) 
+                handler(this, e);
         }
 
         private void SetStatusCode(byte status)
@@ -75,28 +93,6 @@ namespace x86CS.Devices
                         break;
                 }
             }
-        }
-
-        public int[] PortsUsed
-        {
-            get { return portsUsed; }
-        }
-
-        public int IRQNumber
-        {
-            get { return IrqNumber; }
-        }
-
-        public int DMAChannel
-        {
-            get { return DmaChannel; }
-        }
-
-        public event EventHandler IRQ;
-        public event EventHandler<Util.ByteArrayEventArgs> DMA;
-
-        public void Cycle(double frequency, ulong tickCount)
-        {
         }
 
         public ushort Read(ushort address)

@@ -3,7 +3,7 @@ using System.IO;
 
 namespace x86CS.Devices
 {
-    public class Floppy : IDevice
+    public class Floppy : IDevice, INeedsIRQ, INeedsDMA
     {
         private const int IrqNumber = 6;
         private const int DmaChannel = 2;
@@ -29,6 +29,21 @@ namespace x86CS.Devices
 
         public event EventHandler IRQ;
         public event EventHandler<Util.ByteArrayEventArgs> DMA;
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return IrqNumber; }
+        }
+
+        public int DMAChannel
+        {
+            get { return DmaChannel; }
+        }
 
 
         public Floppy()
@@ -166,11 +181,6 @@ namespace x86CS.Devices
 
         #region IDevice Members
 
-        public void Cycle(double frequency, ulong tickCount)
-        {
-
-        }
-
         public ushort Read(ushort addr)
         {
             byte ret;
@@ -205,25 +215,6 @@ namespace x86CS.Devices
                 default:
                     break;
             }
-        }
-
-        #endregion
-
-        #region IDevice Members
-
-        public int[] PortsUsed
-        {
-            get { return portsUsed; }
-        }
-
-        public int IRQNumber
-        {
-            get { return IrqNumber; }
-        }
-
-        public int DMAChannel
-        {
-            get { return DmaChannel; }
         }
 
         #endregion

@@ -4,7 +4,7 @@ using System.Drawing.Imaging;
 
 namespace x86CS.Devices
 {
-    public class VGA : IDevice
+    public class VGA : IDevice, INeedsClock, INeedsMMIO
     {
         private enum SequenceRegister
         {
@@ -19,6 +19,8 @@ namespace x86CS.Devices
                                                0x3b4, 0x3b5, 0x3ba, 0x3c0, 0x3c1, 0x3c2, 0x3c4, 0x3c5, 0x3c7, 0x3c8, 0x3c9,
                                                0x3ca, 0x3cc, 0x3d4, 0x3d5, 0x3da
                                            };
+
+        private readonly MemoryMapRegion[] memoryMap;
         private readonly byte[] sequencer;
         private readonly Color[] dacPalette;
         private readonly byte[] dacColour;
@@ -33,8 +35,15 @@ namespace x86CS.Devices
         private byte currColor;
         private bool attributeControlFlipFlop;
 
-        private const int IrqNumber = -1;
-        private const int DmaChannel = -1;
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public MemoryMapRegion[] MemoryMap
+        {
+            get { return memoryMap; }
+        }
 
         public VGA()
         {
@@ -46,8 +55,6 @@ namespace x86CS.Devices
             attributeControl = new byte[0x15];
             crtControl = new byte[0x19];
         }
-
-        public event EventHandler<Util.ByteArrayEventArgs> DMA;
 
         public void Cycle(double frequency, ulong tickCount)
         {
@@ -164,26 +171,5 @@ namespace x86CS.Devices
 
             g.DrawImage(screenBitmap, 0, 0);
         }
-
-        #region IDevice Members
-
-        public int[] PortsUsed
-        {
-            get { return portsUsed; }
-        }
-
-        public int IRQNumber
-        {
-            get { return IrqNumber; }
-        }
-
-        public int DMAChannel
-        {
-            get { return DmaChannel; }
-        }
-
-        public event EventHandler IRQ;
-
-        #endregion
     }
 }

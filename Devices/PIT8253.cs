@@ -2,6 +2,89 @@
 
 namespace x86CS.Devices
 {
+    public class PIT8253 : IDevice, INeedsIRQ, INeedsClock
+    {
+        private const int IrqNumber = 0;
+
+        private readonly int[] portsUsed = { 0x40, 0x41, 0x42, 0x43 };
+        private readonly Counter[] counters;
+
+        public event EventHandler IRQ;
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
+
+        public int IRQNumber
+        {
+            get { return IrqNumber; }
+        }
+
+        public PIT8253()
+        {
+            counters = new Counter[3];
+            counters[0] = new Counter();
+            counters[0].TimerTick += PIT8253TimerCycle;
+            counters[1] = new Counter();
+            counters[2] = new Counter();
+        }
+
+        public void Cycle(double frequency, ulong timerTicks)
+        {
+            foreach (Counter counter in counters)
+            {
+                counter.Cycle(frequency, timerTicks);
+            }
+        }
+
+        void PIT8253TimerCycle(object sender, EventArgs e)
+        {
+            OnIRQ(e);
+        }
+
+        public void OnIRQ(EventArgs e)
+        {
+            EventHandler handler = IRQ;
+            if (handler != null)
+                handler(this, e);
+        }
+
+        public ushort Read(ushort address)
+        {
+            switch (address)
+            {
+                case 0x43:
+                    return 0xffff;
+                default:
+                    break;
+            }
+
+            return 0;
+        }
+
+        public void Write(ushort address, ushort value)
+        {
+            switch (address)
+            {
+                case 0x40:
+                    counters[0].Reload = value;
+                    break;
+                case 0x43:
+
+                    var bcdMode = (byte)(value & 0x1);
+                    var operatingMode = (byte)((value >> 1) & 0x7);
+                    var accessMode = (byte)((value >> 4) & 0x3);
+                    var channel = (byte)((value >> 6) & 0x3);
+
+                    counters[channel].AccessMode = (AccessMode)accessMode;
+                    counters[channel].OperatingMode = (OperatingMode)operatingMode;
+                    counters[channel].BCDMode = (bcdMode == 1);
+                    break;
+            }
+        }
+    }
+
     public enum OperatingMode
     {
         InterruptOnTerminalCount = 0,
@@ -109,92 +192,6 @@ namespace x86CS.Devices
             EventHandler handler = TimerTick;
             if (handler != null)
                 handler(this, e);
-        }
-    }
-
-    public class PIT8253 : IDevice
-    {
-        private readonly int[] portsUsed = {0x40, 0x41, 0x42, 0x43};
-        private readonly Counter[] counters;
-
-        private int irqNumber;
-
-        public int DMAChannel { get; set; }
-
-        public event EventHandler IRQ;
-        public event EventHandler<Util.ByteArrayEventArgs> DMA;
-
-        public PIT8253()
-        {
-            counters = new Counter[3];
-            counters[0] = new Counter();
-            counters[0].TimerTick += PIT8253TimerCycle;
-            counters[1] = new Counter();
-            counters[2] = new Counter();
-        }
-
-        public void Cycle(double frequency, ulong timerTicks)
-        {
-            foreach(Counter counter in counters)
-            {
-                counter.Cycle(frequency, timerTicks);
-            }
-        }
-
-        void PIT8253TimerCycle(object sender, EventArgs e)
-        {
-            OnIRQ(e);
-        }
-
-        public int[] PortsUsed
-        {
-            get { return portsUsed; }
-        }
-
-        public int IRQNumber
-        {
-            get { return irqNumber; }
-        }
-
-        public void OnIRQ(EventArgs e)
-        {
-            EventHandler handler = IRQ;
-            if (handler != null) 
-                handler(this, e);
-        }
-
-        public ushort Read(ushort address)
-        {
-            switch (address)
-            {
-                case 0x43:
-                    return 0xffff;
-                default:
-                    break;
-            }
-
-            return 0;
-        }
-
-        public void Write(ushort address, ushort value)
-        {
-            switch (address)
-            {
-                case 0x40:
-                    counters[0].Reload = value;
-                    break;
-                case 0x43:
-
-                    var bcdMode = (byte)(value & 0x1);
-                    var operatingMode = (byte)((value >> 1) & 0x7);
-                    var accessMode = (byte)((value >> 4) & 0x3);
-                    var channel = (byte)((value >> 6) & 0x3);
-
-                    counters[channel].AccessMode = (AccessMode)accessMode;
-                    counters[channel].OperatingMode = (OperatingMode)operatingMode;
-                    counters[channel].BCDMode = (bcdMode == 1);
-                    break;
-            }
         }
     }
 }

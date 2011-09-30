@@ -86,7 +86,7 @@ namespace x86CS
 
         void DMARaised(object sender, Util.ByteArrayEventArgs e)
         {
-            IDevice device = sender as IDevice;
+            var device = sender as INeedsDMA;
 
             if (device == null)
                 return;
@@ -96,7 +96,7 @@ namespace x86CS
 
         void IRQRaised(object sender, EventArgs e)
         {
-            IDevice device = sender as IDevice;
+            var device = sender as INeedsIRQ;
 
             if (device == null)
                 return;
@@ -172,8 +172,15 @@ namespace x86CS
 
             foreach(IDevice device in devices)
             {
-                device.IRQ += IRQRaised;
-                device.DMA += DMARaised;
+                INeedsIRQ irqDevice = device as INeedsIRQ;
+                INeedsDMA dmaDevice = device as INeedsDMA;
+
+                if(irqDevice != null)
+                    irqDevice.IRQ += IRQRaised;
+
+                if(dmaDevice != null)
+                    dmaDevice.DMA += DMARaised;
+
                 foreach(int port in device.PortsUsed)
                     SetupIOEntry((ushort)port, device.Read, device.Write);
             }
@@ -240,8 +247,13 @@ namespace x86CS
                 string tempOpStr;
                 int irq, vector;
 
-                foreach(IDevice device in devices)
-                    device.Cycle(frequency, timerTicks);
+                foreach (IDevice device in devices)
+                {
+                    var clockDevice = device as INeedsClock;
+
+                    if(clockDevice != null)
+                        clockDevice.Cycle(frequency, timerTicks);
+                }
                 if (!CPU.Halted)
                     logFile.WriteLine(Operation);
 

@@ -5,12 +5,11 @@ namespace x86CS.Devices
     public class DMAController : IDevice
     {
         private readonly int[] portsUsed = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x80};
-        private const int IrqNumber = -1;
-        private const int DmaChannel = -1;
         
         private readonly byte[] extraPageRegisters;
         private readonly ushort[] memAddress;
         private readonly ushort[] count;
+
         private byte mask;
         private byte command;
         private byte status;
@@ -18,6 +17,11 @@ namespace x86CS.Devices
         private byte temp;
         private byte mode;
         private bool flipFlop;
+
+        public int[] PortsUsed
+        {
+            get { return portsUsed; }
+        }
         
         public DMAController()
         {
@@ -27,34 +31,12 @@ namespace x86CS.Devices
             Reset();
         }
 
-        public int[] PortsUsed
-        {
-            get { return portsUsed; }
-        }
-
-        public int IRQNumber
-        {
-            get { return IrqNumber; }
-        }
-
-        public int DMAChannel
-        {
-            get { return DmaChannel; }
-        }
-
-        public event EventHandler IRQ;
-        public event EventHandler<Util.ByteArrayEventArgs> DMA;
-
         public void DoTransfer(int channel, byte[] data)
         {
             ushort address = memAddress[channel];
             ushort length = count[channel+1];
 
             Memory.BlockWrite(address, data, length+1);
-        }
-
-        public void Cycle(double frequency, ulong tickCount)
-        {
         }
 
         private void Reset()
