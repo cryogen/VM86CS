@@ -107,7 +107,7 @@ namespace x86CS
                 if (value)
                     flags |= 0x1;
                 else
-                    flags &= 0x1;
+                    flags &= ~0x1;
             }
         }
 

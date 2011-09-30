@@ -47,6 +47,8 @@ namespace x86CS.Devices
             crtControl = new byte[0x19];
         }
 
+        public event EventHandler<Util.ByteArrayEventArgs> DMA;
+
         public void Cycle(double frequency, ulong tickCount)
         {
             

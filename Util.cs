@@ -1,9 +1,40 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 
 namespace x86CS
 {
     public static class Util
     {
+        public class CharEventArgs : EventArgs
+        {
+            public CharEventArgs(char charToWrite)
+            {
+                Char = charToWrite;
+            }
+
+            public char Char { get; set; }
+        }
+
+        public class IntEventArgs : EventArgs
+        {
+            public IntEventArgs(int num)
+            {
+                Number = num;
+            }
+
+            public int Number { get; set; }
+        }
+
+        public class ByteArrayEventArgs : EventArgs
+        {
+            public ByteArrayEventArgs(byte[] args)
+            {
+                ByteArray = args;
+            }
+
+            public byte[] ByteArray { get; set; }
+        }
+
         public static int CountSet(this BitArray bits)
         {
             int count = 0;

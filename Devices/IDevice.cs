@@ -9,6 +9,7 @@ namespace x86CS.Devices
         int DMAChannel { get; }
 
         event EventHandler IRQ;
+        event EventHandler<Util.ByteArrayEventArgs> DMA;
 
         void Cycle(double frequency, ulong tickCount);
         ushort Read(ushort addr);

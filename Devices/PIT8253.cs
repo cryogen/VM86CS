@@ -118,15 +118,11 @@ namespace x86CS.Devices
         private readonly Counter[] counters;
 
         private int irqNumber;
-        private int dmaChannel;
 
-        public int DMAChannel
-        {
-            get { return dmaChannel; }
-            set { dmaChannel = value; }
-        }
+        public int DMAChannel { get; set; }
 
         public event EventHandler IRQ;
+        public event EventHandler<Util.ByteArrayEventArgs> DMA;
 
         public PIT8253()
         {

@@ -131,6 +131,7 @@ namespace x86CS.Devices
         }
 
         public event EventHandler IRQ;
+        public event EventHandler<Util.ByteArrayEventArgs> DMA;
 
         public bool RequestInterrupt(byte irq)
         {

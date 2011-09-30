@@ -17,26 +17,6 @@ namespace x86CS
         public string Text { get; set; }
     }
 
-    public class CharEventArgs : EventArgs
-    {
-        public CharEventArgs(char charToWrite)
-        {
-            Char = charToWrite;
-        }
-
-        public char Char { get; set; }
-    }
-
-    public class IntEventArgs : EventArgs
-    {
-        public IntEventArgs(int num)
-        {
-            Number = num;
-        }
-
-        public int Number { get; set; }
-    }
-
     public delegate void InteruptHandler();
 
     public struct IOEntry
@@ -66,6 +46,7 @@ namespace x86CS
         private readonly IDevice[] devices;
         private readonly PIC8259 picDevice;
         private readonly VGA vgaDevice;
+        private readonly DMAController dmaController;
 
         private Dictionary<ushort, IOEntry> ioPorts;
         private object[] operands;
@@ -82,10 +63,11 @@ namespace x86CS
             picDevice = new PIC8259();
             vgaDevice = new VGA();
             FloppyDrive = new Floppy();
+            dmaController = new DMAController();
 
             devices = new IDevice[]
                           {
-                              FloppyDrive, new CMOS(), new Misc(), new PIT8253(), picDevice, new Keyboard(), new DMA(),
+                              FloppyDrive, new CMOS(), new Misc(), new PIT8253(), picDevice, new Keyboard(), dmaController,
                               vgaDevice
                           };
 
@@ -100,6 +82,16 @@ namespace x86CS
             machineForm.Paint += MachineFormPaint;
             machineForm.Show();
             machineForm.BringToFront();
+        }
+
+        void DMARaised(object sender, Util.ByteArrayEventArgs e)
+        {
+            IDevice device = sender as IDevice;
+
+            if (device == null)
+                return;
+
+            dmaController.DoTransfer(device.DMAChannel, e.ByteArray);
         }
 
         void IRQRaised(object sender, EventArgs e)
@@ -181,6 +173,7 @@ namespace x86CS
             foreach(IDevice device in devices)
             {
                 device.IRQ += IRQRaised;
+                device.DMA += DMARaised;
                 foreach(int port in device.PortsUsed)
                     SetupIOEntry((ushort)port, device.Read, device.Write);
             }

@@ -28,6 +28,7 @@ namespace x86CS.Devices
         }
 
         public event EventHandler IRQ;
+        public event EventHandler<Util.ByteArrayEventArgs> DMA;
 
         public void Cycle(double frequency, ulong tickCount)
         {
