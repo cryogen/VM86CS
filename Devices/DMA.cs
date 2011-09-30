@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace x86CS.Devices
+﻿namespace x86CS.Devices
 {
     public class DMAController : IDevice
     {
@@ -83,6 +81,7 @@ namespace x86CS.Devices
                 case 0x80:
                     return extraPageRegisters[0];
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
 
@@ -124,6 +123,7 @@ namespace x86CS.Devices
                     extraPageRegisters[0] = (byte)value;
                     break;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
         }

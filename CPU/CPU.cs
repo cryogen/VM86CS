@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.IO;
-using System.Threading;
 
 namespace x86CS.CPU
 {
@@ -18,7 +17,6 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
         private byte interruptToRun;
-        private bool externalInt;
         public bool Halted { get; private set; }
         
         public uint CurrentAddr { get; private set; }
@@ -382,7 +380,6 @@ namespace x86CS.CPU
                                     IsWritable = true
                                 };
 
-            externalInt = false;
             Halted = false;
             Reset();
         }
@@ -810,6 +807,7 @@ namespace x86CS.CPU
                         }
                         else
                         {
+                            System.Diagnostics.Debugger.Break();
                         }
                     }
                     else
@@ -1160,7 +1158,6 @@ namespace x86CS.CPU
         public void Interrupt(int vector, int irq)
         {
             inInterrupt = true;
-            externalInt = true;
             interruptToRun = (byte)vector;
         }
 
@@ -1345,7 +1342,7 @@ namespace x86CS.CPU
                             registers[rmData.Register].Word = (ushort)(sbyte)sourceByte;
                         break;
                     default:
-                        break;
+                        System.Diagnostics.Debugger.Break();
                 }
                 #endregion
             }

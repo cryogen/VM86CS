@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Globalization;
-using x86CS.Properties;
 
 namespace x86CS
 {

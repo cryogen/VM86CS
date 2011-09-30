@@ -57,6 +57,7 @@ namespace x86CS.Devices
                 case 0x43:
                     return 0xffff;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
 

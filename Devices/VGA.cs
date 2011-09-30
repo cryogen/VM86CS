@@ -1,5 +1,4 @@
-﻿using System;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Drawing.Imaging;
 
 namespace x86CS.Devices
@@ -76,6 +75,7 @@ namespace x86CS.Devices
                 case 0x3cc:
                     return miscOutputRegister;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
 
@@ -133,6 +133,7 @@ namespace x86CS.Devices
                     }
                     break;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
         }

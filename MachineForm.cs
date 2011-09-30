@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 
 namespace x86CS
@@ -16,7 +10,7 @@ namespace x86CS
             InitializeComponent();
         }
 
-        private void MachineForm_Load(object sender, EventArgs e)
+        private void MachineFormLoad(object sender, EventArgs e)
         {
             BringToFront();
         }

@@ -405,6 +405,7 @@ namespace x86CS.CPU
                                 opStr = String.Format("LIDT {0}", rmData.Operand);
                                 break;
                             default:
+                                System.Diagnostics.Debugger.Break();
                                 break;
                         }
                         break;
@@ -1365,7 +1366,7 @@ namespace x86CS.CPU
                                 opStr = String.Format("CALL {0}", rmData.Operand);
                                 break;
                             case 0x3:
-                                opStr = String.Format("CALL FAR {0:X}", rmData.Operand);
+                                opStr = String.Format("CALL FAR {0}", rmData.Operand);
                                 break;
                             case 0x4:
                                 opStr = String.Format("JMP {0}", rmData.Operand);
@@ -1672,6 +1673,7 @@ namespace x86CS.CPU
                                 args.Add(rmData);
                                 break;
                             default:
+                                System.Diagnostics.Debugger.Break();
                                 break;
                         }
                         break;

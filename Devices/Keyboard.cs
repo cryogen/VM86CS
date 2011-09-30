@@ -109,6 +109,7 @@ namespace x86CS.Devices
                 case 0x64:
                     return (ushort) statusRegister;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
 
@@ -134,6 +135,7 @@ namespace x86CS.Devices
                     ProcessCommand();
                     break;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
         }

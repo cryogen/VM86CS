@@ -13,7 +13,6 @@ namespace x86CS.Devices
 
         private FileStream floppyStream;
         private BinaryReader floppyReader;
-        private bool mounted;
         private byte digitalOutput;
         private MainStatus mainStatus;
         private bool inCommand;
@@ -48,7 +47,6 @@ namespace x86CS.Devices
 
         public Floppy()
         {
-            mounted = false;
             mainStatus = MainStatus.RQM;
             data = new byte[16];
         }
@@ -82,17 +80,15 @@ namespace x86CS.Devices
                 return false;
             }
 
-            mounted = true;
             return true;
         }
 
         private void ReadSector()
         {
             int addr = (data[1] * 2 + data[2]) * 512 + (data[3] - 1);
-            byte[] sector;
 
             floppyStream.Seek(addr, SeekOrigin.Begin);
-            sector = floppyReader.ReadBytes(512);
+            byte[] sector = floppyReader.ReadBytes(512);
 
             resultCount = 7;
             resultIdx = 0;
@@ -138,7 +134,7 @@ namespace x86CS.Devices
                     ReadSector();
                     break;
                 default:
-
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
         }
@@ -172,8 +168,8 @@ namespace x86CS.Devices
                     case FloppyCommand.ReadData:
                         paramCount = 8;
                         break;
-                        break;
                     default:
+                        System.Diagnostics.Debugger.Break();
                         break;
                 }
             }
@@ -183,8 +179,6 @@ namespace x86CS.Devices
 
         public ushort Read(ushort addr)
         {
-            byte ret;
-
             switch (addr)
             {
                 case 0x3f2:
@@ -192,11 +186,12 @@ namespace x86CS.Devices
                 case 0x3f4:
                     return (ushort)mainStatus;
                 case 0x3f5:
-                    ret = data[resultIdx++];
+                    byte ret = data[resultIdx++];
                     if (resultIdx == resultCount)
                         mainStatus &= ~MainStatus.DIO;
                     return ret;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
             return 0;
@@ -213,6 +208,7 @@ namespace x86CS.Devices
                     ProcessCommandAndArgs(value);
                     break;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
         }
