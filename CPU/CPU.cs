@@ -1343,6 +1343,7 @@ namespace x86CS.CPU
                         break;
                     default:
                         System.Diagnostics.Debugger.Break();
+                        break;
                 }
                 #endregion
             }

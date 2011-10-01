@@ -19,12 +19,18 @@ namespace x86CS.Devices
                                                0x3ca, 0x3cc, 0x3d4, 0x3d5, 0x3da
                                            };
 
-        private readonly MemoryMapRegion[] memoryMap;
+        private readonly MemoryMapRegion[] memoryMap = {
+                                                           new MemoryMapRegion { Base = 0xa0000, Length = 0x1ffff },
+                                                           new MemoryMapRegion { Base = 0xb0000, Length = 0x7fff },
+                                                           new MemoryMapRegion { Base = 0xb8000, Length = 0xffff }
+                                                       };
         private readonly byte[] sequencer;
         private readonly Color[] dacPalette;
         private readonly byte[] dacColour;
         private readonly byte[] attributeControl;
         private readonly byte[] crtControl;
+        private readonly Bitmap[] font;
+
         private byte miscOutputRegister;
         private byte featureControl;
         private SequenceRegister sequencerAddress;
@@ -124,7 +130,7 @@ namespace x86CS.Devices
                     currColor = 0;
                     break;
                 case 0x3c9:
-                    dacColour[currColor] = (byte)(value & 0x3f);
+                    dacColour[currColor] = (byte)((value & 0x3f) << 2);
                     if (++currColor == 3)
                     {
                         currColor = 0;
@@ -140,7 +146,7 @@ namespace x86CS.Devices
 
         public void GDIDraw(Graphics g)
         {
-            var screenBitmap = new Bitmap(720, 420, PixelFormat.Format32bppRgb);
+            var screenBitmap = new Bitmap(720, 420, PixelFormat.Format24bppRgb);
 
             var fontBuffer = new byte[0x1000];
             var displayBuffer = new byte[0xfa0];
@@ -155,8 +161,8 @@ namespace x86CS.Devices
                 byte attribute = displayBuffer[i + 1];
                 int y = i / 160 * 16;
 
-                Color foreColour = dacPalette[attribute & 0xf];
-                Color backColour = dacPalette[(attribute >> 4) & 0xf];
+                Color foreColour = dacPalette[attributeControl[attribute & 0xf]];
+                Color backColour = dacPalette[attributeControl[(attribute >> 4) & 0xf]];
 
                 for (var f = fontOffset; f < fontOffset + 16; f++)
                 {
