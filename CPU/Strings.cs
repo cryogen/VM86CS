@@ -355,5 +355,31 @@
             }
             SetCount(count);
         }
+        
+        private void StringCompareByte()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                byte source = SegReadByte(overrideSegment, opSize == 32 ? ESI : SI);
+                byte dest = SegReadByte(SegmentRegister.ES, opSize == 32 ? EDI : DI);
+
+                Subtract(dest, source);
+                if (DF)
+                {
+                    ESI--;
+                    EDI--;
+                }
+                else
+                {
+                    ESI++;
+                    EDI++;
+                }
+
+                count--;
+            }
+            SetCount(count);
+        }
     }
 }

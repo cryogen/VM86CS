@@ -17,8 +17,8 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
         private byte interruptToRun;
+
         public bool Halted { get; private set; }
-        
         public uint CurrentAddr { get; private set; }
         public bool Debug { get; set; }
         public bool PMode { get; private set; }
@@ -433,9 +433,6 @@ namespace x86CS.CPU
             uint virtAddr = GetVirtualAddress(segment, offset);
             byte ret = Memory.ReadByte(virtAddr);
 
-/*            if(segment != SegmentRegister.CS)
-                logFile.WriteLine(String.Format("Memory Read Byte {0:X} {1:X}", virtAddr, ret)); */
-
             return ret;
         }
 
@@ -443,9 +440,6 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
             ushort ret = Memory.ReadWord(virtAddr);
-
-/*            if (segment != SegmentRegister.CS)
-                logFile.WriteLine(String.Format("Memory Read Word {0:X} {1:X}", virtAddr, ret));*/
 
             return ret;
         }
@@ -455,17 +449,12 @@ namespace x86CS.CPU
             uint virtAddr = GetVirtualAddress(segment, offset);
             uint ret = Memory.ReadDWord(virtAddr);
 
-/*            if (segment != SegmentRegister.CS)
-                logFile.WriteLine(String.Format("Memory Read DWord {0:X} {1:X}", virtAddr, ret));*/
-
             return ret;
         }
 
         private void SegWriteByte(SegmentRegister segment, uint offset, byte value)
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
-
-//            logFile.WriteLine(String.Format("Memory Write Byte {0:X8} {1:X2}", virtAddr, value)); 
 
             Memory.WriteByte(virtAddr, value);
         }
@@ -474,16 +463,12 @@ namespace x86CS.CPU
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-//            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value)); 
-
             Memory.WriteWord(virtAddr, value);
         }
 
         private void SegWriteDWord(SegmentRegister segment, uint offset, uint value)
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
-
-//            logFile.WriteLine(String.Format("Memory Write word {0:X} {1:X}", virtAddr, value));
 
             Memory.WriteDWord(virtAddr, value);
         }
@@ -1121,7 +1106,10 @@ namespace x86CS.CPU
                 }
                 else
                 {
-                    tempEIP = EIP + offset;
+                    if (relative)
+                        tempEIP = EIP + offset;
+                    else
+                        tempEIP = offset;
                     if (tempEIP > codeSegment.GDTEntry.Limit)
                         throw new Exception("EIP Out of range");
 
@@ -1141,9 +1129,6 @@ namespace x86CS.CPU
 
         private void CallInterrupt(byte vector)
         {
-            //if(externalInt)
-                logFile.WriteLine("Calling interrupt {0:X}, CS {1:X} EIP {2:X} ESP {3:X}", vector, CS, EIP, ESP);
-
             StackPush((ushort)Flags);
             IF = false;
             TF = false;
@@ -1186,6 +1171,9 @@ namespace x86CS.CPU
 
             if (Halted)
                 return;
+
+            string opStr = DecodeOpString(opCode, operands);
+            logFile.WriteLine("{0:X}:{1:X}\t{2}", CS, EIP, opStr);
 
             EIP += (uint)len;
 
@@ -1925,8 +1913,8 @@ namespace x86CS.CPU
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
 
                         memAddress = ProcessRegMem(rmData, out sourceByte, out destByte);
-                        WriteRegMem(rmData, memAddress, destByte);
-                        SetByteReg(rmData.Register, sourceByte);
+                        WriteRegMem(rmData, memAddress, sourceByte);
+                        SetByteReg(rmData.Register, destByte);
                         break;
                     case 0x87:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
@@ -2088,6 +2076,9 @@ namespace x86CS.CPU
                             StringCopyDWord();
                         else
                             StringCopyWord();
+                        break;
+                    case 0xa6:
+                        StringCompareByte();
                         break;
                     case 0xaa:
                         StringWriteByte();
@@ -2722,8 +2713,6 @@ namespace x86CS.CPU
                             CallInterrupt(4);
                         break;
                     case 0xcf:
-                  //      if(externalInt)
-                            logFile.WriteLine("returning from interrupt CS {0:X} EIP {1:X} ESP {2:X}", CS, EIP, ESP);
                         if (opSize == 32)
                             EIP = StackPop();
                         else
@@ -2731,9 +2720,6 @@ namespace x86CS.CPU
                         CS = (ushort)StackPop();
                         eFlags = (CPUFlags)StackPop();
                         IF = true;
-                   //     if(externalInt)
-                            logFile.WriteLine("popped stack CS {0:X} EIP {1:X} ESP {2:X}", CS, EIP, ESP);
-                       // externalInt = false;
                         break;
                     case 0xe0:
                         CX--;
@@ -3081,7 +3067,8 @@ namespace x86CS.CPU
                             switch (rmData.Register)
                             {
                                 case 0:
-                                    And(sourceDWord, (uint)operands[0]);
+                                case 1:
+                                    And(sourceDWord, (uint)operands[1]);
                                     break;
                                 case 2:
                                     sourceDWord = ~sourceDWord;
@@ -3115,7 +3102,8 @@ namespace x86CS.CPU
                             switch (rmData.Register)
                             {
                                 case 0:
-                                    And(sourceWord, (ushort)operands[0]);
+                                case 1:
+                                    And(sourceWord, (ushort)operands[1]);
                                     break;
                                 case 2:
                                     sourceWord = (ushort)~sourceWord;

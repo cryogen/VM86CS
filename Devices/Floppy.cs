@@ -85,9 +85,9 @@ namespace x86CS.Devices
 
         private void ReadSector()
         {
-            int addr = (data[1] * 2 + data[2]) * 512 + (data[3] - 1);
+            int addr = (data[1] * 2 + data[2]) * 18 + (data[3] - 1);
 
-            floppyStream.Seek(addr, SeekOrigin.Begin);
+            floppyStream.Seek(addr * 512, SeekOrigin.Begin);
             byte[] sector = floppyReader.ReadBytes(512);
 
             resultCount = 7;

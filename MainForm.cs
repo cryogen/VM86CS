@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Threading;
 using System.Globalization;
 using x86CS.Properties;
+using System.Collections.Generic;
 
 namespace x86CS
 {
@@ -65,7 +66,8 @@ namespace x86CS
                 {
                     frequency = 100000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
                     lastSeconds = stopwatch.Elapsed.TotalSeconds;
-                    Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("F2") + "TPS"; }); 
+                    if(Created)
+                        Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("F2") + "TPS"; }); 
                 }
                 if (!machine.Running || stepping) 
                     continue;
@@ -82,9 +84,15 @@ namespace x86CS
 
                 if (machine.CheckBreakpoint())
                 {
+                    string opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
                     stepping = true;
                     machine.CPU.Debug = true;
-                    Invoke((MethodInvoker)delegate { PrintRegisters(); SetCPULabel(machine.Operation); });
+
+                    Invoke((MethodInvoker)(() =>
+                                               {
+                                                   PrintRegisters();
+                                                   SetCPULabel(opStr);
+                                               }));
                 }
                 else
                     machine.CPU.Debug = false;
@@ -165,18 +173,21 @@ namespace x86CS
         private void StepButtonClick(object sender, EventArgs e)
         {
             stepping = true;
+            string opStr;
 
             if (!machine.Running)
             {
                 machine.Start();
-                SetCPULabel(machine.Operation);
+                opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
+                SetCPULabel(opStr);
                 PrintRegisters();
                 return;
             }
 
             machine.CPU.Debug = true;
             machine.RunCycle(frequency, timerTicks);
-            SetCPULabel(machine.Operation);
+            opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
+            SetCPULabel(opStr);
             PrintRegisters();
         }
 

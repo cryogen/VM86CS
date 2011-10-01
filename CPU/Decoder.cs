@@ -347,7 +347,7 @@ namespace x86CS.CPU
             return ret;
         }
 
-        private string DecodeOpString(byte opCode, object[] operands)
+        public string DecodeOpString(byte opCode, object[] operands)
         {
             string opStr = "";
             string grpStr = "";
@@ -1384,14 +1384,14 @@ namespace x86CS.CPU
             return opStr;
         }
 
-        public int Decode(uint eip, out byte opCode, out string opStr, out object[] operands)
+        public int Decode(uint eip, out byte opCode, out object[] operands)
         {
             var args = new List<object>();
             RegMemData rmData;
 // ReSharper disable TooWideLocalVariableScope
             byte sourceByte;
             ushort destWord, sourceWord;
-            uint destDWord, sourceDWord;
+            uint sourceDWord;
             // ReSharper restore TooWideLocalVariableScope
 
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + eip; 
@@ -1546,7 +1546,7 @@ namespace x86CS.CPU
                             sourceWord = DecodeReadWord();
                             args.Add(sourceWord);
                         }
-                        break;                        
+                        break;
                     case 0xc8: /* Word, byte operand */
                         destWord = DecodeReadWord();
                         sourceByte = DecodeReadByte();
@@ -1725,23 +1725,40 @@ namespace x86CS.CPU
                             }
                         }
                         break;
-                    case 0xd0:          /* Group reg8 */
+                    case 0xd0: /* Group reg8 */
                     case 0xd2:
                     case 0xfe:
                         rmData = DecodeRM(false);
 
                         args.Add(rmData);
                         break;
-                    case 0xf6:          /* Special */
+                    case 0xf6: /* Special */
                         rmData = DecodeRM(false);
 
                         args.Add(rmData);
-                        if(rmData.Register == 0 || rmData.Register == 1)
+                        if (rmData.Register == 0 || rmData.Register == 1)
                             args.Add(DecodeReadByte());
+                        break;
+                    case 0xf7: /* Special */
+                        rmData = DecodeRM(true);
+
+                        args.Add(rmData);
+                        if (rmData.Register == 0 || rmData.Register == 1)
+                        {
+                            if (opSize == 32)
+                            {
+                                sourceDWord = DecodeReadDWord();
+                                args.Add(sourceDWord);
+                            }
+                            else
+                            {
+                                sourceWord = DecodeReadWord();
+                                args.Add(sourceWord);
+                            }
+                        }
                         break;
                     case 0xd1:          /* Group reg16 */
                     case 0xd3:
-                    case 0xf7:
                     case 0xff:
                         rmData = DecodeRM(true);
 
@@ -1848,9 +1865,6 @@ namespace x86CS.CPU
             }
 
             operands = args.ToArray();
-
-//            opStr = DecodeOpString(opCode, operands);
-            opStr = "";
 
             return (int)(CurrentAddr - baseAddr);
         }

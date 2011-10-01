@@ -12,7 +12,6 @@ namespace x86CS
     public class Machine
     {
         private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
-       //private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("machinelog.txt"));
         private readonly MachineForm machineForm = new MachineForm();
         private readonly IDevice[] devices;
         private readonly PIC8259 picDevice;
@@ -20,11 +19,10 @@ namespace x86CS
         private readonly DMAController dmaController;
 
         private Dictionary<ushort, IOEntry> ioPorts;
-        private object[] operands;
         private int opLen;
-        private byte opCode;
 
-        public string Operation { get; private set; }
+        public object[] Operands { get; private set; }
+        public byte OPCode { get; private set; }
         public Floppy FloppyDrive { get; private set; }
         public bool Running { get; private set; }
         public CPU.CPU CPU { get; private set; }
@@ -43,8 +41,7 @@ namespace x86CS
                           };
 
             CPU = new CPU.CPU();
-            Operation = "";
-
+            
             SetupSystem();
 
             CPU.IORead += CPUIORead;
@@ -94,8 +91,6 @@ namespace x86CS
 
             var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr));
 
-//            logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
-
             return ret;
         }
 
@@ -106,7 +101,6 @@ namespace x86CS
             if (ioPorts.TryGetValue(addr, out entry))
                 entry.Write(addr, value);
 
-//            logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
         }
 
         private void LoadBIOS()
@@ -194,29 +188,32 @@ namespace x86CS
 
         public void Start()
         {
-            string tempOpStr;
-            opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
-            Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
+            byte tempOp;
+            object[] tempOperands;
+
+            opLen = CPU.Decode(CPU.EIP, out tempOp, out tempOperands);
+            OPCode = tempOp;
+            Operands = tempOperands;
             Running = true;
         }
 
         public void Stop()
         {
             Running = false;
-//            logFile.Flush();
         }
 
         public void FlushLog()
         {
-//            logFile.Flush();
             CPU.FlushLog();
         }
 
         public void RunCycle(double frequency, ulong timerTicks)
         {
+            byte tempOp;
+            object[] tempOperands;
+
             if (Running)
             {
-                string tempOpStr;
                 int irq, vector;
 
                 foreach (IDevice device in devices)
@@ -226,8 +223,6 @@ namespace x86CS
                     if(clockDevice != null)
                         clockDevice.Cycle(frequency, timerTicks);
                 }
-  //              if (!CPU.Halted)
-//                    logFile.WriteLine(Operation);
 
                 if(picDevice.InterruptService(out irq, out vector))
                 {
@@ -237,9 +232,10 @@ namespace x86CS
                         picDevice.AckInterrupt((byte)irq);
                     }
                 }
-                CPU.Cycle(opLen, opCode, operands);
-                opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
-                Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
+                CPU.Cycle(opLen, OPCode, Operands);
+                opLen = CPU.Decode(CPU.EIP, out tempOp, out tempOperands);
+                OPCode = tempOp;
+                Operands = tempOperands;
                 if(timerTicks % 100000 == 0)
                     machineForm.Invalidate();
             }
