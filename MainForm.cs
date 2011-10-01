@@ -41,12 +41,12 @@ namespace x86CS
             machine.FlushLog();
         }
 
-        void BreakpointsItemDeleted(object sender, Util.IntEventArgs e)
+        void BreakpointsItemDeleted(object sender, IntEventArgs e)
         {
             machine.ClearBreakpoint(e.Number);
         }
 
-        void BreakpointsItemAdded(object sender, Util.IntEventArgs e)
+        void BreakpointsItemAdded(object sender, IntEventArgs e)
         {
             machine.SetBreakpoint(e.Number);
         }

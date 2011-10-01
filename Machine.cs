@@ -53,7 +53,7 @@ namespace x86CS
             machineForm.Select();
         }
 
-        void DMARaised(object sender, Util.ByteArrayEventArgs e)
+        void DMARaised(object sender, ByteArrayEventArgs e)
         {
             var device = sender as INeedsDMA;
 
@@ -241,6 +241,7 @@ namespace x86CS
             }
         }
     }
+
     public struct IOEntry
     {
         public ReadCallback Read;

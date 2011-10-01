@@ -207,6 +207,36 @@ namespace x86CS
             set { Byte = value; }
         }
     }
+
+    public class CharEventArgs : EventArgs
+    {
+        public CharEventArgs(char charToWrite)
+        {
+            Char = charToWrite;
+        }
+
+        public char Char { get; set; }
+    }
+
+    public class IntEventArgs : EventArgs
+    {
+        public IntEventArgs(int num)
+        {
+            Number = num;
+        }
+
+        public int Number { get; set; }
+    }
+
+    public class ByteArrayEventArgs : EventArgs
+    {
+        public ByteArrayEventArgs(byte[] args)
+        {
+            ByteArray = args;
+        }
+
+        public byte[] ByteArray { get; set; }
+    }
     
     public class TextEventArgs : EventArgs
     {

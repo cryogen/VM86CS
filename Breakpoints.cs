@@ -6,8 +6,8 @@ namespace x86CS
 {
     public partial class Breakpoints : Form
     {
-        public event EventHandler<Util.IntEventArgs> ItemAdded;
-        public event EventHandler<Util.IntEventArgs> ItemDeleted;
+        public event EventHandler<IntEventArgs> ItemAdded;
+        public event EventHandler<IntEventArgs> ItemDeleted;
 
         public Breakpoints()
         {
@@ -19,7 +19,7 @@ namespace x86CS
             var intEvent = ItemAdded;
 
             if (intEvent != null)
-                intEvent(this, new Util.IntEventArgs(item));
+                intEvent(this, new IntEventArgs(item));
         }
 
         private void OnItemDeleted(int item)
@@ -27,7 +27,7 @@ namespace x86CS
             var intEvent = ItemDeleted;
 
             if (intEvent != null)
-                intEvent(this, new Util.IntEventArgs(item));
+                intEvent(this, new IntEventArgs(item));
         }
 
         private void AddButtonClick(object sender, EventArgs e)

@@ -26,7 +26,7 @@ namespace x86CS.Devices
     {
         int DMAChannel { get; }
 
-        event EventHandler<Util.ByteArrayEventArgs> DMA;
+        event EventHandler<ByteArrayEventArgs> DMA;
     }
 
     public interface INeedsClock

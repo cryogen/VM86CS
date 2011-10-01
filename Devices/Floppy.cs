@@ -27,7 +27,7 @@ namespace x86CS.Devices
         private bool interruptInProgress;
 
         public event EventHandler IRQ;
-        public event EventHandler<Util.ByteArrayEventArgs> DMA;
+        public event EventHandler<ByteArrayEventArgs> DMA;
 
         public int[] PortsUsed
         {
@@ -51,9 +51,9 @@ namespace x86CS.Devices
             data = new byte[16];
         }
 
-        public void OnDMA(Util.ByteArrayEventArgs e)
+        public void OnDMA(ByteArrayEventArgs e)
         {
-            EventHandler<Util.ByteArrayEventArgs> handler = DMA;
+            EventHandler<ByteArrayEventArgs> handler = DMA;
             if (handler != null) 
                 handler(this, e);
         }
@@ -100,7 +100,7 @@ namespace x86CS.Devices
             data[5] = 0;
             data[6] = 0;
 
-            OnDMA(new Util.ByteArrayEventArgs(sector));
+            OnDMA(new ByteArrayEventArgs(sector));
 
             mainStatus |= MainStatus.DIO;
             statusZero = 0;
