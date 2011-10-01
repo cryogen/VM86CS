@@ -207,4 +207,14 @@ namespace x86CS
             set { Byte = value; }
         }
     }
+    
+    public class TextEventArgs : EventArgs
+    {
+        public TextEventArgs(string textToWrite)
+        {
+            Text = textToWrite;
+        }
+
+        public string Text { get; set; }
+    }
 }

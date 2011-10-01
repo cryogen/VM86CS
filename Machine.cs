@@ -7,41 +7,12 @@ using System.Windows.Forms;
 
 namespace x86CS
 {
-    public class TextEventArgs : EventArgs
-    {
-        public TextEventArgs(string textToWrite)
-        {
-            Text = textToWrite;
-        }
-
-        public string Text { get; set; }
-    }
-
     public delegate void InteruptHandler();
-
-    public struct IOEntry
-    {
-        public ReadCallback Read;
-        public WriteCallback Write;
-    }
-
-    public struct SystemConfig
-    {
-        public ushort NumBytes;
-        public byte Model;
-        public byte SubModel;
-        public byte Revision;
-        public byte Feature1;
-        public byte Feature2;
-        public byte Feature3;
-        public byte Feature4;
-        public byte Feature5;
-    }
 
     public class Machine
     {
         private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
-        private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("machinelog.txt"));
+       //private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("machinelog.txt"));
         private readonly MachineForm machineForm = new MachineForm();
         private readonly IDevice[] devices;
         private readonly PIC8259 picDevice;
@@ -82,6 +53,7 @@ namespace x86CS
             machineForm.Paint += MachineFormPaint;
             machineForm.Show();
             machineForm.BringToFront();
+            machineForm.Select();
         }
 
         void DMARaised(object sender, Util.ByteArrayEventArgs e)
@@ -122,7 +94,7 @@ namespace x86CS
 
             var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr));
 
-            logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
+//            logFile.WriteLine(String.Format("IO Read {0:X4} returned {1:X4}", addr, ret));
 
             return ret;
         }
@@ -134,7 +106,7 @@ namespace x86CS
             if (ioPorts.TryGetValue(addr, out entry))
                 entry.Write(addr, value);
 
-            logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
+//            logFile.WriteLine(String.Format("IO Write {0:X4} value {1:X4}", addr, value));
         }
 
         private void LoadBIOS()
@@ -231,12 +203,12 @@ namespace x86CS
         public void Stop()
         {
             Running = false;
-            logFile.Flush();
+//            logFile.Flush();
         }
 
         public void FlushLog()
         {
-            logFile.Flush();
+//            logFile.Flush();
             CPU.FlushLog();
         }
 
@@ -254,8 +226,8 @@ namespace x86CS
                     if(clockDevice != null)
                         clockDevice.Cycle(frequency, timerTicks);
                 }
-                if (!CPU.Halted)
-                    logFile.WriteLine(Operation);
+  //              if (!CPU.Halted)
+//                    logFile.WriteLine(Operation);
 
                 if(picDevice.InterruptService(out irq, out vector))
                 {
@@ -268,9 +240,14 @@ namespace x86CS
                 CPU.Cycle(opLen, opCode, operands);
                 opLen = CPU.Decode(CPU.EIP, out opCode, out tempOpStr, out operands);
                 Operation = String.Format("{0:X4}:{1:X} {2}", CPU.CS, CPU.EIP, tempOpStr);
-                if(timerTicks % 10000 == 0)
+                if(timerTicks % 100000 == 0)
                     machineForm.Invalidate();
             }
         }
+    }
+    public struct IOEntry
+    {
+        public ReadCallback Read;
+        public WriteCallback Write;
     }
 }

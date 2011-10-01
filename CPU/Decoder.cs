@@ -1849,7 +1849,8 @@ namespace x86CS.CPU
 
             operands = args.ToArray();
 
-            opStr = DecodeOpString(opCode, operands);
+//            opStr = DecodeOpString(opCode, operands);
+            opStr = "";
 
             return (int)(CurrentAddr - baseAddr);
         }

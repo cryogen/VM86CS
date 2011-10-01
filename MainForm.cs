@@ -61,10 +61,11 @@ namespace x86CS
             {
                 timerTicks++;
 
-                if(timerTicks % 10000 == 0)
+                if(timerTicks % 100000 == 0)
                 {
-                    frequency = 10000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
+                    frequency = 100000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
                     lastSeconds = stopwatch.Elapsed.TotalSeconds;
+                    Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("F2") + "TPS"; }); 
                 }
                 if (!machine.Running || stepping) 
                     continue;

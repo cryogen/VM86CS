@@ -98,12 +98,15 @@
             this.memoryButton = new System.Windows.Forms.Button();
             this.memSegment = new System.Windows.Forms.TextBox();
             this.cpuList = new System.Windows.Forms.ListBox();
+            this.mainStatus = new System.Windows.Forms.StatusStrip();
+            this.tpsLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.mainMenu.SuspendLayout();
             this.registersGroup.SuspendLayout();
             this.segmentGroup.SuspendLayout();
             this.flagsGroup.SuspendLayout();
             this.cpuGroup.SuspendLayout();
             this.memoryGroup.SuspendLayout();
+            this.mainStatus.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainMenu
@@ -751,11 +754,26 @@
             this.cpuList.Size = new System.Drawing.Size(419, 394);
             this.cpuList.TabIndex = 7;
             // 
+            // mainStatus
+            // 
+            this.mainStatus.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tpsLabel});
+            this.mainStatus.Location = new System.Drawing.Point(0, 422);
+            this.mainStatus.Name = "mainStatus";
+            this.mainStatus.Size = new System.Drawing.Size(630, 22);
+            this.mainStatus.TabIndex = 8;
+            // 
+            // tpsLabel
+            // 
+            this.tpsLabel.Name = "tpsLabel";
+            this.tpsLabel.Size = new System.Drawing.Size(0, 17);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(630, 421);
+            this.ClientSize = new System.Drawing.Size(630, 444);
+            this.Controls.Add(this.mainStatus);
             this.Controls.Add(this.cpuList);
             this.Controls.Add(this.memoryGroup);
             this.Controls.Add(this.cpuGroup);
@@ -779,6 +797,8 @@
             this.cpuGroup.PerformLayout();
             this.memoryGroup.ResumeLayout(false);
             this.memoryGroup.PerformLayout();
+            this.mainStatus.ResumeLayout(false);
+            this.mainStatus.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -856,6 +876,8 @@
         private System.Windows.Forms.ToolStripMenuItem breakpointsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem restartToolStripMenuItem;
         private System.Windows.Forms.ListBox cpuList;
+        private System.Windows.Forms.StatusStrip mainStatus;
+        private System.Windows.Forms.ToolStripStatusLabel tpsLabel;
     }
 }
 

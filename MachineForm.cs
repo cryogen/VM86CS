@@ -13,6 +13,7 @@ namespace x86CS
         private void MachineFormLoad(object sender, EventArgs e)
         {
             BringToFront();
+            //TopMost = true;
         }
     }
 }
