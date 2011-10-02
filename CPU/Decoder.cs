@@ -54,7 +54,12 @@ namespace x86CS.CPU
         #region Read Functions
         private byte DecodeReadByte()
         {
-            var ret = (uint)(Memory.ReadByte(CurrentAddr) & 0xff);
+            return DecodeReadByte(true);
+        }
+
+        private byte DecodeReadByte(bool log)
+        {
+            var ret = (uint)(Memory.ReadByte(CurrentAddr, log) & 0xff);
 
             CurrentAddr++;
 
@@ -63,7 +68,12 @@ namespace x86CS.CPU
 
         private ushort DecodeReadWord()
         {
-            var ret = (uint)(Memory.ReadWord(CurrentAddr) & 0xffff);
+            return DecodeReadWord(true);
+        }
+
+        private ushort DecodeReadWord(bool log)
+        {
+            var ret = (uint)(Memory.ReadWord(CurrentAddr, log) & 0xffff);
 
             CurrentAddr += 2;
 
@@ -72,7 +82,12 @@ namespace x86CS.CPU
 
         private uint DecodeReadDWord()
         {
-            uint ret = Memory.ReadDWord(CurrentAddr);
+            return DecodeReadDWord(true);
+        }
+
+        private uint DecodeReadDWord(bool log)
+        {
+            uint ret = Memory.ReadDWord(CurrentAddr, log);
 
             CurrentAddr += 4;
 
@@ -104,7 +119,7 @@ namespace x86CS.CPU
 
             do
             {
-                byte opCode = DecodeReadByte();
+                byte opCode = DecodeReadByte(false);
 
                 switch (opCode)
                 {
@@ -181,7 +196,7 @@ namespace x86CS.CPU
         {
             var ret = new RegMemData();
 
-            byte modRegRm = DecodeReadByte();
+            byte modRegRm = DecodeReadByte(false);
 
             ret.Mode = (byte)(modRegRm >> 6);
             ret.Register = (byte)((modRegRm >> 3) & 0x7);
@@ -221,7 +236,7 @@ namespace x86CS.CPU
                         case 0x4:
                             if (memSize == 32)
                             {
-                                byte sib = DecodeReadByte();
+                                byte sib = DecodeReadByte(false);
 
                                 ret.Base = (byte)(sib & 0x7);
                                 ret.Index = (byte)((sib >> 3) & 0x7);
@@ -304,7 +319,7 @@ namespace x86CS.CPU
                     }
                     else if (ret.Mode == 0x2)
                     {
-                        uint dWordOp = DecodeReadDWord();
+                        uint dWordOp = DecodeReadDWord(false);
                         var tmpDisp = (int)dWordOp;
 
                         if (tmpDisp < 0)
@@ -317,14 +332,14 @@ namespace x86CS.CPU
                     }
                     else if (ret.RegMem == 0x5 && memSize == 32)
                     {
-                        ret.Displacement = DecodeReadWord();
+                        ret.Displacement = DecodeReadWord(false);
                         ret.HasDisplacement = true;
 
                         ret.Operand += "+" + ret.Displacement.ToString("X") + "]";
                     }
                     else if (ret.RegMem == 0x6 && memSize == 16)
                     {
-                        ret.Displacement = DecodeReadWord();
+                        ret.Displacement = DecodeReadWord(false);
                         ret.HasDisplacement = true;
 
                         ret.Operand += ret.Displacement.ToString("X") + "]";
@@ -1399,7 +1414,7 @@ namespace x86CS.CPU
 
             DecodePrefixes();
 
-            opCode = DecodeReadByte();
+            opCode = DecodeReadByte(false);
 
             if (extPrefix)
             {

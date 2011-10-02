@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using System.Threading;
 using System.Globalization;
+using log4net;
 using x86CS.Properties;
 using System.Collections.Generic;
 
@@ -38,7 +39,7 @@ namespace x86CS
 
         void ApplicationApplicationExit(object sender, EventArgs e)
         {
-            machine.FlushLog();
+            LogManager.Shutdown();
         }
 
         void BreakpointsItemDeleted(object sender, IntEventArgs e)

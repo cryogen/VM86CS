@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Windows.Forms;
 
+[assembly: log4net.Config.XmlConfigurator()]
+
 namespace x86CS
 {
     static class Program

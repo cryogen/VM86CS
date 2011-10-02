@@ -1,7 +1,12 @@
-﻿namespace x86CS.Devices
+﻿using System;
+using log4net;
+
+namespace x86CS.Devices
 {
     public class DMAController : IDevice
     {
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(DMAController));
+
         private readonly int[] portsUsed = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x80};
         
         private readonly byte[] extraPageRegisters;
@@ -33,6 +38,8 @@
         {
             ushort address = memAddress[channel];
             ushort length = count[channel+1];
+
+            Logger.Debug(String.Format("Transferring {0} bytes from {1:X}", length, address));
 
             Memory.BlockWrite(address, data, length+1);
         }

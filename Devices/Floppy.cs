@@ -1,10 +1,13 @@
 ﻿using System;
 using System.IO;
+using log4net;
 
 namespace x86CS.Devices
 {
     public class Floppy : IDevice, INeedsIRQ, INeedsDMA
     {
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(Floppy));
+
         private const int IrqNumber = 6;
         private const int DmaChannel = 2;
         private readonly int[] portsUsed = {0x3f0, 0x3f1, 0x3f2, 0x3f4, 0x3f5, 0x3f7};
@@ -90,6 +93,8 @@ namespace x86CS.Devices
             floppyStream.Seek(addr * 512, SeekOrigin.Begin);
             byte[] sector = floppyReader.ReadBytes(512);
 
+            Logger.Debug(String.Format("Reading sector offset {0}", addr));
+
             resultCount = 7;
             resultIdx = 0;
             data[0] = 0;
@@ -113,6 +118,7 @@ namespace x86CS.Devices
             switch (command)
             {
                 case FloppyCommand.Recalibrate:
+                    Logger.Debug("Recalibrate issued");
                     floppyStream.Seek(0, SeekOrigin.Begin);
                     headPosition = 0;
                     currentCyl = 0;
@@ -121,6 +127,7 @@ namespace x86CS.Devices
                     OnIRQ(new EventArgs());
                     break;
                 case FloppyCommand.SenseInterrupt:
+                    Logger.Debug("Sense interrupt isssued");
                     if (!interruptInProgress)
                         statusZero = 0x80;
                     interruptInProgress = false;

@@ -1,20 +1,24 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.IO;
+using log4net;
 
 namespace x86CS
 {
     public class Memory
     {
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory));
+
         private static IntPtr realMemBase;
+        private const bool LogMemory = false;
         private const uint MemorySize = 0xFFFFF;
-        private static readonly TextWriter LogFile = TextWriter.Synchronized(File.CreateText("memlog.txt"));
 
         public static bool A20 { get; set; }
 
         static Memory()
         {
             realMemBase = Marshal.AllocHGlobal((int)MemorySize);
+            Logger.Debug("Real memory base is " + realMemBase.ToString("X"));
         }
 
         private static IntPtr GetRealAddress(uint virtualAddr)
@@ -30,20 +34,17 @@ namespace x86CS
         public static void SegBlockWrite(ushort segment, ushort offset, byte[] buffer, int length)
         {
             var virtualPtr = (uint)((segment << 4) + offset);
-            IntPtr realOffset = GetRealAddress(virtualPtr);
 
-            Marshal.Copy(buffer, 0, realOffset, length);
-
-//            LogFile.WriteLine(String.Format("Seg Write Block: {0:X}:{1:X} ({2:X}) {3}", segment, offset, virtualPtr, length));
+            Memory.BlockWrite(virtualPtr, buffer, length);
         }
 
         public static void BlockWrite(uint addr, byte[] buffer, int length)
         {
             IntPtr realOffset = GetRealAddress(addr);
 
-            Marshal.Copy(buffer, 0, realOffset, length);
+            Logger.Debug(String.Format("Block write {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
-//            LogFile.WriteLine(String.Format("Mem Write Block: {0:X} {1}", addr, length));
+            Marshal.Copy(buffer, 0, realOffset, length);
         }
 
         public static int BlockRead(uint addr, byte[] buffer, int length)
@@ -52,37 +53,58 @@ namespace x86CS
 
             Marshal.Copy(realOffset, buffer, 0, length);
 
-//            LogFile.WriteLine(String.Format("Mem Read Block: {0:X} {1}", addr, length));
+            Logger.Debug(String.Format("Block read {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
             return buffer.Length;
         }
 
         public static byte ReadByte(uint addr)
         {
+            return Memory.ReadByte(addr, LogMemory);
+        }
+
+        public static byte ReadByte(uint addr, bool log)
+        {
             IntPtr realOffset = GetRealAddress(addr);
 
             byte ret = Marshal.ReadByte(realOffset);
-            //LogFile.WriteLine(String.Format("Mem Read Byte: {0:X} {1:X}", addr, ret));
 
+            if(log && LogMemory)
+                Logger.Debug(String.Format("Read Byte {0:X} {1:X}", addr, ret));
+            
             return ret;
         }
 
         public static ushort ReadWord(uint addr)
         {
+            return Memory.ReadWord(addr, LogMemory);
+        }
+
+        public static ushort ReadWord(uint addr, bool log)
+        {
             IntPtr realOffset = GetRealAddress(addr);
 
             var ret = (ushort)Marshal.ReadInt16(realOffset);
-            //LogFile.WriteLine(String.Format("Mem Read Word: {0:X} {1:X}", addr, ret));
+
+            if(log && LogMemory)
+                Logger.Debug(String.Format("Read Word {0:X} {1:X}", addr, ret));
         
             return ret;
         }
 
         public static uint ReadDWord(uint addr)
         {
+            return Memory.ReadDWord(addr, LogMemory);
+        }
+
+        public static uint ReadDWord(uint addr, bool log)
+        {
             IntPtr realOffset = GetRealAddress(addr);
 
             var ret = (uint)Marshal.ReadInt32(realOffset);
-            //LogFile.WriteLine(String.Format("Mem Read DWord: {0:X} {1:X}", addr, ret));
+
+            if(log && LogMemory)
+                Logger.Debug(String.Format("Read DWord {0:X} {1:X}", addr, ret));
 
             return ret;
         }
@@ -91,7 +113,8 @@ namespace x86CS
         {
             IntPtr realOffset = GetRealAddress(addr);
 
-//            LogFile.WriteLine(String.Format("Mem Write Byte: {0:X} {1:X}", addr, value));
+            if(LogMemory)
+                Logger.Debug(String.Format("Write byte {0:X} {1:X}", addr, value));
 
             Marshal.WriteByte(realOffset, value);
         }
@@ -100,7 +123,8 @@ namespace x86CS
         {
             IntPtr realOffset = GetRealAddress(addr);
 
-//            LogFile.WriteLine(String.Format("Mem Write Word: {0:X} {1:X}", addr, value));
+            if(LogMemory)
+                Logger.Debug(String.Format("Write Word {0:X} {1:X}", addr, value));
 
             Marshal.WriteInt16(realOffset, (short)value);
         }
@@ -109,7 +133,8 @@ namespace x86CS
         {
             IntPtr realOffset = GetRealAddress(addr);
 
-//            LogFile.WriteLine(String.Format("Mem Write Word: {0:X} {1:X}", addr, value));
+            if(LogMemory)
+                Logger.Debug(String.Format("Write DWord {0:X} {1:X}", addr, value));
 
             Marshal.WriteInt32(realOffset, (int)value);
         }

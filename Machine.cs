@@ -204,7 +204,6 @@ namespace x86CS
 
         public void FlushLog()
         {
-            CPU.FlushLog();
         }
 
         public void RunCycle(double frequency, ulong timerTicks)

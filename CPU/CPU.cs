@@ -1,22 +1,24 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.IO;
+using log4net;
 
 namespace x86CS.CPU
 {
     public partial class CPU
     {
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(CPU));
+
         private readonly Segment[] segments;
         private readonly Register[] registers;
         private readonly uint[] controlRegisters;
         private CPUFlags eFlags;
         public event ReadCallback IORead;
         public event WriteCallback IOWrite;
-        private readonly TextWriter logFile = TextWriter.Synchronized(File.CreateText("cpulog.txt"));
         private TableRegister idtRegister, gdtRegister;
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
         private byte interruptToRun;
+        private int intCount;
 
         public bool Halted { get; private set; }
         public uint CurrentAddr { get; private set; }
@@ -384,11 +386,6 @@ namespace x86CS.CPU
             Reset();
         }
 
-        public void FlushLog()
-        {
-            logFile.Flush();
-        }
-
         public void Reset()
         {
             eFlags = CPUFlags.ZF | CPUFlags.IF;
@@ -506,7 +503,7 @@ namespace x86CS.CPU
             return ret;
         }
 
-        public void StackPush(ushort value)
+        /*public void StackPush(ushort value)
         {
             if (opSize == 32)
                 ESP -= 2;
@@ -514,16 +511,20 @@ namespace x86CS.CPU
                 SP -= 2;
 
             SegWriteWord(SegmentRegister.SS, SP, value);
-        }
+        }*/
 
         public void StackPush(uint value)
         {
             if (opSize == 32)
+            {
                 ESP -= 4;
+                SegWriteDWord(SegmentRegister.SS, ESP, value);
+            }
             else
+            {
                 SP -= 2;
-
-            SegWriteDWord(SegmentRegister.SS, opSize == 32 ? ESP : SP, value);
+                SegWriteWord(SegmentRegister.SS, SP, (ushort) value);
+            }
         }
 
         private string GetByteRegStr(int offset)
@@ -1129,6 +1130,8 @@ namespace x86CS.CPU
 
         private void CallInterrupt(byte vector)
         {
+            Logger.Debug("INT" + vector.ToString("X"));
+            DumpRegisters();
             StackPush((ushort)Flags);
             IF = false;
             TF = false;
@@ -1138,12 +1141,21 @@ namespace x86CS.CPU
 
             CS = Memory.ReadWord((uint)(vector * 4) + 2);
             EIP = Memory.ReadWord((uint)(vector * 4));
+
+            intCount++;
         }
 
         public void Interrupt(int vector, int irq)
         {
             inInterrupt = true;
             interruptToRun = (byte)vector;
+        }
+
+        private void DumpRegisters()
+        {
+            Logger.Debug(String.Format("AX {0:X4} BX {1:X4} CX {2:X4} DX {3:X4}", AX, BX, CX, DX));
+            Logger.Debug(String.Format("SI {0:X4} DI {1:X4} SP {2:X4} BP {3:X4}", SI, DI, SP, BP));
+            Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
         }
 
         public void Cycle(int len, byte opCode, object[] operands)
@@ -1173,7 +1185,9 @@ namespace x86CS.CPU
                 return;
 
             string opStr = DecodeOpString(opCode, operands);
-            logFile.WriteLine("{0:X}:{1:X}\t{2}", CS, EIP, opStr);
+            
+            if(intCount == 0)
+                Logger.Debug(String.Format("{0:X}:{1:X}\t{2}", CS, EIP, opStr));
 
             EIP += (uint)len;
 
@@ -2720,6 +2734,9 @@ namespace x86CS.CPU
                         CS = (ushort)StackPop();
                         eFlags = (CPUFlags)StackPop();
                         IF = true;
+                        intCount--;
+                        Logger.Debug("IRET");
+                        DumpRegisters();
                         break;
                     case 0xe0:
                         CX--;
