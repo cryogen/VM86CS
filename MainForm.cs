@@ -12,7 +12,6 @@ namespace x86CS
     public partial class MainForm : Form
     {
         private readonly Machine machine;
-        private bool stepping;
         private readonly Thread machineThread;
         private readonly Breakpoints breakpoints = new Breakpoints();
         private double frequency = 100000.0f;
@@ -31,7 +30,7 @@ namespace x86CS
 
             PrintRegisters();
 
-            machine.FloppyDrive.MountImage(@"C:\Downloads\Apps\MS-DOS 6.22\Disk 1.img");
+            machine.FloppyDrive.MountImage(@"C:\fdboot.img");
             
             machineThread = new Thread(RunMachine);
             machineThread.Start();
@@ -70,10 +69,16 @@ namespace x86CS
                     if(Created)
                         Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("F2") + "TPS"; }); 
                 }
-                if (!machine.Running || stepping) 
+                if (!machine.Running || (machine.Stepping && machine.CPU.InterruptLevel == 0))
+                {
+                    if(stepButton.Enabled && Created)
+                        Invoke((MethodInvoker) delegate { stepButton.Enabled = true; });
                     continue;
+                }
                 try
                 {
+                    if (!stepButton.Enabled && Created)
+                        Invoke((MethodInvoker)delegate { stepButton.Enabled = false; });
                     machine.RunCycle(frequency, timerTicks);
                 }
                 catch (Exception ex)
@@ -86,8 +91,7 @@ namespace x86CS
                 if (machine.CheckBreakpoint())
                 {
                     string opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
-                    stepping = true;
-                    machine.CPU.Debug = true;
+                    machine.Stepping = true;
 
                     Invoke((MethodInvoker)(() =>
                                                {
@@ -95,8 +99,6 @@ namespace x86CS
                                                    SetCPULabel(opStr);
                                                }));
                 }
-                else
-                    machine.CPU.Debug = false;
             }
         }
 
@@ -173,7 +175,7 @@ namespace x86CS
 
         private void StepButtonClick(object sender, EventArgs e)
         {
-            stepping = true;
+            machine.Stepping = true;
             string opStr;
 
             if (!machine.Running)
@@ -185,7 +187,6 @@ namespace x86CS
                 return;
             }
 
-            machine.CPU.Debug = true;
             machine.RunCycle(frequency, timerTicks);
             opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
             SetCPULabel(opStr);
@@ -197,8 +198,7 @@ namespace x86CS
             if (!machine.Running)
                 machine.Start();
 
-            machine.CPU.Debug = false;
-            stepping = false;
+            machine.Stepping = false;
         }
 
         private void MainFormFormClosed(object sender, FormClosedEventArgs e)
@@ -236,8 +236,7 @@ namespace x86CS
         {
             machine.Restart();
 
-            machine.CPU.Debug = false;
-            stepping = false;
+            machine.Stepping = false;
         }
     }
 }

@@ -46,7 +46,21 @@ namespace x86CS.Devices
             outputBuffer = new Queue<byte>();
         }
 
-        public void OnIRQ(EventArgs e)
+        public void KeyPress(uint scancode)
+        {
+            outputBuffer.Enqueue((byte)scancode);
+            statusRegister |= KeyboardFlags.OutputBufferFull;
+            OnIRQ(new EventArgs());
+        }
+
+        public void KeyUp(uint scancode)
+        {
+            outputBuffer.Enqueue((byte)(scancode + 0x80));
+            statusRegister |= KeyboardFlags.OutputBufferFull;
+            OnIRQ(new EventArgs());
+        }
+
+        private void OnIRQ(EventArgs e)
         {
             EventHandler handler = IRQ;
             if (handler != null) 

@@ -50,6 +50,7 @@ namespace x86CS.CPU
         private RepeatPrefix repeatPrefix = RepeatPrefix.None;
         private int opSize = 16;
         private int memSize = 16;
+        private bool isSegOverride = false;
 
         #region Read Functions
         private byte DecodeReadByte()
@@ -116,6 +117,7 @@ namespace x86CS.CPU
             opSize = PMode ? 32 : 16;
 
             extPrefix = false;
+            isSegOverride = false;
 
             do
             {
@@ -128,21 +130,27 @@ namespace x86CS.CPU
                         break;
                     case 0x26:
                         setPrefixes |= OPPrefix.ESOverride;
+                        isSegOverride = true;
                         break;
                     case 0x2e:
                         setPrefixes |= OPPrefix.CSOverride;
+                        isSegOverride = true;
                         break;
                     case 0x36:
                         setPrefixes |= OPPrefix.SSOverride;
+                        isSegOverride = true;
                         break;
                     case 0x3e:
                         setPrefixes |= OPPrefix.DSOverride;
+                        isSegOverride = true;
                         break;
                     case 0x64:
                         setPrefixes |= OPPrefix.FSOverride;
+                        isSegOverride = true;
                         break;
                     case 0x65:
                         setPrefixes |= OPPrefix.GSOverride;
+                        isSegOverride = true;
                         break;
                     case 0x66:
                         setPrefixes |= OPPrefix.OPSize;
@@ -487,6 +495,33 @@ namespace x86CS.CPU
 
                         opStr = String.Format("MOVZX {0}, {1}", rmData.RegisterName, rmData.Operand);
                         break;
+                    case 0xa0:
+                        opStr = "PUSH FS";
+                        break;
+                    case 0xa1:
+                        opStr = "POP FS";
+                        break;
+                    case 0xa8:
+                        opStr = "PUSH GS";
+                        break;
+                    case 0xa9:
+                        opStr = "POP GS";
+                        break;
+                    case 0xaf:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        opStr = String.Format("IMUL {0}, {1}", rmData.RegisterName, rmData.Operand);
+                        break;
+                    case 0xb4:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        opStr = String.Format("LFS {0}, {1}", rmData.RegisterName, rmData.Operand);
+                        break;
+                    case 0xb5:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        opStr = String.Format("LGS {0}, {1}", rmData.RegisterName, rmData.Operand);
+                        break;
                 }
             }
             else
@@ -730,7 +765,7 @@ namespace x86CS.CPU
                     case 0x6b:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
 
-                        opStr = String.Format("IMUL {0}, {1}, {2:X}", rmData.RegisterName, rmData.Operand, (ushort)((sbyte)operands[1]));
+                        opStr = String.Format("IMUL {0}, {1}, {2:X}", rmData.RegisterName, rmData.Operand, (ushort)((sbyte)(byte)operands[1]));
                         break;
                     case 0x6c:
                         opStr = "INSB";
@@ -1387,7 +1422,7 @@ namespace x86CS.CPU
                                 opStr = String.Format("JMP {0}", rmData.Operand);
                                 break;
                             case 0x5:
-                                opStr = String.Format("JMP FAR {0:X}:{1:X}", operands[1], operands[0]);
+                                opStr = String.Format("JMP FAR {0}", rmData.Operand);
                                 break;
                             case 0x6:
                                 opStr = String.Format("PUSH {0}", rmData.Operand);
@@ -1424,7 +1459,10 @@ namespace x86CS.CPU
                     case 0x01:          /* R/M ops */
                     case 0x20:
                     case 0x22:
+                    case 0xb4:
+                    case 0xb5:
                     case 0xb6:
+                    case 0xaf:
                         rmData = DecodeRM(true);
                         args.Add(rmData);
                         break;
@@ -1452,6 +1490,11 @@ namespace x86CS.CPU
                             sourceWord = DecodeReadWord();
                             args.Add(sourceWord);
                         }
+                        break;
+                    case 0xa0:  /* No args */
+                    case 0xa1:
+                    case 0xa8:
+                    case 0xa9:
                         break;
                     default:
                         System.Diagnostics.Debugger.Break();
@@ -1481,6 +1524,7 @@ namespace x86CS.CPU
                     case 0x75:
                     case 0x76:
                     case 0x77:
+                    case 0x78:
                     case 0x79:
                     case 0x7a:
                     case 0x7b:
@@ -1657,6 +1701,7 @@ namespace x86CS.CPU
                         args.Add(sourceWord);
                         break;
                     case 0x80: /* Group - imm8 */
+                    case 0x82:
                     case 0xc0:
                         rmData = DecodeRM(false);
 

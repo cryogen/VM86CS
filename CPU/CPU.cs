@@ -18,12 +18,11 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
         private byte interruptToRun;
-        private int intCount;
 
         public bool Halted { get; private set; }
         public uint CurrentAddr { get; private set; }
-        public bool Debug { get; set; }
         public bool PMode { get; private set; }
+        public int InterruptLevel { get; private set; }
 
         #region Registers
 
@@ -366,7 +365,6 @@ namespace x86CS.CPU
         public CPU()
         {
             PMode = false;
-            Debug = false;
             segments = new Segment[6];
             registers = new Register[9];
             controlRegisters = new uint[5];
@@ -825,7 +823,7 @@ namespace x86CS.CPU
                     }
                     break;
                 case 7:
-                    address = opSize == 32 ? EDI : BX;
+                    address = PMode ? EDI : BX;
                     break;
             }
             return address;
@@ -845,9 +843,9 @@ namespace x86CS.CPU
 
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
-                    address += (uint)(int)rmData.Displacement;
+                    address = (ushort)(address + rmData.Displacement);
 
-                if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
+                if (isSegOverride)
                     segToUse = overrideSegment;
 
                 regMemValue = SegReadByte(segToUse, address);
@@ -869,14 +867,9 @@ namespace x86CS.CPU
 
                 address = GetRegMemAddr(rmData, out segToUse);
                 if (rmData.HasDisplacement)
-                {
-                    if (address + (int)rmData.Displacement < 0)
-                        address += (ushort)(int)rmData.Displacement;
-                    else
-                        address += (uint)(int)rmData.Displacement;
-                }
+                    address = (ushort)(address + rmData.Displacement);
 
-                if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
+                if (isSegOverride)
                     segToUse = overrideSegment;
 
                 regMemValue = SegReadWord(segToUse, address);
@@ -901,13 +894,64 @@ namespace x86CS.CPU
                 if (rmData.HasDisplacement)
                     address += rmData.Displacement;
 
-                if (segToUse != overrideSegment && segToUse != SegmentRegister.SS)
+                if (isSegOverride)
                     segToUse = overrideSegment;
 
                 regMemValue = SegReadDWord(segToUse, address);
             }
 
             return address;
+        }
+
+        private byte ReadRegMemByte(RegMemData rmData, uint address)
+        {
+            SegmentRegister readSegment = SegmentRegister.DS;
+
+            if (rmData.IsRegister)
+                return GetByteReg(rmData.RegMem);
+
+            if ((rmData.RegMem == 2 || rmData.RegMem == 3) ||
+                ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
+                readSegment = SegmentRegister.SS;
+
+            if (isSegOverride)
+                readSegment = overrideSegment;
+
+            return SegReadByte(readSegment, address);
+        }
+
+        private ushort ReadRegMemWord(RegMemData rmData, uint address)
+        {
+            SegmentRegister readSegment = SegmentRegister.DS;
+
+            if (rmData.IsRegister)
+                return registers[rmData.RegMem].Word;
+
+            if ((rmData.RegMem == 2 || rmData.RegMem == 3) ||
+                ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
+                readSegment = SegmentRegister.SS;
+
+            if (isSegOverride)
+                readSegment = overrideSegment;
+
+            return SegReadWord(readSegment, address);
+        }
+
+        private uint ReadRegMemDWord(RegMemData rmData, uint address)
+        {
+            SegmentRegister readSegment = SegmentRegister.DS;
+
+            if (rmData.IsRegister)
+                return registers[rmData.RegMem].Word;
+
+            if ((rmData.RegMem == 2 || rmData.RegMem == 3) ||
+                ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
+                readSegment = SegmentRegister.SS;
+
+            if (isSegOverride)
+                readSegment = overrideSegment;
+
+            return SegReadDWord(readSegment, address);
         }
 
         private void WriteRegMem(RegMemData rmData, uint address, byte value)
@@ -920,11 +964,8 @@ namespace x86CS.CPU
             {
                 if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem ==6))
                     writeSegment = SegmentRegister.SS;
-                else
-                {
-                    if (overrideSegment != SegmentRegister.DS)
-                        writeSegment = overrideSegment;
-                }
+                if (isSegOverride)
+                    writeSegment = overrideSegment;
                 SegWriteByte(writeSegment, address, value);
             }
         }
@@ -939,11 +980,10 @@ namespace x86CS.CPU
             {
                 if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
                     writeSegment = SegmentRegister.SS; 
-                else
-                {
-                    if (overrideSegment != SegmentRegister.DS)
-                        writeSegment = overrideSegment;
-                }
+
+                if (isSegOverride)
+                    writeSegment = overrideSegment;
+
                 SegWriteWord(writeSegment, address, value);
             }
         }
@@ -958,11 +998,10 @@ namespace x86CS.CPU
             {
                 if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
                     writeSegment = SegmentRegister.SS;
-                else
-                {
-                    if (overrideSegment != SegmentRegister.DS)
-                        writeSegment = overrideSegment;
-                }
+
+                if (isSegOverride)
+                    writeSegment = overrideSegment;
+
                 SegWriteDWord(writeSegment, address, value);
             }
         }
@@ -977,13 +1016,11 @@ namespace x86CS.CPU
                 offset = opSize == 32 ? registers[rmData.RegMem].DWord : registers[rmData.RegMem].Word;
             else
             {
-                if (rmData.RegMem == 2 || rmData.RegMem == 3)
-                    readSegment = overrideSegment != SegmentRegister.SS ? overrideSegment : SegmentRegister.SS;
-                else
-                {
-                    if (overrideSegment != SegmentRegister.DS)
-                        readSegment = overrideSegment;
-                }
+                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
+                    readSegment = SegmentRegister.SS;
+
+                if (isSegOverride)
+                    readSegment = overrideSegment;
                 offset = opSize == 32 ? SegReadDWord(readSegment, address) : SegReadWord(readSegment, address);
             }
 
@@ -991,7 +1028,7 @@ namespace x86CS.CPU
             uint segment = far ? SegReadWord(readSegment, address + 2) : CS;
 
             if (call)
-                CallProcedure(segment, offset, false);
+                CallProcedure(segment, offset, far, false);
             else
             {
                 CS = segment;
@@ -999,9 +1036,9 @@ namespace x86CS.CPU
             }
         }
 
-        private void CallProcedure(uint segment, uint offset, bool relative)
+        private void CallProcedure(uint segment, uint offset, bool far, bool relative)
         {
-            if (segment == CS)
+            if (!far)
             {
                 if (opSize == 32)
                     StackPush(EIP);
@@ -1131,7 +1168,6 @@ namespace x86CS.CPU
         private void CallInterrupt(byte vector)
         {
             Logger.Debug("INT" + vector.ToString("X"));
-            DumpRegisters();
             StackPush((ushort)Flags);
             IF = false;
             TF = false;
@@ -1142,7 +1178,7 @@ namespace x86CS.CPU
             CS = Memory.ReadWord((uint)(vector * 4) + 2);
             EIP = Memory.ReadWord((uint)(vector * 4));
 
-            intCount++;
+            InterruptLevel++;
         }
 
         public void Interrupt(int vector, int irq)
@@ -1186,8 +1222,8 @@ namespace x86CS.CPU
 
             string opStr = DecodeOpString(opCode, operands);
             
-            if(intCount == 0)
-                Logger.Debug(String.Format("{0:X}:{1:X}\t{2}", CS, EIP, opStr));
+            if(InterruptLevel == 0)
+                Logger.Debug(String.Format("{0:X}:{1:X}    {2}", CS, EIP, opStr));
 
             EIP += (uint)len;
 
@@ -1342,6 +1378,64 @@ namespace x86CS.CPU
                             registers[rmData.Register].DWord = (uint)(sbyte)sourceByte;
                         else
                             registers[rmData.Register].Word = (ushort)(sbyte)sourceByte;
+                        break;
+                    case 0xa0:
+                        StackPush(FS);
+                        break;
+                    case 0xa1:
+                        FS = (ushort) StackPop();
+                        break;
+                    case 0xa8:
+                        StackPush(GS);
+                        break;
+                    case 0xa9:
+                        GS = (ushort)StackPop();
+                        break;
+                    case 0xaf:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        if (opSize == 32)
+                        {
+                            ProcessRegMem(rmData, out destDWord, out sourceDWord);
+                            registers[rmData.Register].DWord = SignedMultiply(destDWord, sourceDWord);
+                        }
+                        else
+                        {
+                            ProcessRegMem(rmData, out destWord, out sourceWord);
+                            registers[rmData.Register].Word = SignedMultiply(destWord, sourceWord);
+                        }
+                        break;
+                    case 0xb4:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        if (opSize == 32)
+                        {
+                            memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
+                            registers[rmData.Register].DWord = destDWord;
+                            FS = ReadRegMemWord(rmData, memAddress + 2);
+                        }
+                        else
+                        {
+                            memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
+                            registers[rmData.Register].Word = destWord;
+                            FS = ReadRegMemWord(rmData, memAddress + 2);
+                        }
+                        break;
+                    case 0xb5:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        if (opSize == 32)
+                        {
+                            memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
+                            registers[rmData.Register].DWord = destDWord;
+                            GS = ReadRegMemWord(rmData, memAddress + 2);
+                        }
+                        else
+                        {
+                            memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
+                            registers[rmData.Register].Word = destWord;
+                            GS = ReadRegMemWord(rmData, memAddress + 2);
+                        }
                         break;
                     default:
                         System.Diagnostics.Debugger.Break();
@@ -1936,14 +2030,14 @@ namespace x86CS.CPU
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
-                            WriteRegMem(rmData, memAddress, destDWord);
-                            registers[rmData.Register].DWord = sourceDWord;
+                            WriteRegMem(rmData, memAddress, sourceDWord);
+                            registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
                             memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
-                            WriteRegMem(rmData, memAddress, destWord);
-                            registers[rmData.Register].Word = sourceWord;
+                            WriteRegMem(rmData, memAddress, sourceWord);
+                            registers[rmData.Register].Word = destWord;
                         }
                         break;
                     case 0x90:
@@ -1971,10 +2065,10 @@ namespace x86CS.CPU
                     #endregion
                     #region Call Procedure
                     case 0x9a:
-                        CallProcedure((ushort)operands[1], (ushort)operands[0], false);
+                        CallProcedure((ushort)operands[1], (ushort)operands[0], true, false);
                         break;
                     case 0xe8:
-                        CallProcedure(CS, offset, false);
+                        CallProcedure(CS, offset, false, false);
                         break;
                     #endregion
                     #region BCD
@@ -2672,14 +2766,14 @@ namespace x86CS.CPU
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
-                            registers[rmData.Register].DWord = SegReadWord(overrideSegment, memAddress);
-                            ES = SegReadWord(overrideSegment, memAddress + 2);
+                            registers[rmData.Register].DWord = destDWord;
+                            ES = ReadRegMemWord(rmData, memAddress + 2);
                         }
                         else
                         {
                             memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
-                            registers[rmData.Register].Word = SegReadWord(overrideSegment, memAddress);
-                            ES = SegReadWord(overrideSegment, memAddress + 2);
+                            registers[rmData.Register].Word = destWord;
+                            ES = ReadRegMemWord(rmData, memAddress + 2);
                         }
                         break;
                     case 0xc5:
@@ -2688,14 +2782,14 @@ namespace x86CS.CPU
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out sourceDWord, out destDWord);
-                            registers[rmData.Register].Word = SegReadWord(overrideSegment, memAddress);
-                            DS = SegReadWord(overrideSegment, memAddress + 2);
+                            registers[rmData.Register].DWord = destDWord;
+                            DS = ReadRegMemWord(rmData, memAddress + 2);
                         }
                         else
                         {
                             memAddress = ProcessRegMem(rmData, out sourceWord, out destWord);
-                            registers[rmData.Register].Word = SegReadWord(overrideSegment, memAddress);
-                            DS = SegReadWord(overrideSegment, memAddress + 2);
+                            registers[rmData.Register].Word = destWord;
+                            DS = ReadRegMemWord(rmData, memAddress + 2);
                         }
                         break;
                     case 0xc9:
@@ -2734,9 +2828,9 @@ namespace x86CS.CPU
                         CS = (ushort)StackPop();
                         eFlags = (CPUFlags)StackPop();
                         IF = true;
-                        intCount--;
+                        if(InterruptLevel > 0)
+                            InterruptLevel--;
                         Logger.Debug("IRET");
-                        DumpRegisters();
                         break;
                     case 0xe0:
                         CX--;
@@ -2852,6 +2946,7 @@ namespace x86CS.CPU
                     #endregion
                     #region Groups
                     case 0x80:
+                    case 0x82:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
 
                         memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
@@ -2885,7 +2980,8 @@ namespace x86CS.CPU
                                 break;
                         }
 
-                        WriteRegMem(rmData, memAddress, destByte);
+                        if(rmData.Register != 7)
+                            WriteRegMem(rmData, memAddress, destByte);
                         break;
                     case 0x81:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");

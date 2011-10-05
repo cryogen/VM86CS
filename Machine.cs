@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Runtime.InteropServices;
+using log4net;
 using x86CS.Devices;
 using System.Windows.Forms;
 
@@ -11,12 +13,15 @@ namespace x86CS
 
     public class Machine
     {
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(Machine));
+
         private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
         private readonly MachineForm machineForm = new MachineForm();
         private readonly IDevice[] devices;
         private readonly PIC8259 picDevice;
         private readonly VGA vgaDevice;
         private readonly DMAController dmaController;
+        private readonly Keyboard keyboard;
 
         private Dictionary<ushort, IOEntry> ioPorts;
         private int opLen;
@@ -26,6 +31,7 @@ namespace x86CS
         public Floppy FloppyDrive { get; private set; }
         public bool Running { get; private set; }
         public CPU.CPU CPU { get; private set; }
+        public bool Stepping { get; set; }
 
         public Machine()
         {
@@ -33,10 +39,11 @@ namespace x86CS
             vgaDevice = new VGA();
             FloppyDrive = new Floppy();
             dmaController = new DMAController();
+            keyboard = new Keyboard();
 
             devices = new IDevice[]
                           {
-                              FloppyDrive, new CMOS(), new Misc(), new PIT8253(), picDevice, new Keyboard(), dmaController,
+                              FloppyDrive, new CMOS(), new Misc(), new PIT8253(), picDevice, keyboard, dmaController,
                               vgaDevice
                           };
 
@@ -48,9 +55,27 @@ namespace x86CS
             CPU.IOWrite += CPUIOWrite;
 
             machineForm.Paint += MachineFormPaint;
+            machineForm.KeyDown += MachineFormKeyDown;
+            machineForm.KeyUp += MachineFormKeyUp;
             machineForm.Show();
             machineForm.BringToFront();
             machineForm.Select();
+        }
+
+        [DllImport("user32.dll")]
+        static extern uint MapVirtualKey(uint uCode, uint uMapType);
+
+        void MachineFormKeyDown(object sender, KeyEventArgs e)
+        {
+            uint scanCode = MapVirtualKey((uint)e.KeyCode, 0);
+            keyboard.KeyPress(scanCode);
+        }
+
+        void MachineFormKeyUp(object sender, KeyEventArgs e)
+        {
+            uint scanCode = MapVirtualKey((uint)e.KeyCode, 0);
+
+            keyboard.KeyUp(scanCode);
         }
 
         void DMARaised(object sender, ByteArrayEventArgs e)
@@ -90,6 +115,7 @@ namespace x86CS
             IOEntry entry;
 
             var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr));
+            Logger.Debug(String.Format("IO Read Port {0:X}, Value {1:X}", addr, ret));
 
             return ret;
         }
@@ -101,6 +127,7 @@ namespace x86CS
             if (ioPorts.TryGetValue(addr, out entry))
                 entry.Write(addr, value);
 
+            Logger.Debug(String.Format("IO Write Port {0:X}, Value {1:X}", addr, value));
         }
 
         private void LoadBIOS()
@@ -182,8 +209,9 @@ namespace x86CS
         public bool CheckBreakpoint()
         {
             var cpuAddr = (uint)(CPU.CurrentAddr - opLen);
+            bool bpHit = breakpoints.Any(kvp => kvp.Value == cpuAddr);
 
-            return breakpoints.Any(kvp => kvp.Value == cpuAddr);
+            return bpHit;
         }
 
         public void Start()

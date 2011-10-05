@@ -10,7 +10,7 @@ namespace x86CS
         private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory));
 
         private static IntPtr realMemBase;
-        private const bool LogMemory = false;
+        private const bool LogMemory = true;
         private const uint MemorySize = 0xFFFFF;
 
         public static bool A20 { get; set; }
@@ -115,6 +115,7 @@ namespace x86CS
 
             if(LogMemory)
                 Logger.Debug(String.Format("Write byte {0:X} {1:X}", addr, value));
+
 
             Marshal.WriteByte(realOffset, value);
         }

@@ -7,11 +7,11 @@ namespace x86CS.Devices
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(DMAController));
 
-        private readonly int[] portsUsed = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x80};
+        private readonly int[] portsUsed = { 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x80, 0x81, 0x82, 0x83};
         
-        private readonly byte[] extraPageRegisters;
+        private readonly byte[] pages;
         private readonly ushort[] memAddress;
-        private readonly ushort[] count;
+        private readonly ushort[] counts;
 
         private byte mask;
         private byte command;
@@ -24,24 +24,25 @@ namespace x86CS.Devices
         public int[] PortsUsed
         {
             get { return portsUsed; }
-        }
+            }
         
         public DMAController()
         {
-            extraPageRegisters = new byte[16];
+            pages = new byte[16];
             memAddress = new ushort[16];
-            count = new ushort[16];
+            counts = new ushort[16];
             Reset();
         }
 
         public void DoTransfer(int channel, byte[] data)
         {
             ushort address = memAddress[channel];
-            ushort length = count[channel+1];
+            ushort length = counts[channel+1];  
+            uint fullAddr = (uint)((pages[channel] << 16) + address);
 
-            Logger.Debug(String.Format("Transferring {0} bytes from {1:X}", length, address));
+            Logger.Debug(String.Format("Transferring {0} bytes from {1:X}", length + 1, fullAddr));
 
-            Memory.BlockWrite(address, data, length+1);
+            Memory.BlockWrite(fullAddr, data, length + 1);
         }
 
         private void Reset()
@@ -68,7 +69,7 @@ namespace x86CS.Devices
                 if (address)
                     memAddress[channel] = memAddress[channel].SetHigh(value);
                 else
-                    count[channel] = count[channel].SetHigh(value);
+                    counts[channel] = counts[channel].SetHigh(value);
                 flipFlop = false;
             }
             else
@@ -76,7 +77,7 @@ namespace x86CS.Devices
                 if (address)
                     memAddress[channel] = memAddress[channel].SetLow(value);
                 else
-                    count[channel] = count[channel].SetLow(value);
+                    counts[channel] = counts[channel].SetLow(value);
                 flipFlop = true;
             }
         }
@@ -86,7 +87,7 @@ namespace x86CS.Devices
             switch (address)
             {
                 case 0x80:
-                    return extraPageRegisters[0];
+                    return pages[0];
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;
@@ -127,7 +128,16 @@ namespace x86CS.Devices
                     Reset();
                     break;
                 case 0x80:
-                    extraPageRegisters[0] = (byte)value;
+                    pages[0] = (byte) value;
+                    break;
+                case 0x81:
+                    pages[2] = (byte) value;
+                    break;
+                case 0x82:
+                    pages[3] = (byte) value;
+                    break;
+                case 0x83:
+                    pages[1] = (byte)value;
                     break;
                 default:
                     System.Diagnostics.Debugger.Break();

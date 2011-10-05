@@ -16,7 +16,7 @@ namespace x86CS.Devices
 
         private FileStream floppyStream;
         private BinaryReader floppyReader;
-        private byte digitalOutput;
+        private DORSetting digitalOutput;
         private MainStatus mainStatus;
         private bool inCommand;
         private byte paramCount;
@@ -86,14 +86,25 @@ namespace x86CS.Devices
             return true;
         }
 
+        private void Reset()
+        {
+            Logger.Debug("Reset issued");
+            digitalOutput &= ~DORSetting.Reset;
+            OnIRQ(new EventArgs());
+        }
+
         private void ReadSector()
         {
             int addr = (data[1] * 2 + data[2]) * 18 + (data[3] - 1);
+            int numSectors = data[5] - data[3] + 1;
+
+            if (numSectors == -1)
+                numSectors = 1;
 
             floppyStream.Seek(addr * 512, SeekOrigin.Begin);
-            byte[] sector = floppyReader.ReadBytes(512);
+            byte[] sector = floppyReader.ReadBytes(512 * numSectors);
 
-            Logger.Debug(String.Format("Reading sector offset {0}", addr));
+            Logger.Debug(String.Format("Reading {0} sectors from sector offset {1}", numSectors, addr));
 
             resultCount = 7;
             resultIdx = 0;
@@ -189,7 +200,7 @@ namespace x86CS.Devices
             switch (addr)
             {
                 case 0x3f2:
-                    return digitalOutput;
+                    return (ushort)digitalOutput;
                 case 0x3f4:
                     return (ushort)mainStatus;
                 case 0x3f5:
@@ -209,7 +220,10 @@ namespace x86CS.Devices
             switch (addr)
             {
                 case 0x3f2:
-                    digitalOutput = (byte) value;
+                    if(((digitalOutput & DORSetting.Reset) == 0) && (((DORSetting)value & DORSetting.Reset) == DORSetting.Reset))
+                        Reset();
+
+                    digitalOutput = (DORSetting) value;
                     break;
                 case 0x3f5:
                     ProcessCommandAndArgs(value);
@@ -234,6 +248,18 @@ namespace x86CS.Devices
         NonDMA = 0x20,
         DIO = 0x40,
         RQM = 0x80
+    }
+
+    [Flags]
+    enum DORSetting
+    {
+        Drive = 0x1,
+        Reset = 0x4,
+        Dma = 0x8,
+        Drive0Motor = 0x10,
+        Drive1Motor = 0x20,
+        Drive2Motor = 0x40,
+        Drive3Motor = 0x80
     }
 
     enum FloppyCommand

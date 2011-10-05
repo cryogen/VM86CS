@@ -1,9 +1,12 @@
 ﻿using System.Diagnostics;
+using log4net;
 
 namespace x86CS.Devices
 {
     public class PIC8259 : IDevice
     {
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory)); 
+
         private readonly int[] portsUsed = {0x20, 0x21, 0xa0, 0xa1};
         private readonly PIController[] controllers;
 
@@ -93,6 +96,10 @@ namespace x86CS.Devices
                     break;
             }
             Debug.Assert(controller != null, "controller != null");
+
+            if ((controller.CommandRegister & 0x3) == 0x3)
+                return controller.InServiceRegister;
+
             return addr%10 == 0 ? controller.StatusRegister : controller.DataRegister;
         }
 
@@ -129,12 +136,13 @@ namespace x86CS.Devices
     internal class PIController
     {
         private byte requestRegister;
-        private byte inServiceRegister;
+        
         private byte dataRegister;
         private byte currentICW;
         private bool expectICW4;
         private byte linkIRQ;
 
+        public byte InServiceRegister { get; private set; }
         public byte VectorBase { get; private set; }
         public byte MaskRegister { get; set; }
         public bool Init { get; set; }
@@ -149,12 +157,12 @@ namespace x86CS.Devices
             Init = false;
             StatusRegister = 0;
             DataRegister = 0;
-            inServiceRegister = 0;
+            InServiceRegister = 0;
         }
 
         public bool RequestInterrupt(byte irq)
         {
-            if (((inServiceRegister >> irq) & 0x1) != 0)
+            if (((InServiceRegister >> irq) & 0x1) != 0)
                 return false;
 
             if (((requestRegister >> irq) & 0x1) != 0)
@@ -169,7 +177,7 @@ namespace x86CS.Devices
         {
             for (int i = 0; i < 8; i++)
             {
-                if (((inServiceRegister >> i) & 0x1) == 0x1)
+                if (((InServiceRegister >> i) & 0x1) == 0x1)
                     return i;
             }
             return -1;
@@ -188,12 +196,12 @@ namespace x86CS.Devices
         public void AckInterrupt(byte irq)
         {
             requestRegister &= (byte) ~(1 << irq);
-            inServiceRegister |= (byte) (1 << irq);
+            InServiceRegister |= (byte) (1 << irq);
         }
 
         public void EOI()
         {
-            inServiceRegister = 0;
+            InServiceRegister = 0;
         }
 
         public void ProcessICW(byte icw)

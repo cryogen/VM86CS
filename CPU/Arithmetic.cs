@@ -565,17 +565,19 @@
         private void Divide(byte source)
         {
             var temp = (byte) (AX/source);
+            var remainder = (byte)(AX%source);
 
             AL = temp;
-            AH = (byte) (AX%source);
+            AH = remainder;
         }
 
         private void SDivide(byte source)
         {
             var temp = (sbyte) ((short) AX/(sbyte) source);
+            var remainder = (sbyte)((short)AX % (sbyte)source);
 
             AL = (byte) temp;
-            AH = (byte) (sbyte) ((short) AX%(sbyte) source);
+            AH = (byte)remainder;
         }
 
         private void Divide(ushort source)
