@@ -71,13 +71,13 @@ namespace x86CS
                 }
                 if (!machine.Running || (machine.Stepping && machine.CPU.InterruptLevel == 0))
                 {
-                    if(stepButton.Enabled && Created)
+                    if(!stepButton.Enabled && Created)
                         Invoke((MethodInvoker) delegate { stepButton.Enabled = true; });
                     continue;
                 }
                 try
                 {
-                    if (!stepButton.Enabled && Created)
+                    if (stepButton.Enabled && Created)
                         Invoke((MethodInvoker)delegate { stepButton.Enabled = false; });
                     machine.RunCycle(frequency, timerTicks);
                 }

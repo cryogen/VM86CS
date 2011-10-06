@@ -18,23 +18,17 @@
 
     public partial class CPU
     {
-        private void CheckOverflow(byte dest, byte source, short result)
+        private void CheckOverflow(short result)
         {
-            if (result > sbyte.MaxValue || result < sbyte.MinValue)
+            if ((sbyte)(byte)result > sbyte.MaxValue || (sbyte)(byte)result < sbyte.MinValue)
                 OF = true;
             else
                 OF = false;
         }
 
-        private void CheckOverflow(ushort dest, ushort source, ushort result)
+        private void CheckOverflow(int result)
         {
-            var signedDest = (short) dest;
-            var signedSource = (short) source;
-            var signedResult = (short) result;
-
-            if (signedDest > 0 && signedSource > 0 && signedResult < 0)
-                OF = true;
-            else if (signedDest < 0 && signedSource < 0 && signedResult > 0)
+            if ((short)(ushort)result > short.MaxValue || (short)(ushort)result < short.MinValue)
                 OF = true;
             else
                 OF = false;
@@ -278,7 +272,7 @@
 
             CF = dest < source;
 
-            CheckOverflow(dest, source, (short) (dest - source));
+            CheckOverflow((short) (dest - (borrow ? source + 1 : source)));
             SetCPUFlags((byte) result);
 
             return (byte) result;
@@ -295,7 +289,7 @@
 
             CF = dest < source;
 
-            CheckOverflow(dest, source, (ushort) result);
+            CheckOverflow((dest - (borrow ? source + 1 : source)));
             SetCPUFlags((ushort) result);
 
             return (ushort) result;
@@ -584,36 +578,40 @@
         {
             var dividend = (uint) (((DX << 16) & 0xFFFF0000) + AX);
             var temp = (ushort) (dividend/source);
+            var remainder = (ushort)(dividend%source);
 
             AX = temp;
-            DX = (ushort) (dividend%source);
+            DX = remainder;
         }
 
         private void Divide(uint source)
         {
             var dividend = ((EDX << 32) & 0xffffffff00000000) + EAX;
             var temp = (uint) (dividend/source);
+            var remainder = (uint) (dividend%source);
 
             EAX = temp;
-            EDX = (uint) (dividend%source);
+            EDX = remainder;
         }
 
         private void SDivide(ushort source)
         {
             var dividend = (uint) ((DX << 16 & 0xffff0000) + AX);
             var temp = (short) ((int) dividend/(short) source);
+            var remainder = (short) ((int) dividend%(short) source);
 
             AX = (ushort) temp;
-            DX = (ushort) ((int) dividend/(short) source);
+            DX = (ushort) remainder;
         }
 
         private void SDivide(uint source)
         {
             var dividend = (EDX << 32 & 0xffffffff00000000) + EAX;
             var temp = (int) ((long) dividend/(int) source);
+            var remainder = (int) ((long) dividend%(int) source);
 
             EAX = (uint) temp;
-            EDX = (uint) ((long) dividend/(int) source);
+            EDX = (uint) remainder;
         }
 
         #endregion

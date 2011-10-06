@@ -378,6 +378,8 @@
                 }
 
                 count--;
+                if (repeatPrefix == RepeatPrefix.Repeat && !ZF || repeatPrefix == RepeatPrefix.RepeatNotZero && ZF)
+                    break;
             }
             SetCount(count);
         }

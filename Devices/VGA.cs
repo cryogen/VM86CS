@@ -148,7 +148,7 @@ namespace x86CS.Devices
         {
             var screenBitmap = new Bitmap(720, 420, PixelFormat.Format24bppRgb);
 
-            var fontBuffer = new byte[0x1000];
+            var fontBuffer = new byte[0x2000];
             var displayBuffer = new byte[0xfa0];
 
             Memory.BlockRead(0xa0000, fontBuffer, fontBuffer.Length);

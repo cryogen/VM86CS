@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace x86CS.CPU
 {
@@ -50,7 +51,7 @@ namespace x86CS.CPU
         private RepeatPrefix repeatPrefix = RepeatPrefix.None;
         private int opSize = 16;
         private int memSize = 16;
-        private bool isSegOverride = false;
+        private bool isSegOverride;
 
         #region Read Functions
         private byte DecodeReadByte()
@@ -490,7 +491,76 @@ namespace x86CS.CPU
                     case 0x8f:
                         opStr = String.Format("JNLE {0:X} ({1:X})", memSize == 32 ? signedDWord : signedWord, offset);
                         break;
+                    case 0x90:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETO {0}", rmData.RegisterName);
+                        break;
+                    case 0x91:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETNO {0}", rmData.RegisterName);
+                        break;
+                    case 0x92:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETB {0}", rmData.RegisterName);
+                        break;
+                    case 0x93:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETNB {0}", rmData.RegisterName);
+                        break;
+                    case 0x94:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETZ {0}", rmData.RegisterName);
+                        break;
+                    case 0x95:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETNZ {0}", rmData.RegisterName);
+                        break;
+                    case 0x96:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETBE {0}", rmData.RegisterName);
+                        break;
+                    case 0x97:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETNBE {0}", rmData.RegisterName);
+                        break;
+                    case 0x98:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETS {0}", rmData.RegisterName);
+                        break;
+                    case 0x99:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETNS {0}", rmData.RegisterName);
+                        break;
+                    case 0x9a:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETP {0}", rmData.RegisterName);
+                        break;
+                    case 0x9b:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETPE {0}", rmData.RegisterName);
+                        break;
+                    case 0x9c:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETL {0}", rmData.RegisterName);
+                        break;
+                    case 0x9d:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETNL {0}", rmData.RegisterName);
+                        break;
+                    case 0x9e:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETLE {0}", rmData.RegisterName);
+                        break;
+                    case 0x9f:
+                        Debug.Assert(rmData != null, "rmData != null");
+                        opStr = String.Format("SETNLE {0}", rmData.RegisterName);
+                        break;
                     case 0xb6:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+
+                        opStr = String.Format("MOVZX {0}, {1}", rmData.RegisterName, rmData.Operand);
+                        break;
+                    case 0xb7:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
 
                         opStr = String.Format("MOVZX {0}, {1}", rmData.RegisterName, rmData.Operand);
@@ -1459,9 +1529,26 @@ namespace x86CS.CPU
                     case 0x01:          /* R/M ops */
                     case 0x20:
                     case 0x22:
+                    case 0x90:
+                    case 0x91:
+                    case 0x92:
+                    case 0x93:
+                    case 0x94:
+                    case 0x95:
+                    case 0x96:
+                    case 0x97:
+                    case 0x98:
+                    case 0x99:
+                    case 0x9a:
+                    case 0x9b:
+                    case 0x9c:
+                    case 0x9d:
+                    case 0x9e:
+                    case 0x9f:
                     case 0xb4:
                     case 0xb5:
                     case 0xb6:
+                    case 0xb7:
                     case 0xaf:
                         rmData = DecodeRM(true);
                         args.Add(rmData);

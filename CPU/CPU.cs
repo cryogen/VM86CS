@@ -750,19 +750,19 @@ namespace x86CS.CPU
             switch (rmData.RegMem)
             {
                 case 0:
-                    if (opSize == 32)
+                    if (PMode)
                         address = EAX;
                     else
                         address = (uint)(BX + SI);
                     break;
                 case 1:
-                    if (opSize == 32)
+                    if (PMode)
                         address = ECX;
                     else
                         address = (uint)(BX + DI);
                     break;
                 case 2:
-                    if (opSize == 32)
+                    if (PMode)
                         address = EDX;
                     else
                     {
@@ -771,7 +771,7 @@ namespace x86CS.CPU
                     }
                     break;
                 case 3:
-                    if (opSize == 32)
+                    if (PMode)
                         address = EBX;
                     else
                     {
@@ -780,7 +780,7 @@ namespace x86CS.CPU
                     }
                     break;
                 case 4:
-                    if (opSize == 32)
+                    if (PMode)
                     {
                         if (rmData.Base != 5)
                         {
@@ -798,7 +798,7 @@ namespace x86CS.CPU
                         address = SI;
                     break;
                 case 5:
-                    if (opSize == 32)
+                    if (PMode)
                     {
                         if (rmData.Mode == 1 || rmData.Mode == 2)
                             address = EBP;
@@ -809,7 +809,7 @@ namespace x86CS.CPU
                         address = DI;
                     break;
                 case 6:
-                    if (opSize == 32)
+                    if (PMode)
                         address = ESI;
                     else
                     {
@@ -1167,7 +1167,7 @@ namespace x86CS.CPU
 
         private void CallInterrupt(byte vector)
         {
-            Logger.Debug("INT" + vector.ToString("X"));
+            //Logger.Debug("INT" + vector.ToString("X"));
             StackPush((ushort)Flags);
             IF = false;
             TF = false;
@@ -1211,6 +1211,13 @@ namespace x86CS.CPU
 
             if(inInterrupt)
             {
+                setPrefixes = 0;
+                repeatPrefix = RepeatPrefix.None;
+                overrideSegment = SegmentRegister.DS;
+                opSize = PMode ? 32 : 16;
+
+                extPrefix = false;
+                isSegOverride = false;
                 CallInterrupt(interruptToRun);
                 inInterrupt = false;
                 Halted = false;
@@ -1222,7 +1229,7 @@ namespace x86CS.CPU
 
             string opStr = DecodeOpString(opCode, operands);
             
-            if(InterruptLevel == 0)
+            //if(InterruptLevel == 0)
                 Logger.Debug(String.Format("{0:X}:{1:X}    {2}", CS, EIP, opStr));
 
             EIP += (uint)len;
@@ -1371,13 +1378,94 @@ namespace x86CS.CPU
                         if (!ZF && SF == OF)
                             EIP = offset;
                         break;
+                    case 0x90:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (OF ? 1 : 0));
+                        break;
+                    case 0x91:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (!OF ? 1 : 0));
+                        break;
+                    case 0x92:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (CF ? 1 : 0));
+                        break;
+                    case 0x93:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (!CF ? 1 : 0));
+                        break;
+                    case 0x94:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (ZF ? 1 : 0));
+                        break;
+                    case 0x95:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (!ZF ? 1 : 0));
+                        break;
+                    case 0x96:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        if (ZF || CF)
+                            WriteRegMem(rmData, memAddress, 1);
+                        else
+                            WriteRegMem(rmData, memAddress, 0);
+                        break;
+                    case 0x97:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        if (!CF && !ZF)
+                            WriteRegMem(rmData, memAddress, 1);
+                        else
+                            WriteRegMem(rmData, memAddress, 0);
+                        break;
+                    case 0x98:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (SF ? 1 : 0));
+                        break;
+                    case 0x99:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (!SF ? 1 : 0));
+                        break;
+                    case 0x9a:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (PF ? 1 : 0));
+                        break;
+                    case 0x9b:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (!PF ? 1 : 0));
+                        break;
+                    case 0x9c:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (SF != OF ? 1 : 0));
+                        break;
+                    case 0x9d:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        WriteRegMem(rmData, memAddress, (byte) (SF == OF ? 1 : 0));
+                        break;
+                    case 0x9e:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        if (ZF || SF != OF)
+                            WriteRegMem(rmData, memAddress, 1);
+                        else
+                            WriteRegMem(rmData, memAddress, 0);
+                        break;
+                    case 0x9f:
+                        memAddress = ProcessRegMem(rmData, out tempByte, out destByte);
+                        if (!ZF && SF == OF)
+                            WriteRegMem(rmData, memAddress, 1);
+                        else
+                            WriteRegMem(rmData, memAddress, 0);
+                        break;
                     case 0xb6:
                         System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         ProcessRegMem(rmData, out destByte, out sourceByte);
                         if (opSize == 32)
-                            registers[rmData.Register].DWord = (uint)(sbyte)sourceByte;
+                            registers[rmData.Register].DWord = (uint)sourceByte;
                         else
-                            registers[rmData.Register].Word = (ushort)(sbyte)sourceByte;
+                            registers[rmData.Register].Word = (ushort)sourceByte;
+                        break;
+                    case 0xb7:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
+                        ProcessRegMem(rmData, out destWord, out sourceWord);
+                        registers[rmData.Register].DWord = sourceWord;
                         break;
                     case 0xa0:
                         StackPush(FS);
@@ -2121,13 +2209,14 @@ namespace x86CS.CPU
                     #endregion
                     #region Multiply
                     case 0x69:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             tempDWord = (uint)operands[1];
 
                             destDWord = SignedMultiply(sourceDWord, tempDWord);
-                            WriteRegMem(rmData, memAddress, destDWord);
+                            registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
@@ -2135,17 +2224,18 @@ namespace x86CS.CPU
                             tempWord = (ushort)operands[1];
 
                             destWord = SignedMultiply(sourceWord, tempWord);
-                            WriteRegMem(rmData, memAddress, destWord);
+                            registers[rmData.Register].Word = destWord;
                         }
                         break;
                     case 0x6b:
+                        System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
                         if (opSize == 32)
                         {
                             memAddress = ProcessRegMem(rmData, out destDWord, out sourceDWord);
                             sourceByte = (byte)operands[1];
 
                             destDWord = SignedMultiply(sourceDWord, sourceByte);
-                            WriteRegMem(rmData, memAddress, destDWord);
+                            registers[rmData.Register].DWord = destDWord;
                         }
                         else
                         {
@@ -2153,7 +2243,7 @@ namespace x86CS.CPU
                             sourceByte = (byte)operands[1];
 
                             destWord = SignedMultiply(sourceWord, sourceByte);
-                            WriteRegMem(rmData, memAddress, destWord);
+                            registers[rmData.Register].Word = destWord;
                         }
                         break;
                     #endregion
@@ -2830,7 +2920,7 @@ namespace x86CS.CPU
                         IF = true;
                         if(InterruptLevel > 0)
                             InterruptLevel--;
-                        Logger.Debug("IRET");
+//                        Logger.Debug("IRET");
                         break;
                     case 0xe0:
                         CX--;
