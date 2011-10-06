@@ -1229,7 +1229,7 @@ namespace x86CS.CPU
 
             string opStr = DecodeOpString(opCode, operands);
             
-            //if(InterruptLevel == 0)
+            if(InterruptLevel == 0)
                 Logger.Debug(String.Format("{0:X}:{1:X}    {2}", CS, EIP, opStr));
 
             EIP += (uint)len;

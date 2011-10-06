@@ -151,6 +151,22 @@ namespace x86CS.Devices
                 case FloppyCommand.ReadData:
                     ReadSector();
                     break;
+                case FloppyCommand.WriteData:
+                    resultCount = 7;
+                    resultIdx = 0;
+                    data[0] = 0;
+                    data[1] = 0x2;
+                    data[2] = 0;
+                    data[3] = 0;
+                    data[4] = 0;
+                    data[5] = 0;
+                    data[6] = 0;
+
+                    mainStatus |= MainStatus.DIO;
+                    statusZero = 0;
+
+                    OnIRQ(new EventArgs());
+                    break;
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;
@@ -184,6 +200,9 @@ namespace x86CS.Devices
                         inCommand = false;
                         break;
                     case FloppyCommand.ReadData:
+                        paramCount = 8;
+                        break;
+                    case FloppyCommand.WriteData:
                         paramCount = 8;
                         break;
                     default:
