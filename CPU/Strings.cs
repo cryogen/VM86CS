@@ -383,5 +383,61 @@
             }
             SetCount(count);
         }
+
+        private void StringCompareWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                ushort source = SegReadWord(overrideSegment, opSize == 32 ? ESI : SI);
+                ushort dest = SegReadWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
+
+                Subtract(dest, source);
+                if (DF)
+                {
+                    ESI -= 2;
+                    EDI -= 2;
+                }
+                else
+                {
+                    ESI += 2;
+                    EDI += 2;
+                }
+
+                count--;
+                if (repeatPrefix == RepeatPrefix.Repeat && !ZF || repeatPrefix == RepeatPrefix.RepeatNotZero && ZF)
+                    break;
+            }
+            SetCount(count);
+        }
+
+        private void StringCompareDWord()
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                uint source = SegReadDWord(overrideSegment, opSize == 32 ? ESI : SI);
+                uint dest = SegReadDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI);
+
+                Subtract(dest, source);
+                if (DF)
+                {
+                    ESI -= 4;
+                    EDI -= 4;
+                }
+                else
+                {
+                    ESI += 4;
+                    EDI += 4;
+                }
+
+                count--;
+                if (repeatPrefix == RepeatPrefix.Repeat && !ZF || repeatPrefix == RepeatPrefix.RepeatNotZero && ZF)
+                    break;
+            }
+            SetCount(count);
+        }
     }
 }

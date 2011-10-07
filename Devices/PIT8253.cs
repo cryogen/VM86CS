@@ -54,6 +54,8 @@ namespace x86CS.Devices
         {
             switch (address)
             {
+                case 0x40:
+                    return 0x000;
                 case 0x43:
                     return 0xffff;
                 default:

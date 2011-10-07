@@ -44,7 +44,7 @@ namespace x86CS
             devices = new IDevice[]
                           {
                               FloppyDrive, new CMOS(), new Misc(), new PIT8253(), picDevice, keyboard, dmaController,
-                              vgaDevice
+                              vgaDevice, new ATA()
                           };
 
             CPU = new CPU.CPU();

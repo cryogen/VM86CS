@@ -1325,6 +1325,9 @@ namespace x86CS.CPU
                     case 0xd5:
                         opStr = "AAD";
                         break;
+                    case 0xd7:
+                        opStr = "XLAT";
+                        break;
                     case 0xe0:
                         opStr = String.Format("LOOPNZ {0:X} ({1:X})", signedByte, offset);
                         break;

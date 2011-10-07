@@ -87,6 +87,7 @@
     <Compile Include="CPU\Decoder.cs" />
     <Compile Include="CPU\Logic.cs" />
     <Compile Include="CPU\Strings.cs" />
+    <Compile Include="Devices\ATA.cs" />
     <Compile Include="Devices\DMA.cs" />
     <Compile Include="Devices\Floppy.cs" />
     <Compile Include="Devices\IDevice.cs" />

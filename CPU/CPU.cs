@@ -1229,7 +1229,7 @@ namespace x86CS.CPU
 
             string opStr = DecodeOpString(opCode, operands);
             
-            if(InterruptLevel == 0)
+           // if(InterruptLevel == 0)
                 Logger.Debug(String.Format("{0:X}:{1:X}    {2}", CS, EIP, opStr));
 
             EIP += (uint)len;
@@ -2278,6 +2278,12 @@ namespace x86CS.CPU
                     case 0xa6:
                         StringCompareByte();
                         break;
+                    case 0xa7:
+                        if(opSize == 32)
+                            StringCompareWord();
+                        else
+                            StringCompareWord();
+                        break;
                     case 0xaa:
                         StringWriteByte();
                         break;
@@ -2834,8 +2840,21 @@ namespace x86CS.CPU
                             registers[rmData.Register].Word = (ushort)memAddress;
                         }
                         break;
+                    case 0x9e:
+                        eFlags |= (CPUFlags)0x02;
+                        CF = (AH & 0x1) == 0x1;
+                        PF = (AH & 0x4) == 0x4;
+                        AF = (AH & 0x10) == 0x10;
+                        ZF = (AH & 0x40) == 0x40;
+                        SF = (AH & 0x80) == 0x80;
+                        break;
                     case 0x9f:
-                        AH = (byte)eFlags;
+                        AH = 0x02;
+                        AH |= (byte)((byte)eFlags & 0x1);
+                        AH |= (byte)((byte)eFlags & 0x4);
+                        AH |= (byte)((byte)eFlags & 0x10);
+                        AH |= (byte)((byte)eFlags & 0x40);
+                        AH |= (byte)((byte)eFlags & 0x80);
                         break;
                     case 0xc2:
                         if (opSize == 32)
@@ -2921,6 +2940,12 @@ namespace x86CS.CPU
                         if(InterruptLevel > 0)
                             InterruptLevel--;
 //                        Logger.Debug("IRET");
+                        break;
+                    case 0xd7:
+                        if (memSize == 32)
+                            AL = SegReadByte(overrideSegment, EBX + AL);
+                        else
+                            AL = SegReadByte(overrideSegment, (uint)(BX + AL));
                         break;
                     case 0xe0:
                         CX--;
@@ -3417,7 +3442,11 @@ namespace x86CS.CPU
                             }
                         }
                         break;
-                    #endregion
+                    default:
+                        System.Diagnostics.Debugger.Break();
+                        break;
+
+                        #endregion
                 }
             }
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
