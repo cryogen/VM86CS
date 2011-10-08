@@ -64,9 +64,9 @@ namespace x86CS
             {
                 timerTicks++;
 
-                if(timerTicks % 100000 == 0)
+                if(timerTicks % 50000 == 0)
                 {
-                    frequency = 100000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
+                    frequency = 50000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
                     lastSeconds = stopwatch.Elapsed.TotalSeconds;
                     if(Created)
                         Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("F2") + "TPS"; }); 
