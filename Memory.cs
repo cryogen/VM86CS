@@ -10,14 +10,14 @@ namespace x86CS
         private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory));
 
         private static IntPtr realMemBase;
-        private const bool LogMemory = true;
+        private const bool LogMemory = false;
         private const uint MemorySize = 0xFFFFF;
 
         public static bool A20 { get; set; }
 
         static Memory()
         {
-            realMemBase = Marshal.AllocHGlobal((int)MemorySize);
+            realMemBase = Marshal.AllocHGlobal(32*(int)MemorySize);
             Logger.Debug("Real memory base is " + realMemBase.ToString("X"));
         }
 

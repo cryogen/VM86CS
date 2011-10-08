@@ -29,6 +29,12 @@ namespace x86CS.Devices
             registers[0x0c] = 0x00;  /* all int flags cleared */
             registers[0x0d] = 0x80;  /* VRT */
             registers[0x14] = 0x05;  /* Machine config byte */
+            registers[0x15] = 0x71;  /* Low byte of 640K memory available */
+            registers[0x16] = 0x02;  /* High byte of above */
+            registers[0x17] = 0x00;  /* Low byte of memory up to 64M */
+            registers[0x18] = 0x80;  /* High byte of above */
+            registers[0x34] = 0x00;  /* Low byte of memory up to 4GB */
+            registers[0x35] = 0x02;  /* High byte */
             registers[0x3d] = 0x21;  /* 1st and 2nd boot devices */
             registers[0x38] = 0x00;  /* 3rd boot device */
         }

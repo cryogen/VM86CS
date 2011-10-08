@@ -30,7 +30,7 @@ namespace x86CS
 
             PrintRegisters();
 
-            machine.FloppyDrive.MountImage(@"C:\disk1.img");
+            machine.FloppyDrive.MountImage(@"C:\fdboot.img");
             
             machineThread = new Thread(RunMachine);
             machineThread.Start();
