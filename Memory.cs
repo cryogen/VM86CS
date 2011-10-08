@@ -36,7 +36,7 @@ namespace x86CS
 
         public static int BlockRead(uint addr, byte[] buffer, int length)
         {
-            Array.Copy(memory, addr, buffer, 0, length);
+            Buffer.BlockCopy(memory, (int)addr, buffer, 0, length);
 
             Logger.Debug(String.Format("Block read {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
@@ -101,7 +101,7 @@ namespace x86CS
             if(LogMemory)
                 Logger.Debug(String.Format("Write Word {0:X} {1:X}", addr, value));
 
-            Array.Copy(BitConverter.GetBytes(value), 0, memory, addr, 2);
+            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, memory, (int)addr, 2);
         }
 
         public static void WriteDWord(uint addr, uint value)
@@ -109,7 +109,7 @@ namespace x86CS
             if(LogMemory)
                 Logger.Debug(String.Format("Write DWord {0:X} {1:X}", addr, value));
 
-            Array.Copy(BitConverter.GetBytes(value), 0, memory, addr, 4);
+            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, memory, (int)addr, 4);
         }
     }
 }
