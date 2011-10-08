@@ -12,3 +12,10 @@ obj/x86/Debug/x86CS.csproj.FileListAbsolute.txt
 _ReSharper.x86CS
 x86CS.6.0.ReSharper.user
 x86CS.csproj.ReSharper.user
+bin/Profiled
+log4net.dll
+x86cs.csps
+x86CS.csproj.user
+*.counters
+BIOS-bochs-legacy
+VGABIOS-lgpl-latest

@@ -251,14 +251,17 @@ namespace x86CS.CPU
 
             SF = signed < 0;
 
-            SetParity((int)operand);
+            SetParity(operand);
         }
 
-        private void SetParity(int value)
+        private void SetParity(uint value)
         {
-            var bitCount = new BitArray(new[] { value });
-
-            PF = bitCount.CountSet() % 2 == 0;
+            value ^= value >> 1;
+            value ^= value >> 2;
+            value ^= value >> 4;
+            value ^= value >> 8;
+            value ^= value >> 16;
+            PF = ((value & 1) == 1);
         }
     }
 }
