@@ -31,7 +31,7 @@ namespace x86CS
         {
             Logger.Debug(String.Format("Block write {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
-            buffer.CopyTo(memory, addr);
+            Buffer.BlockCopy(buffer, 0, memory, (int)addr, length);
         }
 
         public static int BlockRead(uint addr, byte[] buffer, int length)
@@ -65,8 +65,8 @@ namespace x86CS
 
         public static ushort ReadWord(uint addr, bool log)
         {
-            ushort ret = BitConverter.ToUInt16(memory, (int)addr);
-
+            ushort ret = (ushort)(memory[addr] | memory[addr+1] << 8);
+                
             if(log && LogMemory)
                 Logger.Debug(String.Format("Read Word {0:X} {1:X}", addr, ret));
         
@@ -80,7 +80,7 @@ namespace x86CS
 
         public static uint ReadDWord(uint addr, bool log)
         {
-            uint ret = BitConverter.ToUInt32(memory, (int)addr);
+            uint ret = (uint)(memory[addr] | memory[addr + 1] << 8 | memory[addr + 2] << 16 | memory[addr + 3] << 24);
 
             if(log && LogMemory)
                 Logger.Debug(String.Format("Read DWord {0:X} {1:X}", addr, ret));
@@ -101,7 +101,8 @@ namespace x86CS
             if(LogMemory)
                 Logger.Debug(String.Format("Write Word {0:X} {1:X}", addr, value));
 
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, memory, (int)addr, 2);
+            memory[addr] = (byte)value;
+            memory[addr + 1] = (byte)value.GetHigh();
         }
 
         public static void WriteDWord(uint addr, uint value)
@@ -109,7 +110,10 @@ namespace x86CS
             if(LogMemory)
                 Logger.Debug(String.Format("Write DWord {0:X} {1:X}", addr, value));
 
-            Buffer.BlockCopy(BitConverter.GetBytes(value), 0, memory, (int)addr, 4);
+            memory[addr] = (byte)value;
+            memory[addr + 1] = (byte)(value >> 8);
+            memory[addr + 2] = (byte)(value >> 16);
+            memory[addr + 3] = (byte)(value >> 24);
         }
     }
 }
