@@ -9,26 +9,15 @@ namespace x86CS
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory));
 
-        private static IntPtr realMemBase;
         private const bool LogMemory = false;
         private const uint MemorySize = 0xFFFFF;
+        private static readonly byte[] memory;
 
         public static bool A20 { get; set; }
 
         static Memory()
         {
-            realMemBase = Marshal.AllocHGlobal(32*(int)MemorySize);
-            Logger.Debug("Real memory base is " + realMemBase.ToString("X"));
-        }
-
-        private static IntPtr GetRealAddress(uint virtualAddr)
-        {
-            var actualAddr = (int)virtualAddr;
-
-            /*if (!a20)
-                actualAddr &= ~0x80000;*/
-
-            return new IntPtr(realMemBase.ToInt32() + actualAddr);
+            memory = new byte[MemorySize * 32];
         }
 
         public static void SegBlockWrite(ushort segment, ushort offset, byte[] buffer, int length)
@@ -40,18 +29,14 @@ namespace x86CS
 
         public static void BlockWrite(uint addr, byte[] buffer, int length)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
             Logger.Debug(String.Format("Block write {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
-            Marshal.Copy(buffer, 0, realOffset, length);
+            buffer.CopyTo(memory, addr);
         }
 
         public static int BlockRead(uint addr, byte[] buffer, int length)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
-            Marshal.Copy(realOffset, buffer, 0, length);
+            Array.Copy(memory, addr, buffer, 0, length);
 
             Logger.Debug(String.Format("Block read {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
@@ -65,9 +50,7 @@ namespace x86CS
 
         public static byte ReadByte(uint addr, bool log)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
-            byte ret = Marshal.ReadByte(realOffset);
+            byte ret = memory[addr];
 
             if(log && LogMemory)
                 Logger.Debug(String.Format("Read Byte {0:X} {1:X}", addr, ret));
@@ -82,9 +65,7 @@ namespace x86CS
 
         public static ushort ReadWord(uint addr, bool log)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
-            var ret = (ushort)Marshal.ReadInt16(realOffset);
+            ushort ret = BitConverter.ToUInt16(memory, (int)addr);
 
             if(log && LogMemory)
                 Logger.Debug(String.Format("Read Word {0:X} {1:X}", addr, ret));
@@ -99,9 +80,7 @@ namespace x86CS
 
         public static uint ReadDWord(uint addr, bool log)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
-            var ret = (uint)Marshal.ReadInt32(realOffset);
+            uint ret = BitConverter.ToUInt32(memory, (int)addr);
 
             if(log && LogMemory)
                 Logger.Debug(String.Format("Read DWord {0:X} {1:X}", addr, ret));
@@ -111,33 +90,26 @@ namespace x86CS
 
         public static void WriteByte(uint addr, byte value)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
             if(LogMemory)
                 Logger.Debug(String.Format("Write byte {0:X} {1:X}", addr, value));
 
-
-            Marshal.WriteByte(realOffset, value);
+            memory[addr] = value;
         }
 
         public static void WriteWord(uint addr, ushort value)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
             if(LogMemory)
                 Logger.Debug(String.Format("Write Word {0:X} {1:X}", addr, value));
 
-            Marshal.WriteInt16(realOffset, (short)value);
+            Array.Copy(BitConverter.GetBytes(value), 0, memory, addr, 2);
         }
 
         public static void WriteDWord(uint addr, uint value)
         {
-            IntPtr realOffset = GetRealAddress(addr);
-
             if(LogMemory)
                 Logger.Debug(String.Format("Write DWord {0:X} {1:X}", addr, value));
 
-            Marshal.WriteInt32(realOffset, (int)value);
+            Array.Copy(BitConverter.GetBytes(value), 0, memory, addr, 4);
         }
     }
 }

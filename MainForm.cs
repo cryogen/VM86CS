@@ -16,6 +16,7 @@ namespace x86CS
         private readonly Breakpoints breakpoints = new Breakpoints();
         private double frequency = 100000.0f;
         private ulong timerTicks;
+        private bool running;
 
         public MainForm()
         {
@@ -33,6 +34,7 @@ namespace x86CS
             machine.FloppyDrive.MountImage(@"C:\fdboot.img");
             
             machineThread = new Thread(RunMachine);
+            running = true;
             machineThread.Start();
         }
 
@@ -58,7 +60,7 @@ namespace x86CS
 
             stopwatch.Start();
 
-            while (true)
+            while (running)
             {
                 timerTicks++;
 
@@ -80,6 +82,10 @@ namespace x86CS
                     if (stepButton.Enabled && Created)
                         Invoke((MethodInvoker)delegate { stepButton.Enabled = false; });
                     machine.RunCycle(frequency, timerTicks);
+                }
+                catch (ThreadAbortException)
+                {
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -110,7 +116,7 @@ namespace x86CS
         private void ExitToolStripMenuItemClick(object sender, EventArgs e)
         {
             machine.Stop();
-            machineThread.Abort();
+            running = false;
             Application.Exit();
         }
 
