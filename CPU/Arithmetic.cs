@@ -283,9 +283,9 @@
             short result;
 
             if (borrow && CF)
-                result = (short) (dest - (source + 1));
-            else
-                result = (short) (dest - source);
+                source++;
+
+            result = (short) (dest - source);
 
             CF = dest < source;
 
@@ -300,9 +300,9 @@
             int result;
 
             if (borrow && CF)
-                result = (int) (dest - (source + 1));
-            else
-                result = (int) (dest - source);
+                source++;
+
+            result = (int) (dest - source);
 
             CF = dest < source;
 
