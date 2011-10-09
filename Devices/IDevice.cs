@@ -12,8 +12,8 @@ namespace x86CS.Devices
     {
         int[] PortsUsed { get; }
 
-        ushort Read(ushort addr);
-        void Write(ushort addr, ushort value);
+        uint Read(ushort addr, int size);
+        void Write(ushort addr, uint value, int size);
     }
 
     public interface INeedsIRQ

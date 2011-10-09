@@ -2,12 +2,22 @@
 {
     public partial class CPU
     {
+        private void ProcessString(Operand[] operands)
+        {
+            switch (currentInstruction.Instruction.Opcode)
+            {
+                case 0xab:
+                    StringStore(GetOperandValue(operands[1]), 16);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         private uint GetCount()
         {
             if (repeatPrefix == RepeatPrefix.Repeat || repeatPrefix == RepeatPrefix.RepeatNotZero)
-            {
-                return opSize == 32 ? ECX : CX;
-            }
+                return addressSize == 32 ? ECX : CX;
             return 1;
         }
 
@@ -16,19 +26,69 @@
             if (repeatPrefix == RepeatPrefix.None)
                 return;
 
-            if (opSize == 32)
+            if (addressSize == 32)
                 ECX = value;
             else
                 CX = (ushort)value;
         }
 
-        private void StringInByte()
+        private void StringStore(uint value, int size)
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                int amount;
+                uint addr;
+
+                if (addressSize == 32)
+                    addr = EDI;
+                else
+                    addr = DI;
+
+                if (size == 8)
+                {
+                    SegWriteByte(SegmentRegister.ES, addr, (byte)value);
+                    amount = 1;
+                }
+                else if (size == 16)
+                {
+                    SegWriteWord(SegmentRegister.ES, addr, (ushort)value);
+                    amount = 2;
+                }
+                else
+                {
+                    SegWriteDWord(SegmentRegister.ES, addr, value);
+                    amount = 4;
+                }
+
+                if (DF)
+                {
+                    if (addressSize == 32)
+                        EDI -= (uint)amount;
+                    else
+                        DI -= (ushort)amount;
+                }
+                else
+                {
+                    if (addressSize == 32)
+                        EDI += (uint)amount;
+                    else
+                        DI += (ushort)amount;
+                }
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+      /*  private void StringInByte()
         {
             var count = GetCount();
 
             while (count > 0)
             {
-                var value = (byte)DoIORead(DX);
+                var value = (byte)DoIORead(DX, 8);
 
                 SegWriteByte(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
@@ -46,7 +106,7 @@
             uint count = GetCount();
             while (count > 0)
             {
-                ushort value = DoIORead(DX);
+                ushort value = (ushort)DoIORead(DX, 16);
                 SegWriteWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
                     EDI -= 2;
@@ -63,7 +123,7 @@
             uint count = GetCount();
             while (count > 0)
             {
-                uint value = DoIORead(DX);
+                uint value = DoIORead(DX, 32);
                 SegWriteDWord(SegmentRegister.ES, opSize == 32 ? EDI : DI, value);
                 if (DF)
                     EDI -= 4;
@@ -77,12 +137,12 @@
 
         private void StringOutByte()
         {
-            uint count = GetCount();
+         /*   uint count = GetCount();
 
             while (count > 0)
             {
                 var value = SegReadByte(overrideSegment, opSize == 32 ? ESI : SI);
-                DoIOWrite(DX, value);
+                DoIOWrite(DX, value, 8);
                 if (DF)
                     ESI--;
                 else
@@ -95,12 +155,12 @@
 
         private void StringOutWord()
         {
-            uint count = GetCount();
+        /*    uint count = GetCount();
 
             while (count > 0)
             {
                 var value = SegReadWord(overrideSegment, opSize == 32 ? ESI : SI);
-                DoIOWrite(DX, value);
+                DoIOWrite(DX, value, 16);
                 if (DF)
                     ESI -= 2;
                 else
@@ -118,7 +178,7 @@
             while (count > 0)
             {
                 var value = SegReadDWord(overrideSegment, opSize == 32 ? ESI : SI);
-                DoIOWrite(DX, (ushort)value);
+                DoIOWrite(DX, value, 32);
                 if (DF)
                     ESI -= 4;
                 else
@@ -179,7 +239,8 @@
             }
             SetCount(count);
         }
-
+        */
+        /*
         private void StringWriteByte()
         {
             uint count = GetCount();
@@ -438,6 +499,6 @@
                     break;
             }
             SetCount(count);
-        }
+        }*/
     }
 }

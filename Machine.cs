@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using log4net;
 using x86CS.Devices;
 using System.Windows.Forms;
+using Bea;
 
 namespace x86CS
 {
@@ -25,6 +26,7 @@ namespace x86CS
 
         private Dictionary<ushort, IOEntry> ioPorts;
         private int opLen;
+        private Disasm currentInstruction;
 
         public object[] Operands { get; private set; }
         public byte OPCode { get; private set; }
@@ -60,6 +62,9 @@ namespace x86CS
             machineForm.Show();
             machineForm.BringToFront();
             machineForm.Select();
+            currentInstruction = new Disasm();
+            currentInstruction.Archi = 0x10;
+            currentInstruction.Options = (ulong)(Bea.BeaConstants.SpecialInfo.PrefixedNumeral | Bea.BeaConstants.SpecialInfo.NasmSyntax | Bea.BeaConstants.SpecialInfo.ShowSegmentRegs);
         }
 
         [DllImport("user32.dll")]
@@ -110,22 +115,22 @@ namespace x86CS
             ioPorts.Add(port, entry);
         }
 
-        private ushort CPUIORead(ushort addr)
+        private uint CPUIORead(ushort addr, int size)
         {
             IOEntry entry;
 
-            var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr));
+            var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr, size));
             Logger.Debug(String.Format("IO Read Port {0:X}, Value {1:X}", addr, ret));
 
             return ret;
         }
 
-        private void CPUIOWrite(ushort addr, ushort value)
+        private void CPUIOWrite(ushort addr, uint value, int size)
         {
             IOEntry entry;
 
             if (ioPorts.TryGetValue(addr, out entry))
-                entry.Write(addr, value);
+                entry.Write(addr, value, size);
 
             Logger.Debug(String.Format("IO Write Port {0:X}, Value {1:X}", addr, value));
         }
@@ -216,12 +221,16 @@ namespace x86CS
 
         public void Start()
         {
-            byte tempOp;
-            object[] tempOperands;
+            int addr = (int)((CPU.CS << 4) + CPU.IP);
 
-            opLen = CPU.Decode(CPU.EIP, out tempOp, out tempOperands);
-            OPCode = tempOp;
-            Operands = tempOperands;
+            GCHandle handler = GCHandle.Alloc(Memory.MemoryArray, GCHandleType.Pinned);
+
+            currentInstruction.EIP = new IntPtr(handler.AddrOfPinnedObject().ToInt64() + addr);
+            currentInstruction.VirtualAddr = (ulong)addr;
+
+            opLen = BeaEngine.Disasm(currentInstruction);
+            handler.Free();
+            
             Running = true;
         }
 
@@ -236,9 +245,6 @@ namespace x86CS
 
         public void RunCycle(double frequency, ulong timerTicks)
         {
-            byte tempOp;
-            object[] tempOperands;
-
             if (Running)
             {
                 int irq, vector;
@@ -259,11 +265,20 @@ namespace x86CS
                         picDevice.AckInterrupt((byte)irq);
                     }
                 }
-                CPU.Cycle(opLen, OPCode, Operands);
-                opLen = CPU.Decode(CPU.EIP, out tempOp, out tempOperands);
-                OPCode = tempOp;
-                Operands = tempOperands;
-                if(timerTicks % 100000 == 0)
+                CPU.Cycle(currentInstruction, opLen);
+                GCHandle handle = GCHandle.Alloc(Memory.MemoryArray, GCHandleType.Pinned);
+
+                currentInstruction.EIP = new IntPtr(handle.AddrOfPinnedObject().ToInt64() + CPU.CurrentAddr);
+                currentInstruction.VirtualAddr = (ulong)CPU.CurrentAddr;
+                if (CPU.PMode)
+                    currentInstruction.Archi = 0;
+                else
+                    currentInstruction.Archi = 16;
+
+                handle.Free();
+
+                opLen = BeaEngine.Disasm(currentInstruction);
+                if (timerTicks % 100000 == 0)
                     machineForm.Invalidate();
             }
         }

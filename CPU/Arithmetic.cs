@@ -18,6 +18,41 @@
 
     public partial class CPU
     {
+        private void ProcessArithmetic(Operand[] operands)
+        {
+            uint source, dest;
+
+            dest = GetOperandValue(operands[0]);
+            source = GetOperandValue(operands[1]);
+
+            switch (currentInstruction.Instruction.Opcode)
+            {
+                case 0x3c:
+                    Subtract(dest, source, (int)operands[0].OperandSize);
+                    break;
+                case 0x04:
+                case 0x05:
+                case 0x83:
+                    dest = Add(GetOperandValue(operands[0]), GetOperandValue(operands[1]), (int)operands[0].OperandSize);
+                    SetOperandValue(operands[0], dest);
+                    break;
+                case 0x80:
+                    switch (currentInstruction.Instruction.Mnemonic)
+                    {
+                        case "cmp ":
+                            Subtract(dest, source, (int)operands[0].OperandSize);
+                            break;
+                        case "add ":
+                            dest = Add(GetOperandValue(operands[0]), GetOperandValue(operands[1]), (int)operands[0].OperandSize);
+                            SetOperandValue(operands[0], dest);
+                            break;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
         private void CheckOverflow(short result)
         {
             if ((sbyte)(byte)result > sbyte.MaxValue || (sbyte)(byte)result < sbyte.MinValue)
@@ -34,15 +69,9 @@
                 OF = false;
         }
 
-        private void CheckOverflow(uint dest, uint source, uint result)
+        private void CheckOverflow(long result)
         {
-            var signedDest = (int) dest;
-            var signedSource = (int) source;
-            var signedResult = (int) result;
-
-            if (signedDest > 0 && signedSource > 0 && signedResult < 0)
-                OF = true;
-            else if (signedDest < 0 && signedSource < 0 && signedResult > 0)
+            if ((int)(uint)result > int.MaxValue || (int)(uint)result < int.MinValue)
                 OF = true;
             else
                 OF = false;
@@ -50,266 +79,87 @@
 
         #region Addition
 
-        private void Add(byte source)
+        private uint Add(uint dest, uint source, int size)
         {
-            AL = Add(AL, source);
+            return DoAdd(dest, source, size, false);
         }
 
-        private void Add(ushort source)
+        private uint AddWithCarry(uint dest, uint source, int size)
         {
-            AX = Add(AX, source);
+            return DoAdd(dest, source, size, true);
         }
 
-        private void Add(uint source)
+        private uint DoAdd(uint dest, uint source, int size, bool carry)
         {
-            EAX = Add(EAX, source);
-        }
-
-        private byte Add(byte dest, byte source)
-        {
-            return DoAdd(dest, source, false);
-        }
-
-        private ushort Add(ushort dest, byte source)
-        {
-            return DoAdd(dest, (ushort)(sbyte)source, false);
-        }
-
-        private uint Add(uint dest, byte source)
-        {
-            return DoAdd(dest, (uint)(sbyte)source, false);
-        }
-
-        private ushort Add(ushort dest, ushort source)
-        {
-            return DoAdd(dest, source, false);
-        }
-
-        private uint Add(uint dest, uint source)
-        {
-            return DoAdd(dest, source, false);
-        }
-
-        private void AddWithCarry(byte source)
-        {
-            AL = AddWithCarry(AL, source);
-        }
-
-
-        private void AddWithCarry(ushort source)
-        {
-            AX = AddWithCarry(AX, source);
-        }
-
-        private void AddWithCarry(uint source)
-        {
-            EAX = AddWithCarry(EAX, source);
-        }
-
-        private byte AddWithCarry(byte dest, byte source)
-        {
-            return DoAdd(dest, source, true);
-        }
-
-        private ushort AddWithCarry(ushort dest, byte source)
-        {
-            return DoAdd(dest, (ushort)(sbyte)source, true);
-        }
-
-        private uint AddWithCarry(uint dest, byte source)
-        {
-            return DoAdd(dest, (uint)(sbyte)source, true);
-        }
-
-        private ushort AddWithCarry(ushort dest, ushort source)
-        {
-            return DoAdd(dest, source, true);
-        }
-
-        private uint AddWithCarry(uint dest, uint source)
-        {
-            return DoAdd(dest, source, true);
-        }
-
-        private byte DoAdd(byte dest, byte source, bool carry)
-        {
-            var ret = (short) (source + dest);
-
+            ulong ret;
+            
             if (carry)
-                ret += CF ? (short) 1 : (short) 0;
+                source += (uint)(CF ? 1 : 0);
 
-            CheckOverflow(dest, source, (byte) ret);
-
-            CF = ret > byte.MaxValue;
-
-            SetCPUFlags((byte) ret);
-
-            return (byte) ret;
-        }
-
-        private ushort DoAdd(ushort dest, ushort source, bool carry)
-        {
-            var ret = source + dest;
-
-            if (carry)
-                ret += CF ? 1 : 0;
-
-            CheckOverflow(dest, source, (ushort) ret);
-
-            CF = ret > ushort.MaxValue;
-
-            SetCPUFlags((ushort)ret);
-
-            return (ushort) ret;
-        }
-
-        private uint DoAdd(uint dest, uint source, bool carry)
-        {
-            var ret = (ulong) (source + dest);
-
-            if (carry)
-                ret += (ulong) (CF ? 1 : 0);
-
-            CheckOverflow(dest, source, (uint) ret);
-
-            CF = ret > uint.MaxValue;
-
-            SetCPUFlags((uint) ret);
-
-            return (uint) ret;
+            switch (size)
+            {
+                case 8:
+                    ret = (ushort)((byte)source + (byte)dest);
+                    CheckOverflow((short)ret);
+                    CF = ret > byte.MaxValue;
+                    SetCPUFlags((byte)ret);
+                    return (byte)ret;
+                case 16:
+                    ret = (uint)((ushort)source + (ushort)dest);
+                    CheckOverflow((int)ret);
+                    CF = ret > ushort.MaxValue;
+                    SetCPUFlags((ushort)ret);
+                    return (ushort)ret;
+                default:
+                    ret = (ulong)((uint)source + (uint)dest);
+                    CheckOverflow((long)ret);
+                    CF = ret > uint.MaxValue;
+                    SetCPUFlags((uint)ret);
+                    return (uint)ret;
+            }
         }
 
         #endregion
 
         #region Subtraction
 
-        private void Subtract(byte source)
+        private uint Subtract(uint dest, uint source, int size)
         {
-            AL = DoSub(AL, source, false);
+            return DoSub(dest, source, size, false);
         }
 
-        private void Subtract(ushort source)
+        private uint SubWithBorrow(uint dest, uint source, int size)
         {
-            AX = DoSub(AX, source, false);
+            return DoSub(dest, source, size, true);
         }
 
-        private void Subtract(uint source)
+        private uint DoSub(uint dest, uint source, int size, bool borrow)
         {
-            EAX = DoSub(EAX, source, false);
-        }
-
-        private byte Subtract(byte dest, byte source)
-        {
-            return DoSub(dest, source, false);
-        }
-
-        private ushort Subtract(ushort dest, byte source)
-        {
-            return DoSub(dest, (ushort)(sbyte)source, false);
-        }
-
-        private uint Subtract(uint dest, byte source)
-        {
-            return DoSub(dest, (uint)(sbyte) source, false);
-        }
-
-        private ushort Subtract(ushort dest, ushort source)
-        {
-            return DoSub(dest, source, false);
-        }
-
-        private uint Subtract(uint dest, uint source)
-        {
-            return DoSub(dest, source, false);
-        }
-
-        private void SubWithBorrow(byte source)
-        {
-            AL = DoSub(AL, source, true);
-        }
-
-        private void SubWithBorrow(ushort source)
-        {
-            AX = DoSub(AX, source, true);
-        }
-
-        private void SubWithBorrow(uint source)
-        {
-            EAX = DoSub(EAX, source, true);
-        }
-
-        private byte SubWithBorrow(byte dest, byte source)
-        {
-            return DoSub(dest, source, true);
-        }
-
-        private ushort SubWithBorrow(ushort dest, byte source)
-        {
-            return DoSub(dest, (ushort)(sbyte)source, true);
-        }
-
-        private uint SubWithBorrow(uint dest, byte source)
-        {
-            return DoSub(dest, (uint)(sbyte)source, true);
-        }
-
-        private ushort SubWithBorrow(ushort dest, ushort source)
-        {
-            return DoSub(dest, source, true);
-        }
-
-        private uint SubWithBorrow(uint dest, uint source)
-        {
-            return DoSub(dest, source, true);
-        }
-
-        private byte DoSub(byte dest, byte source, bool borrow)
-        {
-            if (borrow && CF)
-                source++;
-
-            var result = (sbyte) (dest - source);
-
-            CF = dest < source;
-
-            CheckOverflow((short) (dest - (borrow ? source + 1 : source)));
-            SetCPUFlags((byte) result);
-
-            return (byte) result;
-        }
-
-        private ushort DoSub(ushort dest, ushort source, bool borrow)
-        {
-            short result;
+            long result;
 
             if (borrow && CF)
                 source++;
-
-            result = (short) (dest - source);
-
             CF = dest < source;
 
-            CheckOverflow((dest - (borrow ? source + 1 : source)));
-            SetCPUFlags((ushort) result);
-
-            return (ushort) result;
-        }
-
-        private uint DoSub(uint dest, uint source, bool borrow)
-        {
-            int result;
-
-            if (borrow && CF)
-                source++;
-
-            result = (int) (dest - source);
-
-            CF = dest < source;
-
-            CheckOverflow(dest, source, (uint) result);
-            SetCPUFlags((uint) result);
-
-            return (uint) result;
+            switch (size)
+            {
+                case 8:
+                    result = (byte)((byte)dest - (byte)source);
+                    SetCPUFlags((byte)result);
+                    CheckOverflow((short)result);
+                    break;
+                case 16:
+                    result = (ushort)((ushort)dest - (ushort)(short)source);
+                    SetCPUFlags((ushort)result);
+                    CheckOverflow((int)result);
+                    break;
+                default:
+                    result = (int)(dest - source);
+                    SetCPUFlags((uint)result);
+                    CheckOverflow(result);
+                    break;
+            }
+            return (uint)result;
         }
 
         #endregion
@@ -320,29 +170,29 @@
         {
             var tempCF = CF;
 
-            var ret = Add(dest, 1);
+            var ret = Add(dest, 1, 8);
 
             CF = tempCF;
 
-            return ret;
+            return (byte)ret;
         }
 
         private ushort Increment(ushort dest)
         {
             var tempCF = CF;
 
-            var ret = Add(dest, 1);
+            var ret = Add(dest, 1, 16);
 
             CF = tempCF;
 
-            return ret;
+            return(ushort) ret;
         }
 
         private uint Increment(uint dest)
         {
             bool tempCF = CF;
 
-            uint ret = Add(dest, 1);
+            uint ret = Add(dest, 1, 32);
 
             CF = tempCF;
 
@@ -353,7 +203,7 @@
         {
             bool tempCF = CF;
 
-            byte ret = Subtract(dest, 1);
+            byte ret = (byte)Subtract(dest, 1, 8);
 
             CF = tempCF;
 
@@ -364,7 +214,7 @@
         {
             bool tempCF = CF;
 
-            ushort ret = Subtract(dest, 1);
+            ushort ret = (ushort)Subtract(dest, 1, 16);
 
             CF = tempCF;
 
@@ -375,7 +225,7 @@
         {
             bool tempCF = CF;
 
-            uint ret = Subtract(dest, 1);
+            uint ret = Subtract(dest, 1, 32);
 
             CF = tempCF;
 

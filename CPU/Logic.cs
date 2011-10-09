@@ -4,6 +4,66 @@ namespace x86CS.CPU
 {
     public partial class CPU
     {
+        private void ProcessLogic(Operand[] operands)
+        {
+            uint source, dest;
+
+            dest = GetOperandValue(operands[0]);
+            source = GetOperandValue(operands[1]);
+
+            switch (currentInstruction.Instruction.Opcode)
+            {
+                case 0x31:
+                    dest = Xor(dest, source, operands[0].OperandSize);
+                    SetOperandValue(operands[0], dest);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void SetCPUFlags(byte operand)
+        {
+            var signed = (sbyte)operand;
+
+            ZF = operand == 0;
+            SF = signed < 0;
+
+            SetParity(operand);
+        }
+
+        private void SetCPUFlags(ushort operand)
+        {
+            var signed = (short)operand;
+
+            ZF = operand == 0;
+
+            SF = signed < 0;
+
+            SetParity(operand);
+        }
+
+        private void SetCPUFlags(uint operand)
+        {
+            var signed = (int)operand;
+
+            ZF = operand == 0;
+
+            SF = signed < 0;
+
+            SetParity(operand);
+        }
+
+        private void SetParity(uint value)
+        {
+            value ^= value >> 1;
+            value ^= value >> 2;
+            value ^= value >> 4;
+            value ^= value >> 8;
+            value ^= value >> 16;
+            PF = ((value & 1) == 1);
+        }
+
         private byte And(byte source)
         {
             return DoAnd(AL, source);
@@ -156,112 +216,29 @@ namespace x86CS.CPU
             return temp;
         }
 
-        private void Xor(byte source)
+        private uint Xor(uint dest, uint source, uint size)
         {
-            AL = DoXor(AL, source);
-        }
+            uint ret;
 
-        private void Xor(ushort source)
-        {
-            AX = DoXor(AX, source);
-        }
-
-        private void Xor(uint source)
-        {
-            EAX = DoXor(EAX, source);
-        }
-
-        private byte Xor(byte dest, byte source)
-        {
-            return DoXor(dest, source);
-        }
-
-        private ushort Xor(ushort dest, byte source)
-        {
-            return DoXor(dest, (ushort)(sbyte)source);
-        }
-
-        private uint Xor(uint dest, byte source)
-        {
-            return DoXor(dest, (uint)(sbyte)source);
-        }
-
-        private ushort Xor(ushort dest, ushort source)
-        {
-            return DoXor(dest, source);
-        }
-
-        private uint Xor(uint dest, uint source)
-        {
-            return DoXor(dest, source);
-        }
-
-        private byte DoXor(byte dest, byte source)
-        {
-            var temp = (byte)(source ^ dest);
-
-            SetCPUFlags(temp);
+            switch (size)
+            {
+                case 8:
+                    ret = (byte)((byte)source ^ (byte)dest);
+                    SetCPUFlags((byte)ret);
+                    break;
+                case 16:
+                    ret = (ushort)((ushort)source ^ (ushort)(short)dest);
+                    SetCPUFlags((ushort)ret);
+                    break;
+                default:
+                    ret = source ^ dest;
+                    SetCPUFlags(ret);
+                    break;
+            }
 
             CF = false;
             OF = false;
-
-            return temp;
+            return ret;
         }
-
-        private ushort DoXor(ushort dest, ushort source)
-        {
-            var temp = (ushort)(source ^ dest);
-
-            SetCPUFlags(temp);
-
-            CF = false;
-            OF = false;
-
-            return temp;
-        }
-
-        private uint DoXor(uint dest, uint source)
-        {
-            var temp = source ^ dest;
-
-            SetCPUFlags(temp);
-
-            CF = false;
-            OF = false;
-
-            return temp;
-        }
-
-        private void SetCPUFlags(ushort operand)
-        {
-            var signed = (short)operand;
-
-            ZF = operand == 0;
-
-            SF = signed < 0;
-
-            SetParity(operand);
-        }
-
-        private void SetCPUFlags(uint operand)
-        {
-            var signed = (int)operand;
-
-            ZF = operand == 0;
-
-            SF = signed < 0;
-
-            SetParity(operand);
-        }
-
-        private void SetParity(uint value)
-        {
-            value ^= value >> 1;
-            value ^= value >> 2;
-            value ^= value >> 4;
-            value ^= value >> 8;
-            value ^= value >> 16;
-            PF = ((value & 1) == 1);
-        }
-    }
+   }
 }

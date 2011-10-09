@@ -214,7 +214,7 @@ namespace x86CS.Devices
 
         #region IDevice Members
 
-        public ushort Read(ushort addr)
+        public uint Read(ushort addr, int size)
         {
             switch (addr)
             {
@@ -234,7 +234,7 @@ namespace x86CS.Devices
             return 0;
         }
 
-        public void Write(ushort addr, ushort value)
+        public void Write(ushort addr, uint value, int size)
         {
             switch (addr)
             {
@@ -245,7 +245,7 @@ namespace x86CS.Devices
                     digitalOutput = (DORSetting) value;
                     break;
                 case 0x3f5:
-                    ProcessCommandAndArgs(value);
+                    ProcessCommandAndArgs((ushort)value);
                     break;
                 default:
                     System.Diagnostics.Debugger.Break();

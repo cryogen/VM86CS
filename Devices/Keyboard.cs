@@ -114,7 +114,7 @@ namespace x86CS.Devices
             }
         }
 
-        public ushort Read(ushort address)
+        public uint Read(ushort address, int size)
         {
             switch (address)
             {
@@ -137,7 +137,7 @@ namespace x86CS.Devices
             return 0;
         }
 
-        public void Write(ushort address, ushort value)
+        public void Write(ushort address, uint value, int size)
         {
             switch (address)
             {

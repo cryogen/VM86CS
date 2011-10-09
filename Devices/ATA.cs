@@ -18,12 +18,12 @@ namespace x86CS.Devices
             get { return portsUsed; }
         }
 
-        public ushort Read(ushort addr)
+        public uint Read(ushort addr, int size)
         {
             return 0;
         }
 
-        public void Write(ushort addr, ushort value)
+        public void Write(ushort addr, uint value, int size)
         {
 
         }

@@ -80,7 +80,7 @@ namespace x86CS.Devices
                 controllers[1].AckInterrupt(irq);
         }
 
-        public ushort Read(ushort addr)
+        public uint Read(ushort addr, int size)
         {
             PIController controller = null;
 
@@ -103,7 +103,7 @@ namespace x86CS.Devices
             return addr%10 == 0 ? controller.StatusRegister : controller.DataRegister;
         }
 
-        public void Write(ushort addr, ushort value)
+        public void Write(ushort addr, uint value, int size)
         {
             PIController controller = null;
 

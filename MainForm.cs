@@ -96,13 +96,11 @@ namespace x86CS
 
                 if (machine.CheckBreakpoint())
                 {
-                    string opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
                     machine.Stepping = true;
-
                     Invoke((MethodInvoker)(() =>
                                                {
                                                    PrintRegisters();
-                                                   SetCPULabel(opStr);
+                                                   //SetCPULabel();
                                                }));
                 }
             }
@@ -187,15 +185,13 @@ namespace x86CS
             if (!machine.Running)
             {
                 machine.Start();
-                opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
-                SetCPULabel(opStr);
+//                SetCPULabel(opStr);
                 PrintRegisters();
                 return;
             }
 
             machine.RunCycle(frequency, timerTicks);
-            opStr = String.Format("{0:X}:{1:X}  {2}", machine.CPU.CS, machine.CPU.EIP, machine.CPU.DecodeOpString(machine.OPCode, machine.Operands));
-            SetCPULabel(opStr);
+//            SetCPULabel(opStr);
             PrintRegisters();
         }
 

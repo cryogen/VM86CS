@@ -1,9 +1,18 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using log4net;
+using Bea;
+using System.Collections.Generic;
 
 namespace x86CS.CPU
 {
+    public enum RepeatPrefix
+    {
+        None = 0,
+        Repeat,
+        RepeatNotZero
+    }
+
     public partial class CPU
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(CPU));
@@ -18,6 +27,10 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
         private byte interruptToRun;
+        private Disasm currentInstruction;
+        private RepeatPrefix repeatPrefix = RepeatPrefix.None;
+        private int opSize = 16;
+        private int addressSize = 16;
 
         public bool Halted { get; private set; }
         public uint CurrentAddr { get; private set; }
@@ -525,100 +538,6 @@ namespace x86CS.CPU
             }
         }
 
-        private string GetByteRegStr(int offset)
-        {
-            switch (offset)
-            {
-                case 0x0:
-                    return "AL";
-                case 0x1:
-                    return "CL";
-                case 0x2:
-                    return "DL";
-                case 0x3:
-                    return "BL";
-                case 0x4:
-                    return "AH";
-                case 0x5:
-                    return "CH";
-                case 0x6:
-                    return "DH";
-                case 0x7:
-                    return "BH";
-                default:
-                    return "";
-            }
-        }
-
-        private string GetControlRegStr(int offset)
-        {
-            switch (offset)
-            {
-                case 0:
-                    return "CR0";
-                case 1:
-                    return "CR1";
-                case 2:
-                    return "CR2";
-                case 3:
-                    return "CR3";
-                case 4:
-                    return "CR4";
-            }
-
-            return "";
-        }
-
-        private string GetRegStr(int offset)
-        {
-            string ret = "";
-
-            if (opSize == 32)
-                ret = "E";
-
-            switch (offset)
-            {
-                case 0x0:
-                    ret += "AX";
-                    break;
-                case 0x1:
-                    ret += "CX";
-                    break;
-                case 0x2:
-                    ret += "DX";
-                    break;
-                case 0x3:
-                    ret += "BX";
-                    break;
-                case 0x4:
-                    ret += "SP";
-                    break;
-                case 0x5:
-                    ret += "BP";
-                    break;
-                case 0x6:
-                    ret += "SI";
-                    break;
-                case 0x7:
-                    ret += "DI";
-                    break;
-                default:
-                    return "";
-            }
-
-            return ret;
-        }
-
-        private void SetCPUFlags(byte operand)
-        {
-            var signed = (sbyte)operand;
-
-            ZF = operand == 0;
-            SF = signed < 0;
-
-            SetParity(operand);
-        }
-
         private GDTEntry GetSelectorEntry(uint selector)
         {
             int entrySize = Marshal.SizeOf(typeof(GDTEntry));
@@ -645,424 +564,6 @@ namespace x86CS.CPU
                 segments[(int)segment].Selector = selector;
                 segments[(int)segment].GDTEntry = realModeEntry;
                 segments[(int)segment].GDTEntry.BaseAddress = selector << 4;
-            }
-        }
-
-        private byte GetByteReg(byte offset)
-        {
-            byte byteOp = 0;
-
-            switch (offset)
-            {
-                case 0x00:
-                    byteOp = AL;
-                    break;
-                case 0x01:
-                    byteOp = CL;
-                    break;
-                case 0x2:
-                    byteOp = DL;
-                    break;
-                case 0x3:
-                    byteOp = BL;
-                    break;
-                case 0x4:
-                    byteOp = AH;
-                    break;
-                case 0x5:
-                    byteOp = CH;
-                    break;
-                case 0x6:
-                    byteOp = DH;
-                    break;
-                case 0x7:
-                    byteOp = BH;
-                    break;
-            }
-
-            return byteOp;
-        }
-
-        private void SetByteReg(byte offset, byte byteOp)
-        {
-            switch (offset)
-            {
-                case 0x00:
-                    AL = byteOp;
-                    break;
-                case 0x01:
-                    CL = byteOp;
-                    break;
-                case 0x2:
-                    DL = byteOp;
-                    break;
-                case 0x3:
-                    BL = byteOp;
-                    break;
-                case 0x4:
-                    AH = byteOp;
-                    break;
-                case 0x5:
-                    CH = byteOp;
-                    break;
-                case 0x6:
-                    DH = byteOp;
-                    break;
-                case 0x7:
-                    BH = byteOp;
-                    break;
-            }
-        }
-
-        private byte DoIORead(byte addr)
-        {
-            return (byte)(DoIORead((ushort)(addr & 0x00ff)) & 0x00ff);
-        }
-
-        private ushort DoIORead(ushort addr)
-        {
-            ReadCallback ioRead = IORead;
-
-            if (ioRead != null)
-                return ioRead(addr);
-
-            return 0xffff;
-        }
-
-        private void DoIOWrite(byte addr, byte value)
-        {
-            DoIOWrite((ushort)(addr & 0x00ff), (ushort)(value & 0x00ff));
-        }
-
-        private void DoIOWrite(ushort addr, ushort value)
-        {
-            WriteCallback ioWrite = IOWrite;
-
-            if (ioWrite != null)
-                ioWrite(addr, value);
-        }
-
-        private uint GetRegMemAddr(RegMemData rmData, out SegmentRegister segToUse)
-        {
-            uint address = 0;
-            segToUse = SegmentRegister.DS;
-
-            switch (rmData.RegMem)
-            {
-                case 0:
-                    if (PMode)
-                        address = EAX;
-                    else
-                        address = (uint)(BX + SI);
-                    break;
-                case 1:
-                    if (PMode)
-                        address = ECX;
-                    else
-                        address = (uint)(BX + DI);
-                    break;
-                case 2:
-                    if (PMode)
-                        address = EDX;
-                    else
-                    {
-                        address = (uint)(BP + SI);
-                        segToUse = SegmentRegister.SS;
-                    }
-                    break;
-                case 3:
-                    if (PMode)
-                        address = EBX;
-                    else
-                    {
-                        address = (uint)(BP + DI);
-                        segToUse = SegmentRegister.SS;
-                    }
-                    break;
-                case 4:
-                    if (PMode)
-                    {
-                        if (rmData.Base != 5)
-                        {
-                            if (rmData.Index != 4)
-                                address = registers[rmData.Index].DWord * rmData.Scale + registers[rmData.Base].DWord;
-                            else
-                                address = registers[rmData.Base].DWord;
-                        }
-                        else
-                        {
-                            System.Diagnostics.Debugger.Break();
-                        }
-                    }
-                    else
-                        address = SI;
-                    break;
-                case 5:
-                    if (PMode)
-                    {
-                        if (rmData.Mode == 1 || rmData.Mode == 2)
-                            address = EBP;
-                        else
-                            address = 0;
-                    }
-                    else
-                        address = DI;
-                    break;
-                case 6:
-                    if (PMode)
-                        address = ESI;
-                    else
-                    {
-                        if (rmData.Mode == 0)
-                            address = 0;
-                        else
-                        {
-                            address = BP;
-                            segToUse = SegmentRegister.SS;
-                        }
-                    }
-                    break;
-                case 7:
-                    address = PMode ? EDI : BX;
-                    break;
-            }
-            return address;
-        }
-
-        private uint ProcessRegMem(RegMemData rmData, out byte registerValue, out byte regMemValue)
-        {
-            uint address = 0;
-
-            registerValue = GetByteReg(rmData.Register);
-
-            if (rmData.IsRegister)
-                regMemValue = GetByteReg(rmData.RegMem);
-            else
-            {
-                SegmentRegister segToUse;
-
-                address = GetRegMemAddr(rmData, out segToUse);
-                if (rmData.HasDisplacement)
-                    address = (ushort)(address + rmData.Displacement);
-
-                if (isSegOverride)
-                    segToUse = overrideSegment;
-
-                regMemValue = SegReadByte(segToUse, address);
-            }
-            return address;
-        }
-
-        private uint ProcessRegMem(RegMemData rmData, out ushort registerValue, out ushort regMemValue)
-        {
-            uint address = 0;
-
-            registerValue = registers[rmData.Register].Word;
-
-            if (rmData.IsRegister)
-                regMemValue = registers[rmData.RegMem].Word;
-            else
-            {
-                SegmentRegister segToUse;
-
-                address = GetRegMemAddr(rmData, out segToUse);
-                if (rmData.HasDisplacement)
-                    address = (ushort)(address + rmData.Displacement);
-
-                if (isSegOverride)
-                    segToUse = overrideSegment;
-
-                regMemValue = SegReadWord(segToUse, address);
-            }
-
-            return address;
-        }
-
-        private uint ProcessRegMem(RegMemData rmData, out uint registerValue, out uint regMemValue)
-        {
-            uint address = 0;
-
-            registerValue = registers[rmData.Register].DWord;
-
-            if (rmData.IsRegister)
-                regMemValue = registers[rmData.RegMem].DWord;
-            else
-            {
-                SegmentRegister segToUse;
-
-                address = GetRegMemAddr(rmData, out segToUse);
-                if (rmData.HasDisplacement)
-                    address += rmData.Displacement;
-
-                if (isSegOverride)
-                    segToUse = overrideSegment;
-
-                regMemValue = SegReadDWord(segToUse, address);
-            }
-
-            return address;
-        }
-
-        private byte ReadRegMemByte(RegMemData rmData, uint address)
-        {
-            SegmentRegister readSegment = SegmentRegister.DS;
-
-            if (rmData.IsRegister)
-                return GetByteReg(rmData.RegMem);
-
-            if ((rmData.RegMem == 2 || rmData.RegMem == 3) ||
-                ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
-                readSegment = SegmentRegister.SS;
-
-            if (isSegOverride)
-                readSegment = overrideSegment;
-
-            return SegReadByte(readSegment, address);
-        }
-
-        private ushort ReadRegMemWord(RegMemData rmData, uint address)
-        {
-            SegmentRegister readSegment = SegmentRegister.DS;
-
-            if (rmData.IsRegister)
-                return registers[rmData.RegMem].Word;
-
-            if ((rmData.RegMem == 2 || rmData.RegMem == 3) ||
-                ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
-                readSegment = SegmentRegister.SS;
-
-            if (isSegOverride)
-                readSegment = overrideSegment;
-
-            return SegReadWord(readSegment, address);
-        }
-
-        private uint ReadRegMemDWord(RegMemData rmData, uint address)
-        {
-            SegmentRegister readSegment = SegmentRegister.DS;
-
-            if (rmData.IsRegister)
-                return registers[rmData.RegMem].Word;
-
-            if ((rmData.RegMem == 2 || rmData.RegMem == 3) ||
-                ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
-                readSegment = SegmentRegister.SS;
-
-            if (isSegOverride)
-                readSegment = overrideSegment;
-
-            return SegReadDWord(readSegment, address);
-        }
-
-        private void WriteRegMem(RegMemData rmData, uint address, byte value)
-        {
-            SegmentRegister writeSegment = SegmentRegister.DS;
-
-            if (rmData.IsRegister)
-                SetByteReg(rmData.RegMem, value);
-            else
-            {
-                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem ==6))
-                    writeSegment = SegmentRegister.SS;
-                if (isSegOverride)
-                    writeSegment = overrideSegment;
-                SegWriteByte(writeSegment, address, value);
-            }
-        }
-
-        private void WriteRegMem(RegMemData rmData, uint address, ushort value)
-        {
-            SegmentRegister writeSegment = SegmentRegister.DS;
-
-            if (rmData.IsRegister)
-                registers[rmData.RegMem].Word = value;
-            else
-            {
-                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
-                    writeSegment = SegmentRegister.SS; 
-
-                if (isSegOverride)
-                    writeSegment = overrideSegment;
-
-                SegWriteWord(writeSegment, address, value);
-            }
-        }
-
-        private void WriteRegMem(RegMemData rmData, uint address, uint value)
-        {
-            SegmentRegister writeSegment = SegmentRegister.DS;
-
-            if (rmData.IsRegister)
-                registers[rmData.RegMem].DWord = value;
-            else
-            {
-                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
-                    writeSegment = SegmentRegister.SS;
-
-                if (isSegOverride)
-                    writeSegment = overrideSegment;
-
-                SegWriteDWord(writeSegment, address, value);
-            }
-        }
-
-        private void CallRegMem(RegMemData rmData, uint address, bool far, bool call)
-        {
-            SegmentRegister readSegment = SegmentRegister.DS;
-            uint offset;
-
-            System.Diagnostics.Debug.Assert(rmData != null, "rmData != null");
-            if (rmData.IsRegister)
-                offset = opSize == 32 ? registers[rmData.RegMem].DWord : registers[rmData.RegMem].Word;
-            else
-            {
-                if ((rmData.RegMem == 2 || rmData.RegMem == 3) || ((rmData.Mode == 1 || rmData.Mode == 2) && rmData.RegMem == 6))
-                    readSegment = SegmentRegister.SS;
-
-                if (isSegOverride)
-                    readSegment = overrideSegment;
-                offset = opSize == 32 ? SegReadDWord(readSegment, address) : SegReadWord(readSegment, address);
-            }
-
-
-            uint segment = far ? SegReadWord(readSegment, address + 2) : CS;
-
-            if (call)
-                CallProcedure(segment, offset, far, false);
-            else
-            {
-                CS = segment;
-                EIP = offset;
-            }
-        }
-
-        private void CallProcedure(uint segment, uint offset, bool far, bool relative)
-        {
-            if (!far)
-            {
-                if (opSize == 32)
-                    StackPush(EIP);
-                else
-                    StackPush(IP);
-
-                if (relative)
-                    EIP += offset;
-                else
-                    EIP = offset;
-            }
-            else
-            {
-                StackPush(CS);
-                if (opSize == 32)
-                    StackPush(EIP);
-                else
-                    StackPush(IP);
-
-                CS = segment;
-                if (relative)
-                    EIP += offset;
-                else
-                    EIP = offset;
             }
         }
 
@@ -1194,30 +695,235 @@ namespace x86CS.CPU
             Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
         }
 
-        public void Cycle(int len, byte opCode, object[] operands)
+        [Flags]
+        private enum RegisterType
         {
-// ReSharper disable TooWideLocalVariableScope
-            byte destByte, sourceByte, tempByte;
-            ushort destWord, sourceWord, tempWord;
-            uint destDWord, sourceDWord, tempDWord;
-            ulong tempQWord;
-            uint memAddress;
-            uint offset = 0;
-            sbyte signedByte;
-            short signedWord;
-            int signedDWord;
-            RegMemData rmData = null;
-            // ReSharper restore TooWideLocalVariableScope
+            NoRegister = 0x0000,
+            MMX = 0x10000,
+            General = 0x20000,
+            FPU = 0x40000,
+            SSE = 0x80000,
+            CR = 0x100000,
+            DR = 0x200000,
+            Special = 0x400000,
+            MemoryManagement = 0x800000,
+            Segment = 0x1000000
+        }
+
+        private enum OperandType
+        {
+            Memory,
+            Register,
+            Immediate
+        }
+
+        private struct Operand
+        {
+            public uint Value;
+            public uint Register;
+            public RegisterType RegisterType;
+            public uint Address;
+            public SegmentRegister Segment;
+            public uint OperandSize;
+            public bool High;
+            public OperandType Type;
+        }
+
+        private uint ReadGeneralRegsiter(uint register, int size, bool high)
+        {
+            if (size == 32)
+                return registers[register].DWord;
+            else if (size == 16)
+                return registers[register].Word;
+            else if (size == 8 && high)
+                return registers[register].HighByte;
+            else if (size == 8)
+                return registers[register].LowByte;
+            else
+                System.Diagnostics.Debugger.Break();
+
+            return 0xffffffff;
+        }
+
+        private uint ReadRegister(Operand operand)
+        {
+            switch (operand.RegisterType)
+            {
+                case RegisterType.General:
+                    return ReadGeneralRegsiter(operand.Register, (int)operand.OperandSize, operand.High);
+                default:
+                    break;
+            }
+
+            return 0;
+        }
+
+        private void WriteRegister(Operand operand, uint value)
+        {
+            switch (operand.RegisterType)
+            {
+                case RegisterType.General:
+                    if (operand.OperandSize == 32)
+                        registers[operand.Register].DWord = value;
+                    else if (operand.OperandSize == 16)
+                        registers[operand.Register].Word = (ushort)value;
+                    else if (operand.OperandSize == 8 && operand.High)
+                        registers[operand.Register].HighByte = (byte)value;
+                    else if (operand.OperandSize == 8)
+                        registers[operand.Register].LowByte = (byte)value;
+                    else
+                        System.Diagnostics.Debugger.Break();
+                    break;
+                case RegisterType.Segment:
+                    segments[operand.Register].Selector = value;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private uint GetOperandValue(Operand operand)
+        {
+            if (operand.Type == OperandType.Register)
+                return ReadRegister(operand);
+            else if (operand.Type == OperandType.Immediate)
+                return operand.Value;
+
+            return 0;
+        }
+
+        private void SetOperandValue(Operand operand, uint value)
+        {
+            if (operand.Type == OperandType.Register)
+                WriteRegister(operand, value);
+            else if (operand.Type == OperandType.Memory)
+            {
+                SegmentRegister segment;
+
+                if (operand.Segment == SegmentRegister.Default)
+                    segment = SegmentRegister.DS;
+                else
+                    segment = operand.Segment;
+
+                if (operand.OperandSize == 8)
+                    SegWriteByte(segment, operand.Address, (byte)value);
+                else if (operand.OperandSize == 16)
+                    SegWriteWord(segment, operand.Address, (ushort)value);
+                else if (operand.OperandSize == 32)
+                    SegWriteDWord(segment, operand.Address, value);
+            }
+            else
+                System.Diagnostics.Debugger.Break();
+        }
+
+        private uint RegisterFromBeaRegister(int register)
+        {
+            switch (register)
+            {
+                case 0x1:
+                    return 0;
+                case 0x2:
+                    return 1;
+                case 0x4:
+                    return 2;
+                case 0x8:
+                    return 3;
+                case 0x10:
+                    return 4;
+                case 0x20:
+                    return 5;
+                case 0x40:
+                    return 6;
+                case 0x80:
+                    return 7;
+                default:
+                    return 0xffffffff;
+            }
+        }
+
+        private Operand ProcessArgument(ArgumentType argument)
+        {
+            Operand operand = new Operand();
+            BeaConstants.ArgumentType argType;
+
+            operand.OperandSize = (uint)argument.ArgSize;
+
+            argType = (BeaConstants.ArgumentType)(argument.ArgType & 0xffff0000);
+            if ((argType & BeaConstants.ArgumentType.MEMORY_TYPE) == BeaConstants.ArgumentType.MEMORY_TYPE)
+            {
+                uint baseRegister = 0;
+
+                if (argument.Memory.IndexRegister != 0 || argument.Memory.Scale != 0)
+                    System.Diagnostics.Debugger.Break();
+                if (argument.Memory.BaseRegister != 0)
+                {
+                    baseRegister = RegisterFromBeaRegister(argument.Memory.BaseRegister);
+                    operand.Address = ReadGeneralRegsiter(baseRegister, argument.ArgSize, false);
+                }
+
+                if (argument.Memory.Displacement < 0)
+                    System.Diagnostics.Debugger.Break();
+                operand.Address += (uint)argument.Memory.Displacement;
+                operand.Type = OperandType.Memory;
+            }
+            else if ((argType & BeaConstants.ArgumentType.REGISTER_TYPE) == BeaConstants.ArgumentType.REGISTER_TYPE)
+            {
+                operand.RegisterType = (RegisterType)((int)argType & ~0xf0000000);
+                operand.Register = RegisterFromBeaRegister(argument.ArgType & 0x0000ffff);
+                
+                if (argument.ArgPosition == 1)
+                    operand.High = true;
+                else
+                    operand.High = false;
+
+                operand.Type = OperandType.Register;
+            }
+            else if ((argType & BeaConstants.ArgumentType.CONSTANT_TYPE) == BeaConstants.ArgumentType.CONSTANT_TYPE)
+            {
+                operand.Value = (uint)currentInstruction.Instruction.Immediate;
+                operand.Type = OperandType.Immediate;
+            }
+
+            if (currentInstruction.Prefix.CSPrefix == 1)
+                operand.Segment = SegmentRegister.CS;
+            else if (currentInstruction.Prefix.DSPrefix == 1)
+                operand.Segment = SegmentRegister.DS;
+            else if (currentInstruction.Prefix.ESPrefix == 1)
+                operand.Segment = SegmentRegister.ES;
+            else if (currentInstruction.Prefix.FSPrefix == 1)
+                operand.Segment = SegmentRegister.FS;
+            else if (currentInstruction.Prefix.GSPrefix == 1)
+                operand.Segment = SegmentRegister.GS;
+            else if (currentInstruction.Prefix.SSPrefix == 1)
+                operand.Segment = SegmentRegister.SS;
+            else
+                operand.Segment = SegmentRegister.Default;
+
+            return operand;
+        }
+
+        private Operand[] ProcessOperands()
+        {
+            List<Operand> operands = new List<Operand>();
+
+            if (currentInstruction.Argument1.ArgType != (int)BeaConstants.ArgumentType.NO_ARGUMENT)
+                operands.Add(ProcessArgument(currentInstruction.Argument1));
+            if (currentInstruction.Argument2.ArgType != (int)BeaConstants.ArgumentType.NO_ARGUMENT)
+                operands.Add(ProcessArgument(currentInstruction.Argument2));
+            if (currentInstruction.Argument3.ArgType != (int)BeaConstants.ArgumentType.NO_ARGUMENT)
+                operands.Add(ProcessArgument(currentInstruction.Argument3));
+
+            return operands.ToArray();
+        }
+
+        public void Cycle(Disasm instruction, int len)
+        {
+            Operand[] operands;
+
+            currentInstruction = instruction;
 
             if(inInterrupt)
             {
-                setPrefixes = 0;
-                repeatPrefix = RepeatPrefix.None;
-                overrideSegment = SegmentRegister.DS;
-                opSize = PMode ? 32 : 16;
-
-                extPrefix = false;
-                isSegOverride = false;
                 CallInterrupt(interruptToRun);
                 inInterrupt = false;
                 Halted = false;
@@ -1227,46 +933,25 @@ namespace x86CS.CPU
             if (Halted)
                 return;
 
-            string opStr = DecodeOpString(opCode, operands);
-            
+            if (currentInstruction.Prefix.AddressSize != 0)
+                System.Diagnostics.Debugger.Break();
+            if (currentInstruction.Prefix.OperandSize != 0)
+                System.Diagnostics.Debugger.Break();
+
+            if (currentInstruction.Prefix.RepPrefix != 0)
+                repeatPrefix = RepeatPrefix.Repeat;
+            if (currentInstruction.Prefix.RepnePrefix != 0)
+                repeatPrefix = RepeatPrefix.RepeatNotZero;
+
+            operands = ProcessOperands();
+
            // if(InterruptLevel == 0)
-                Logger.Debug(String.Format("{0:X}:{1:X}    {2}", CS, EIP, opStr));
+                Logger.Debug(String.Format("{0:X}:{1:X}    {2}", CS, EIP, instruction.CompleteInstr));
 
             EIP += (uint)len;
 
-            if (operands.Length > 0)
-            {
-                rmData = operands[0] as RegMemData;
-
-                if (operands[0] is byte)
-                {
-                    signedByte = (sbyte)(byte)operands[0];
-                    if (opSize == 32)
-                        offset = (uint)(EIP + signedByte);
-                    else
-                        offset = (ushort)(IP + signedByte);
-                }
-
-                if (operands[0] is ushort)
-                {
-                    signedWord = (short)(ushort)operands[0];
-                    if (opSize == 32)
-                        offset = (uint)(EIP + signedWord);
-                    else
-                        offset = (ushort)(IP + signedWord);
-                }
-
-                if (operands[0] is uint)
-                {
-                    signedDWord = (int)(uint)operands[0];
-                    if (opSize == 32)
-                        offset = (uint)(EIP + signedDWord);
-                    else
-                        offset = (ushort)(IP + signedDWord);
-                }
-            }
-
-            if (extPrefix)
+            #region old code
+            /*            if (extPrefix)
             {
                 #region extended opcodes
                 switch (opCode)
@@ -3205,7 +2890,7 @@ namespace x86CS.CPU
                                 case 6:
                                     destDWord = Xor(destDWord, sourceByte);
                                     break;
-                                case 7:  /* cmp */
+                                case 7:  
                                     Subtract(destDWord, sourceByte);
                                     break;
                             }
@@ -3448,7 +3133,36 @@ namespace x86CS.CPU
 
                         #endregion
                 }
+            }*/
+            #endregion
+
+            switch ((BeaConstants.InstructionType)(currentInstruction.Instruction.Category & 0x0000FFFF))
+            {
+                case BeaConstants.InstructionType.CONTROL_TRANSFER:
+                    ProcessControlTransfer();
+                    break;
+                case BeaConstants.InstructionType.LOGICAL_INSTRUCTION:
+                    ProcessLogic(operands);
+                    break;
+                case BeaConstants.InstructionType.InOutINSTRUCTION:
+                    ProcessInputOutput(operands);
+                    break;
+                case BeaConstants.InstructionType.DATA_TRANSFER:
+                    ProcessDataTransfer(operands);
+                    break;
+                case BeaConstants.InstructionType.ARITHMETIC_INSTRUCTION:
+                    ProcessArithmetic(operands);
+                    break;
+                case BeaConstants.InstructionType.FLAG_CONTROL_INSTRUCTION:
+                    ProcessFlagControl(operands);
+                    break;
+                case BeaConstants.InstructionType.STRING_INSTRUCTION:
+                    ProcessString(operands);
+                    break;
+                default:
+                    break;
             }
+
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
         }
     }

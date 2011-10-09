@@ -68,10 +68,15 @@
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BeaEngine\Constants.cs" />
+    <Compile Include="BeaEngine\Engine.cs" />
+    <Compile Include="BeaEngine\Structs.cs" />
     <Compile Include="Breakpoints.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -80,8 +85,12 @@
     </Compile>
     <Compile Include="CPU\Arithmetic.cs" />
     <Compile Include="CPU\BCD.cs" />
+    <Compile Include="CPU\ControlTransfer.cs" />
     <Compile Include="CPU\CPU.cs" />
+    <Compile Include="CPU\DataTransfer.cs" />
     <Compile Include="CPU\Decoder.cs" />
+    <Compile Include="CPU\FlagControl.cs" />
+    <Compile Include="CPU\InputOutput.cs" />
     <Compile Include="CPU\Logic.cs" />
     <Compile Include="CPU\Strings.cs" />
     <Compile Include="Devices\ATA.cs" />

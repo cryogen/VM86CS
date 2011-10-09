@@ -14,6 +14,7 @@ namespace x86CS
         private static readonly byte[] memory;
 
         public static bool A20 { get; set; }
+        public static byte[] MemoryArray { get { return memory; } }
 
         static Memory()
         {

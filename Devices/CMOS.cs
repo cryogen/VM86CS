@@ -39,7 +39,7 @@ namespace x86CS.Devices
             registers[0x38] = 0x00;  /* 3rd boot device */
         }
 
-        public ushort Read(ushort addr)
+        public uint Read(ushort addr, int size)
         {
             ushort ret;
 
@@ -61,7 +61,7 @@ namespace x86CS.Devices
             return ret;
         }
 
-        public void Write(ushort addr, ushort value)
+        public void Write(ushort addr, uint value, int size)
         {
             var tmp = (ushort)(value & 0x7f);
 

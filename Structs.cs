@@ -3,8 +3,8 @@ using System.Runtime.InteropServices;
 
 namespace x86CS
 {
-    public delegate ushort ReadCallback(ushort addr);
-    public delegate void WriteCallback(ushort addr, ushort value);
+    public delegate uint ReadCallback(ushort addr, int size);
+    public delegate void WriteCallback(ushort addr, uint value, int size);
 
     public enum SegmentRegister
     {
@@ -13,7 +13,8 @@ namespace x86CS
         SS,
         DS,
         FS,
-        GS
+        GS,
+        Default
     }
     public enum CPURegister
     {
