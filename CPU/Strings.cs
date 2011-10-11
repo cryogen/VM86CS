@@ -2,7 +2,7 @@
 {
     public partial class CPU
     {
-        private void ProcessString(Operand[] operands)
+      /*  private void ProcessString(Operand[] operands)
         {
             switch (currentInstruction.Instruction.Opcode)
             {
@@ -12,7 +12,7 @@
                 default:
                     break;
             }
-        }
+        }*/
 
         private uint GetCount()
         {

@@ -7,7 +7,7 @@ namespace x86CS.CPU
 {
     public partial class CPU
     {
-        private void ProcessFlagControl(Operand[] operands)
+/*        private void ProcessFlagControl(Operand[] operands)
         {
             switch (currentInstruction.Instruction.Opcode)
             {
@@ -20,6 +20,6 @@ namespace x86CS.CPU
                 default:
                     break;
             }
-        }
+        }*/
     }
 }

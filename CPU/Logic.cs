@@ -4,23 +4,59 @@ namespace x86CS.CPU
 {
     public partial class CPU
     {
-        private void ProcessLogic(Operand[] operands)
+     /*   private void ProcessLogic(Operand[] operands)
         {
             uint source, dest;
+            int opSize = (int)operands[0].OperandSize;
 
             dest = GetOperandValue(operands[0]);
             source = GetOperandValue(operands[1]);
 
             switch (currentInstruction.Instruction.Opcode)
             {
+                case 0x30:
                 case 0x31:
-                    dest = Xor(dest, source, operands[0].OperandSize);
+                case 0x32:
+                case 0x33:
+                case 0x34:
+                case 0x35:
+                    dest = Xor(dest, source, opSize);
                     SetOperandValue(operands[0], dest);
+                    break;
+                case 0x24:
+                case 0x25:
+                case 0x20:
+                case 0x21:
+                case 0x22:
+                case 0x23:
+                    dest = And(dest, source, opSize);
+                    SetOperandValue(operands[0], dest);
+                    break;
+                case 0x84:
+                case 0x85:
+                case 0xa8:
+                case 0xa9:
+                case 0xf6:
+                case 0xf7:
+                    dest = And(dest, source, opSize);
+                    break;
+                case 0x80:
+                case 0x81:
+                case 0x83:
+                    switch (currentInstruction.Instruction.Mnemonic)
+                    {
+                        case "xor ":
+                            dest = Xor(dest, source, opSize);
+                            SetOperandValue(operands[0], dest);
+                            break;
+                        default:
+                            break;
+                    }
                     break;
                 default:
                     break;
             }
-        }
+        }*/
 
         private void SetCPUFlags(byte operand)
         {
@@ -64,75 +100,25 @@ namespace x86CS.CPU
             PF = ((value & 1) == 1);
         }
 
-        private byte And(byte source)
+        private uint And(uint dest, uint source, int size)
         {
-            return DoAnd(AL, source);
-        }
+            uint temp;
 
-        private ushort And(ushort source)
-        {
-            return DoAnd(AX, source);
-        }
-
-        private uint And(uint source)
-        {
-            return DoAnd(EAX, source);
-        }
-
-        private byte And(byte dest, byte source)
-        {
-            return DoAnd(dest, source);
-        }
-
-        private ushort And(ushort dest, byte source)
-        {
-            return DoAnd(dest, (ushort)(sbyte)source);
-        }
-
-        private uint And(uint dest, byte source)
-        {
-            return DoAnd(dest, (uint)(sbyte)source);
-        }
-
-        private ushort And(ushort dest, ushort source)
-        {
-            return DoAnd(dest, source);
-        }
-
-        private uint And(uint dest, uint source)
-        {
-            return DoAnd(dest, source);
-        }
-
-        private byte DoAnd(byte dest, byte source)
-        {
-            var temp = (byte)(source & dest);
-
-            SetCPUFlags(temp);
-
-            CF = false;
-            OF = false;
-
-            return temp;
-        }
-
-        private ushort DoAnd(ushort dest, ushort source)
-        {
-            var temp = (ushort)(source & dest);
-
-            SetCPUFlags(temp);
-
-            CF = false;
-            OF = false;
-
-            return temp;
-        }
-
-        private uint DoAnd(uint dest, uint source)
-        {
-            var temp = source & dest;
-
-            SetCPUFlags(temp);
+            switch (size)
+            {
+                case 8:
+                    temp = (byte)((byte)dest & (byte)source);
+                    SetCPUFlags((byte)temp);
+                    break;
+                case 16:
+                    temp = (ushort)((ushort)dest & (ushort)source);
+                    SetCPUFlags((ushort)temp);
+                    break;
+                default:
+                    temp = dest & source;
+                    SetCPUFlags(temp);
+                    break;
+            }
 
             CF = false;
             OF = false;
@@ -216,7 +202,7 @@ namespace x86CS.CPU
             return temp;
         }
 
-        private uint Xor(uint dest, uint source, uint size)
+        private uint Xor(uint dest, uint source, int size)
         {
             uint ret;
 

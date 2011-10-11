@@ -18,40 +18,89 @@
 
     public partial class CPU
     {
-        private void ProcessArithmetic(Operand[] operands)
+        /*private void ProcessArithmetic(Operand[] operands)
         {
             uint source, dest;
+            int opSize = (int)operands[0].OperandSize;
+
+            source = dest = 0;
 
             dest = GetOperandValue(operands[0]);
-            source = GetOperandValue(operands[1]);
+            if(operands.Length > 1)
+                source = GetOperandValue(operands[1]);
 
             switch (currentInstruction.Instruction.Opcode)
             {
                 case 0x3c:
-                    Subtract(dest, source, (int)operands[0].OperandSize);
+                    Subtract(dest, source, opSize);
                     break;
+                case 0x00:
+                case 0x01:
+                case 0x02:
+                case 0x03:
                 case 0x04:
                 case 0x05:
-                case 0x83:
-                    dest = Add(GetOperandValue(operands[0]), GetOperandValue(operands[1]), (int)operands[0].OperandSize);
+                    dest = Add(dest, source, opSize);
+                    SetOperandValue(operands[0], dest);
+                    break;
+                case 0x40:
+                case 0x41:
+                case 0x42:
+                case 0x43:
+                case 0x44:
+                case 0x45:
+                case 0x46:
+                case 0x47:
+                    dest = Increment(dest, opSize);
+                    SetOperandValue(operands[0], dest);
+                    break;
+                case 0x48:
+                case 0x49:
+                case 0x4a:
+                case 0x4b:
+                case 0x4c:
+                case 0x4d:
+                case 0x4e:
+                case 0x4f:
+                    dest = Decrement(dest, opSize);
                     SetOperandValue(operands[0], dest);
                     break;
                 case 0x80:
+                case 0x81:
+                case 0x83:
                     switch (currentInstruction.Instruction.Mnemonic)
                     {
                         case "cmp ":
-                            Subtract(dest, source, (int)operands[0].OperandSize);
+                            Subtract(dest, source, opSize);
                             break;
                         case "add ":
-                            dest = Add(GetOperandValue(operands[0]), GetOperandValue(operands[1]), (int)operands[0].OperandSize);
+                            dest = Add(dest, source, opSize);
                             SetOperandValue(operands[0], dest);
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                case 0xfe:
+                case 0xff:
+                    switch (currentInstruction.Instruction.Mnemonic)
+                    {
+                        case "inc ":
+                            dest = Increment(dest, opSize);
+                            SetOperandValue(operands[0], dest);
+                            break;
+                        case "dec ":
+                            dest = Decrement(dest, opSize);
+                            SetOperandValue(operands[0], dest);
+                            break;
+                        default:
                             break;
                     }
                     break;
                 default:
                     break;
             }
-        }
+        }*/
 
         private void CheckOverflow(short result)
         {
@@ -105,7 +154,7 @@
                     SetCPUFlags((byte)ret);
                     return (byte)ret;
                 case 16:
-                    ret = (uint)((ushort)source + (ushort)dest);
+                    ret = (uint)((ushort)(short)(sbyte)source + (ushort)dest);
                     CheckOverflow((int)ret);
                     CF = ret > ushort.MaxValue;
                     SetCPUFlags((ushort)ret);
@@ -165,73 +214,23 @@
         #endregion
 
         #region Inc/Dec
-
-        private byte Increment(byte dest)
-        {
-            var tempCF = CF;
-
-            var ret = Add(dest, 1, 8);
-
-            CF = tempCF;
-
-            return (byte)ret;
-        }
-
-        private ushort Increment(ushort dest)
-        {
-            var tempCF = CF;
-
-            var ret = Add(dest, 1, 16);
-
-            CF = tempCF;
-
-            return(ushort) ret;
-        }
-
-        private uint Increment(uint dest)
+        private uint Increment(uint dest, int size)
         {
             bool tempCF = CF;
-
-            uint ret = Add(dest, 1, 32);
-
+            uint ret = Add(dest, 1, size);
             CF = tempCF;
 
             return ret;
         }
 
-        private byte Decrement(byte dest)
+        private uint Decrement(uint dest, int size)
         {
             bool tempCF = CF;
-
-            byte ret = (byte)Subtract(dest, 1, 8);
-
+            uint ret = Subtract(dest, 1, size);
             CF = tempCF;
 
             return ret;
         }
-
-        private ushort Decrement(ushort dest)
-        {
-            bool tempCF = CF;
-
-            ushort ret = (ushort)Subtract(dest, 1, 16);
-
-            CF = tempCF;
-
-            return ret;
-        }
-
-        private uint Decrement(uint dest)
-        {
-            bool tempCF = CF;
-
-            uint ret = Subtract(dest, 1, 32);
-
-            CF = tempCF;
-
-            return ret;
-        }
-
         #endregion
 
         #region Multiply

@@ -1,9 +1,7 @@
-﻿using Bea;
-
-namespace x86CS.CPU
+﻿namespace x86CS.CPU
 {
     public partial class CPU
-    {
+    {/*
         private void DoFarJump()
         {
             uint segment, offset;
@@ -84,7 +82,19 @@ namespace x86CS.CPU
             }
         }
 
-        private void ProcessControlTransfer()
+        private void ProcessRet()
+        {
+            switch (currentInstruction.Instruction.Opcode)
+            {
+                case 0xc3:
+                    EIP = (ushort)StackPop();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void ProcessControlTransfer(Operand[] operands)
         {
             switch ((BeaConstants.BranchType)currentInstruction.Instruction.BranchType)
             {
@@ -94,6 +104,9 @@ namespace x86CS.CPU
                 case BeaConstants.BranchType.CallType:
                     ProcessCall();
                     break;
+                case BeaConstants.BranchType.RetType:
+                    ProcessRet();
+                    break;
                 case BeaConstants.BranchType.JE:
                     if (ZF)
                         DoJump();
@@ -102,9 +115,17 @@ namespace x86CS.CPU
                     if(!ZF)
                         DoJump();
                     break;
+                case BeaConstants.BranchType.JC:
+                    if (CF)
+                        DoJump();
+                    break;
+                case BeaConstants.BranchType.JA:
+                    if (!CF && !ZF)
+                        DoJump();
+                    break;
                 default:
                     break;
             }
-        }
+        }*/
     }
 }
