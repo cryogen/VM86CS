@@ -21,3 +21,5 @@ BIOS-bochs-legacy
 VGABIOS-lgpl-latest
 x86Disasm/bin/
 x86Disasm/obj
+bin/x86/Release
+obj

@@ -1,8 +1,10 @@
-﻿namespace x86CS.CPU
+﻿using x86Disasm;
+namespace x86CS.CPU
 {
     public partial class CPU
-    {/*
-        private void DoFarJump()
+    {
+        [CPUFunction(OpCode=0xea)]
+        public void DoFarJump(uint address)
         {
             uint segment, offset;
 
@@ -11,8 +13,8 @@
             else if (PMode && ((CR0 & 0x1) == 0))
                 PMode = false;
 
-            segment = (uint)((currentInstruction.Instruction.AddrValue & 0xffff0000) >> 4);
-            offset = (uint)currentInstruction.Instruction.AddrValue & 0x0000ffff;
+            segment = (uint)((address & 0xffff0000) >> 4);
+            offset = (uint)address & 0x0000ffff;
 
             CS = segment;
             if (opSize == 32)
@@ -21,7 +23,7 @@
                 EIP = (ushort)offset;
         }
 
-        private void DoJump()
+        /*private void DoJump()
         {
             if(opSize == 32)
                 EIP = (uint)currentInstruction.Instruction.AddrValue;

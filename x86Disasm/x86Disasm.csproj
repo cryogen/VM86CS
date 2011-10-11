@@ -36,6 +36,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attribute.cs" />
     <Compile Include="Delegates.cs" />
     <Compile Include="Disassembler.cs" />
     <Compile Include="Enums.cs" />

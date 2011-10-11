@@ -45,6 +45,7 @@ namespace x86Disasm
 
     public enum OperandType
     {
+        None = 0,
         Register,
         Memory,
         Immediate

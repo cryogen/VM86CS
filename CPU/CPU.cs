@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using log4net;
 using System.Collections.Generic;
 using x86Disasm;
+using System.Reflection;
 
 namespace x86CS.CPU
 {
@@ -384,6 +385,7 @@ namespace x86CS.CPU
             idtRegister = new TableRegister();
             gdtRegister = new TableRegister();
             disasm = new Disassembler(DisassemblerRead);
+            ProcessOperations();
             realModeEntry = new GDTEntry
                                 {
                                     BaseAddress = 0,
@@ -428,6 +430,47 @@ namespace x86CS.CPU
                 eFlags |= flag;
             else
                 eFlags &= ~flag;
+        }
+
+        private void ProcessOperations()
+        {
+            foreach (MethodInfo method in (typeof(CPU)).GetMethods())
+            {
+                foreach (var attribute in method.GetCustomAttributes(typeof(CPUFunction), true))
+                {
+                    CPUFunction function = attribute as CPUFunction;
+
+                    disasm.AddOperation(function.OpCode, method, method.GetParameters().Length);
+                }
+            }
+        }
+
+        private uint ProcessOperand(Operand operand)
+        {
+            switch (operand.Type)
+            {
+                case OperandType.Immediate:
+                    return operand.Value;
+            }
+
+            return 0xffffffff;
+        }
+
+        private uint[] ProcessOperands()
+        {
+            uint[] arguments;
+            Operand[] operands = disasm.Operands;
+
+            if (operands.Length == 0)
+                return null;
+
+            arguments = new uint[disasm.NumberOfOperands];
+            for (int i = 0; i < disasm.NumberOfOperands; i++)
+            {
+                arguments[i] = ProcessOperand(operands[i]);
+            }
+
+            return arguments;
         }
 
         private uint DisassemblerRead(uint offset, int size)
@@ -699,42 +742,6 @@ namespace x86CS.CPU
             Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
         }
 
-        [Flags]
-        private enum RegisterType
-        {
-            NoRegister = 0x0000,
-            MMX = 0x10000,
-            General = 0x20000,
-            FPU = 0x40000,
-            SSE = 0x80000,
-            CR = 0x100000,
-            DR = 0x200000,
-            Special = 0x400000,
-            MemoryManagement = 0x800000,
-            Segment = 0x1000000
-        }
-
-        private SegmentRegister MemorySegmentToActualSegment(MemorySegment segment)
-        {
-            switch (segment)
-            {
-                case MemorySegment.CS:
-                    return SegmentRegister.CS;
-                case MemorySegment.DS:
-                    return SegmentRegister.DS;
-                case MemorySegment.ES:
-                    return SegmentRegister.ES;
-                case MemorySegment.FS:
-                    return SegmentRegister.FS;
-                case MemorySegment.GS:
-                    return SegmentRegister.GS;
-                case MemorySegment.SS:
-                    return SegmentRegister.SS;
-            }
-
-            return SegmentRegister.Default;
-        }
-
         private uint ReadGeneralRegsiter(uint register, int size, bool high)
         {
             if (size == 32)
@@ -906,20 +913,6 @@ namespace x86CS.CPU
                 operand.Segment = SegmentRegister.SS;
 
             return operand;
-        }
-
-        private Operand[] ProcessOperands()
-        {
-            List<Operand> operands = new List<Operand>();
-
-            if (currentInstruction.Argument1.ArgType != (int)BeaConstants.ArgumentType.NO_ARGUMENT)
-                operands.Add(ProcessArgument(currentInstruction.Argument1));
-            if (currentInstruction.Argument2.ArgType != (int)BeaConstants.ArgumentType.NO_ARGUMENT)
-                operands.Add(ProcessArgument(currentInstruction.Argument2));
-            if (currentInstruction.Argument3.ArgType != (int)BeaConstants.ArgumentType.NO_ARGUMENT)
-                operands.Add(ProcessArgument(currentInstruction.Argument3));
-
-            return operands.ToArray();
         }*/
 
         public void Cycle()
@@ -936,44 +929,15 @@ namespace x86CS.CPU
                 return;
 
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
-            disasm.Disassemble(CurrentAddr);
+            uint len = (uint)disasm.Disassemble(CurrentAddr);
+            EIP += len;
 
-           // if(InterruptLevel == 0)
-/*            if(Logger.IsDebugEnabled)
-                Logger.Debug(String.Format("{0:X}:{1:X}    {2}", CS, EIP, instruction.CompleteInstr));*/
+            uint[] operands = ProcessOperands();
 
-            //EIP += (uint)len;
-
-            /*switch ((BeaConstants.InstructionType)(currentInstruction.Instruction.Category & 0x0000FFFF))
-            {
-                case BeaConstants.InstructionType.CONTROL_TRANSFER:
-                    ProcessControlTransfer(operands);
-                    break;
-                case BeaConstants.InstructionType.BIT_UInt8:
-                case BeaConstants.InstructionType.LOGICAL_INSTRUCTION:
-                    ProcessLogic(operands);
-                    break;
-                case BeaConstants.InstructionType.InOutINSTRUCTION:
-                    ProcessInputOutput(operands);
-                    break;
-                case BeaConstants.InstructionType.DATA_TRANSFER:
-                    ProcessDataTransfer(operands);
-                    break;
-                case BeaConstants.InstructionType.ARITHMETIC_INSTRUCTION:
-                    ProcessArithmetic(operands);
-                    break;
-                case BeaConstants.InstructionType.FLAG_CONTROL_INSTRUCTION:
-                    ProcessFlagControl(operands);
-                    break;
-                case BeaConstants.InstructionType.STRING_INSTRUCTION:
-                    ProcessString(operands);
-                    break;
-                case BeaConstants.InstructionType.MISCELLANEOUS_INSTRUCTION:
-                    ProcessMisc(operands);
-                    break;
-                default:
-                    break;
-            }*/
+            if (operands.Length == 0)
+                disasm.Execute(this);
+            else
+                disasm.Execute(this, operands);
 
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
         }

@@ -1,4 +1,5 @@
-﻿namespace x86Disasm
+﻿using System.Reflection;
+namespace x86Disasm
 {
     internal struct Instruction
     {
@@ -18,6 +19,13 @@
         public int Size;
         public int Value;
         public bool High;
+    }
+
+    public struct Operation
+    {
+        public ushort OpCode;
+        public MethodInfo Method;
+        public int NumberOfArgs;
     }
 
     public struct Operand

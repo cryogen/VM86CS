@@ -69,7 +69,7 @@ namespace x86CS
                     frequency = 50000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
                     lastSeconds = stopwatch.Elapsed.TotalSeconds;
                     if(Created)
-                        Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("F2") + "TPS"; }); 
+                        Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("n") + "TPS"; }); 
                 }
 
                 if (!machine.Running || (machine.Stepping && machine.CPU.InterruptLevel == 0))

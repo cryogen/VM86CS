@@ -239,38 +239,6 @@ namespace x86CS
             if (Running)
             {
                 CPU.Cycle();
-//                int irq, vector;
-
-         /*       foreach (IDevice device in devices)
-                {
-                    var clockDevice = device as INeedsClock;
-
-                    if(clockDevice != null)
-                        clockDevice.Cycle(frequency, timerTicks);
-                }*/
-
-                /*if(picDevice.InterruptService(out irq, out vector))
-                {
-                    if(CPU.IF)
-                    {
-                        CPU.Interrupt(vector, irq);
-                        picDevice.AckInterrupt((byte)irq);
-                    }
-                }*/
-             /*   CPU.Cycle(currentInstruction, opLen);
-                GCHandle handle = GCHandle.Alloc(Memory.MemoryArray, GCHandleType.Pinned);
-
-                currentInstruction.EIP = new IntPtr(handle.AddrOfPinnedObject().ToInt64() + CPU.CurrentAddr);
-                currentInstruction.VirtualAddr = (ulong)CPU.CurrentAddr;
-                if (CPU.PMode)
-                    currentInstruction.Archi = 0;
-                else
-                    currentInstruction.Archi = 16;
-
-                opLen = BeaEngine.Disasm(currentInstruction);
-
-                handle.Free();*/
-
                 /*if (timerTicks % 100000 == 0)
                     machineForm.Invalidate();*/
             }
