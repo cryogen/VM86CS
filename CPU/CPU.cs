@@ -451,6 +451,20 @@ namespace x86CS.CPU
             {
                 case OperandType.Immediate:
                     return operand.Value;
+                case OperandType.Register:
+                    switch (operand.Size)
+                    {
+                        case 8:
+                            if (operand.Register.High)
+                                return registers[(int)operand.Register.Register].HighByte;
+                            else
+                                return registers[(int)operand.Register.Register].LowByte;
+                        case 16:
+                            return registers[(int)operand.Register.Register].Word;
+                        case 32:
+                            return registers[(int)operand.Register.Register].DWord;
+                    }
+                    break;
             }
 
             return 0xffffffff;

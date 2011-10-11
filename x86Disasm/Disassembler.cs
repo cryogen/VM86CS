@@ -45,9 +45,29 @@ namespace x86Disasm
 
         }
 
+        private void ProcessRegMemRegister(ref Operand operand, Argument argument, byte rmByte)
+        {
+            operand.Type = OperandType.Register;
+            operand.Size = argument.Size;
+            if (operand.Size == 8)
+                operand.Register = registers8Bit[rmByte & 0x7];
+            else
+                operand.Register = registers16Bit[rmByte & 0x7];
+        }
+
+        private void ProcessRegMemMemory(ref Operand operand, Argument argument, byte rmByte)
+        {
+            operand.Type = OperandType.Memory;
+            operand.Size = argument.Size;
+            operand.Memory = regMemMemory16[rmByte & 0x7];
+            if (rmByte < 0x40)
+                operand.Memory.Base = 0;
+        }
+
         private uint ProcessArgument(Argument argument, int operandNumber, uint offset)
         {
             Operand operand = new Operand();
+            byte rmByte;
 
             switch (argument.Type)
             {
@@ -61,7 +81,24 @@ namespace x86Disasm
                 case ArgumentType.RegMemGeneral:
                 case ArgumentType.RegMemMemory:
                 case ArgumentType.RegMemSegment:
-                    ProcessRegMem(operand);
+                    rmByte = ReadByte(offset++);
+                    switch (argument.Type)
+                    {
+                        case ArgumentType.RegMem:
+                            if (rmByte >= 0xc0)
+                                ProcessRegMemRegister(ref operand, argument, rmByte);
+                            else
+                                ProcessRegMemMemory(ref operand, argument, rmByte);
+                            break;
+                        case ArgumentType.RegMemGeneral:
+                            ProcessRegMemRegister(ref operand, argument, rmByte);
+                            break;
+                        case ArgumentType.RegMemMemory:
+                            ProcessRegMemRegister(ref operand, argument, rmByte);
+                            break;
+                        default:
+                            break;
+                    }
                     break;
                 default:
                     break;

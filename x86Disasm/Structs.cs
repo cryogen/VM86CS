@@ -16,7 +16,7 @@ namespace x86Disasm
     internal struct Argument
     {
         public ArgumentType Type;
-        public int Size;
+        public uint Size;
         public int Value;
         public bool High;
     }
@@ -39,15 +39,16 @@ namespace x86Disasm
 
     public struct RegisterOperand
     {
-        public uint RegisterIndex;
+        public GeneralRegister Register;
         public bool High;
     }
 
     public struct MemoryOperand
     {
-        public uint Base;
+        public GeneralRegister Base;
+        public GeneralRegister Index;
         public int Displacement;
-        public uint Index;
-        public uint Scale;
+        public int Scale;
+        public SegmentRegister Segment;
     }
 }
