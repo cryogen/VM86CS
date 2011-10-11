@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "x86CS", "x86CS.csproj", "{E19AF389-5B99-4AEC-AB7F-689770A476E6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "x86Disasm", "..\x86Disasm\x86Disasm.csproj", "{280D1B38-0694-4281-B8E3-2F14F371901D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "x86Disasm", "x86Disasm\x86Disasm.csproj", "{280D1B38-0694-4281-B8E3-2F14F371901D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,7 +31,6 @@ Global
 		{280D1B38-0694-4281-B8E3-2F14F371901D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{280D1B38-0694-4281-B8E3-2F14F371901D}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{280D1B38-0694-4281-B8E3-2F14F371901D}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{280D1B38-0694-4281-B8E3-2F14F371901D}.Debug|x86.Build.0 = Debug|Any CPU
 		{280D1B38-0694-4281-B8E3-2F14F371901D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{280D1B38-0694-4281-B8E3-2F14F371901D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{280D1B38-0694-4281-B8E3-2F14F371901D}.Release|x64.ActiveCfg = Release|Any CPU

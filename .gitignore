@@ -19,3 +19,5 @@ x86CS.csproj.user
 *.counters
 BIOS-bochs-legacy
 VGABIOS-lgpl-latest
+x86Disasm/bin/
+x86Disasm/obj
