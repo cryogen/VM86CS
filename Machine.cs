@@ -27,14 +27,10 @@ namespace x86CS
         private int opLen;
 
         public Floppy FloppyDrive { get; private set; }
-        public bool Running { get; private set; }
         public CPU.CPU CPU { get; private set; }
-        public bool Stepping { get; set; }
 
-        public string Operation
-        {
-            get { return "";/*return String.Format("{0:X}:{1:X}  {2}", CPU.CS, CPU.EIP, currentInstruction.CompleteInstr);*/ }
-        }
+        public bool Running;
+        public bool Stepping;
 
         public Machine()
         {
@@ -221,6 +217,8 @@ namespace x86CS
         public void Start()
         {
             int addr = (int)((CPU.CS << 4) + CPU.IP);
+
+            CPU.Fetch();
             
             Running = true;
         }
@@ -230,15 +228,12 @@ namespace x86CS
             Running = false;
         }
 
-        public void FlushLog()
-        {
-        }
-
         public void RunCycle(double frequency, ulong timerTicks)
         {
             if (Running)
             {
                 CPU.Cycle();
+                CPU.Fetch();
                 /*if (timerTicks % 100000 == 0)
                     machineForm.Invalidate();*/
             }

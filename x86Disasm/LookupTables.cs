@@ -238,7 +238,7 @@
             new Instruction { OpCode=0x00e7, Type=InstructionType.InputOutput, NumberOfArguments = 2, Nmumonic = "OUT", Arg1=new Argument { Type=ArgumentType.Immediate, Size=8 }, Arg2=new Argument {Type=ArgumentType.GeneralRegister, Value=(int)GeneralRegister.EAX, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
             new Instruction { OpCode=0x00e8, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "CALL", Arg1=new Argument { Type=ArgumentType.Relative, Size=16 }, Arg2=new Argument {Type=ArgumentType.None, Size=0}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
             new Instruction { OpCode=0x00e9, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "JMP", Arg1=new Argument { Type=ArgumentType.Relative, Size=16 }, Arg2=new Argument {Type=ArgumentType.None, Size=0}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
-            new Instruction { OpCode=0x00ea, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "JMP", Arg1=new Argument { Type=ArgumentType.Address, Size=32 }, Arg2=new Argument {Type=ArgumentType.None, Size=0}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
+            new Instruction { OpCode=0x00ea, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "JMP FAR", Arg1=new Argument { Type=ArgumentType.Address, Size=32 }, Arg2=new Argument {Type=ArgumentType.None, Size=0}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
             new Instruction { OpCode=0x00eb, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "JMP", Arg1=new Argument { Type=ArgumentType.Relative, Size=8 }, Arg2=new Argument {Type=ArgumentType.None, Size=0}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
             new Instruction { OpCode=0x00ec, Type=InstructionType.InputOutput, NumberOfArguments = 2, Nmumonic = "IN", Arg1=new Argument { Type=ArgumentType.GeneralRegister, Value=(int)GeneralRegister.EAX, Size=8 }, Arg2=new Argument {Type=ArgumentType.GeneralRegister, Value=(int)GeneralRegister.EDX, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
             new Instruction { OpCode=0x00ed, Type=InstructionType.InputOutput, NumberOfArguments = 2, Nmumonic = "IN", Arg1=new Argument { Type=ArgumentType.GeneralRegister, Value=(int)GeneralRegister.EAX, Size=16 }, Arg2=new Argument {Type=ArgumentType.GeneralRegister, Value=(int)GeneralRegister.EDX, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
@@ -297,5 +297,50 @@
             new RegisterOperand { Register=GeneralRegister.ESI },
             new RegisterOperand { Register=GeneralRegister.EDI },
         };
+
+        private string[] registerStrings8BitLow =
+        {
+            "AL",
+            "CL",
+            "DL",
+            "BL",
+            "AH",
+            "CH",
+            "DH",
+            "BH"
+        };
+
+        private string[] registerStrings8BitHigh =
+        {
+            "AH",
+            "CH",
+            "DH",
+            "BH"
+        };
+
+        private string[] registerStrings16Bit =
+        {
+            "AX",
+            "CX",
+            "DX",
+            "BX",
+            "SP",
+            "BP",
+            "SI",
+            "DI",
+        };
+
+        private string[] registerStrings32Bit =
+        {
+            "EAX",
+            "ECX",
+            "EDX",
+            "EBX",
+            "ESP",
+            "EBP",
+            "ESI",
+            "EDI",
+        };
+
     }
 }

@@ -31,12 +31,19 @@ namespace x86CS.CPU
         private RepeatPrefix repeatPrefix = RepeatPrefix.None;
         private int opSize = 16;
         private int addressSize = 16;
+        private int opLen;
         private Disassembler disasm;
 
         public bool Halted { get; private set; }
         public uint CurrentAddr { get; private set; }
         public bool PMode { get; private set; }
-        public int InterruptLevel { get; private set; }
+
+        public int InterruptLevel;
+
+        public string InstructionText
+        {
+            get { return disasm.InstructionText; }
+        }
 
         #region Registers
 
@@ -439,49 +446,112 @@ namespace x86CS.CPU
                 foreach (var attribute in method.GetCustomAttributes(typeof(CPUFunction), true))
                 {
                     CPUFunction function = attribute as CPUFunction;
+                    Delegate methodDelegate;
 
-                    disasm.AddOperation(function.OpCode, method, method.GetParameters().Length);
+                    try
+                    {
+                        switch (method.GetParameters().Length)
+                        {
+                            case 0:
+                                methodDelegate = Delegate.CreateDelegate(typeof(CPUCallbackNoargs), this, method);
+                                break;
+                            case 1:
+                                methodDelegate = Delegate.CreateDelegate(typeof(CPUCallback1args), this, method);
+                                break;
+                            case 2:
+                                methodDelegate = Delegate.CreateDelegate(typeof(CPUCallback2args), this, method);
+                                break;
+                            case 3:
+                                methodDelegate = Delegate.CreateDelegate(typeof(CPUCallback3args), this, method);
+                                break;
+                            default:
+                                throw new Exception("Method signature not supported");
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        throw new Exception("Method signatire not supported");
+                    }
+
+                    disasm.AddOperation(function.OpCode, methodDelegate, method.GetParameters().Length);
                 }
             }
         }
 
-        private uint ProcessOperand(Operand operand)
+        private void WriteOperand(Operand operand)
         {
             switch (operand.Type)
             {
-                case OperandType.Immediate:
-                    return operand.Value;
                 case OperandType.Register:
                     switch (operand.Size)
                     {
                         case 8:
                             if (operand.Register.High)
-                                return registers[(int)operand.Register.Register].HighByte;
+                                registers[(int)operand.Register.Register].HighByte = (byte)operand.Value;
                             else
-                                return registers[(int)operand.Register.Register].LowByte;
+                                registers[(int)operand.Register.Register].LowByte = (byte)operand.Value;
+                            break;
                         case 16:
-                            return registers[(int)operand.Register.Register].Word;
+                            registers[(int)operand.Register.Register].Word = (ushort)operand.Value;
+                            break;
                         case 32:
-                            return registers[(int)operand.Register.Register].DWord;
+                            registers[(int)operand.Register.Register].DWord = operand.Value;
+                            break;
                     }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private Operand ProcessOperand(Operand operand)
+        {
+            switch (operand.Type)
+            {
+                case OperandType.Immediate:
+                    return operand;
+                case OperandType.Register:
+                    switch (operand.Size)
+                    {
+                        case 8:
+                            if (operand.Register.High)
+                                operand.Value = registers[(int)operand.Register.Register].HighByte;
+                            else
+                                operand.Value = registers[(int)operand.Register.Register].LowByte;
+                            break;
+                        case 16:
+                            operand.Value = registers[(int)operand.Register.Register].Word;
+                            break;
+                        case 32:
+                            operand.Value =  registers[(int)operand.Register.Register].DWord;
+                            break;
+                    }
+                    break;
+                default:
                     break;
             }
 
-            return 0xffffffff;
+            return operand;
         }
 
-        private uint[] ProcessOperands()
+        private Operand[] ProcessOperands()
         {
-            uint[] arguments;
+            Operand[] arguments;
             Operand[] operands = disasm.Operands;
 
             if (operands.Length == 0)
                 return null;
 
-            arguments = new uint[disasm.NumberOfOperands];
+            arguments = new Operand[disasm.NumberOfOperands];
             for (int i = 0; i < disasm.NumberOfOperands; i++)
             {
                 arguments[i] = ProcessOperand(operands[i]);
+            }
+
+            if (disasm.NumberOfOperands == 2 && arguments[0].Size > 8 && arguments[1].Size == 8 && arguments[1].Type == OperandType.Immediate)
+            {
+                arguments[1].Size = arguments[0].Size;
+                arguments[1].Value = (uint)(int)(sbyte)arguments[1].Value;
             }
 
             return arguments;
@@ -655,78 +725,6 @@ namespace x86CS.CPU
             BP = (ushort)StackPop();
         }
 
-        private void DoJump(uint segment, uint offset, bool relative)
-        {
-            Segment codeSegment = segments[(int)SegmentRegister.CS];
-            uint tempEIP;
-
-            if (PMode == false && ((CR0 & 0x1) == 0x1))
-                PMode = true;
-            else if (PMode && ((CR0 & 0x1) == 0))
-                PMode = false;
-
-            if (segment == CS)
-            {
-                if (relative)
-                {
-                    var relOffset = (int)offset;
-
-                    tempEIP = (uint)(EIP + relOffset);
-                }
-                else
-                    tempEIP = offset;
-
-                if (tempEIP > codeSegment.GDTEntry.Limit)
-                    throw new Exception("General Fault Code 0");
-            }
-            else
-            {
-                if (PMode)
-                {
-                    if (segment == 0)
-                        throw new Exception("Null segment selector");
-
-                    if (segment > (gdtRegister.Limit))
-                        throw new Exception("Selector out of range");
-
-                    GDTEntry newEntry = GetSelectorEntry(segment);
-
-                    if (!newEntry.IsCode)
-                        throw new Exception("Segment is not code");
-
-                    CS = segment;
-                    if (relative)
-                    {
-                        var relOffset = (int)offset;
-
-                        tempEIP = (uint)(EIP + relOffset);
-                    }
-                    else
-                        tempEIP = offset;                    
-                }
-                else
-                {
-                    if (relative)
-                        tempEIP = EIP + offset;
-                    else
-                        tempEIP = offset;
-                    if (tempEIP > codeSegment.GDTEntry.Limit)
-                        throw new Exception("EIP Out of range");
-
-                    CS = segment;
-
-                    if (opSize == 32)
-                        EIP = tempEIP;
-                    else
-                        EIP = (ushort)tempEIP;
-                }
-            }
-            if (opSize == 32)
-                EIP = tempEIP;
-            else
-                EIP = (ushort)tempEIP;
-        }
-
         private void CallInterrupt(byte vector)
         {
             //Logger.Debug("INT" + vector.ToString("X"));
@@ -772,162 +770,11 @@ namespace x86CS.CPU
             return 0xffffffff;
         }
 
-/*        private uint ReadRegister(Operand operand)
+        public void Fetch()
         {
-            switch (operand.RegisterType)
-            {
-                case RegisterType.General:
-                    return ReadGeneralRegsiter(operand.Register, (int)operand.OperandSize, operand.High);
-                case RegisterType.Segment:
-                    return segments[operand.Register].Selector;
-                default:
-                    break;
-            }
-
-            return 0;
-        }*/
-
-/*        private void WriteRegister(Operand operand, uint value)
-        {
-            switch (operand.RegisterType)
-            {
-                case RegisterType.General:
-                    if (operand.OperandSize == 32)
-                        registers[operand.Register].DWord = value;
-                    else if (operand.OperandSize == 16)
-                        registers[operand.Register].Word = (ushort)value;
-                    else if (operand.OperandSize == 8 && operand.High)
-                        registers[operand.Register].HighByte = (byte)value;
-                    else if (operand.OperandSize == 8)
-                        registers[operand.Register].LowByte = (byte)value;
-                    else
-                        System.Diagnostics.Debugger.Break();
-                    break;
-                case RegisterType.Segment:
-                    SetSelector((SegmentRegister)operand.Register, value);
-                    break;
-                default:
-                    break;
-            }
-        }*/
-
-        /*private uint GetOperandValue(Operand operand)
-        {
-            if (operand.Type == OperandType.Register)
-                return ReadRegister(operand);
-            else if (operand.Type == OperandType.Immediate)
-                return operand.Value;
-            else if (operand.Type == OperandType.Memory)
-            {
-                if (operand.OperandSize == 8)
-                    return (byte)SegReadByte(operand.Segment, operand.Address);
-                else if (operand.OperandSize == 16)
-                    return (ushort)SegReadWord(operand.Segment, operand.Address);
-                else return SegReadDWord(operand.Segment, operand.Address);
-            }
-
-            return 0;
+            CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
+            opLen = disasm.Disassemble(CurrentAddr);
         }
-
-        private void SetOperandValue(Operand operand, uint value)
-        {
-            if (operand.Type == OperandType.Register)
-                WriteRegister(operand, value);
-            else if (operand.Type == OperandType.Memory)
-            {
-                if (operand.OperandSize == 8)
-                    SegWriteByte(operand.Segment, operand.Address, (byte)value);
-                else if (operand.OperandSize == 16)
-                    SegWriteWord(operand.Segment, operand.Address, (ushort)value);
-                else if (operand.OperandSize == 32)
-                    SegWriteDWord(operand.Segment, operand.Address, value);
-            }
-            else
-                System.Diagnostics.Debugger.Break();
-        }
-
-        private uint RegisterFromBeaRegister(int register)
-        {
-            switch (register)
-            {
-                case 0x1:
-                    return 0;
-                case 0x2:
-                    return 1;
-                case 0x4:
-                    return 2;
-                case 0x8:
-                    return 3;
-                case 0x10:
-                    return 4;
-                case 0x20:
-                    return 5;
-                case 0x40:
-                    return 6;
-                case 0x80:
-                    return 7;
-                default:
-                    return 0xffffffff;
-            }
-        }*/
-
-        /*private Operand ProcessArgument(ArgumentType argument)
-        {
-            Operand operand = new Operand();
-            BeaConstants.ArgumentType argType;
-
-            operand.OperandSize = (uint)argument.ArgSize;
-
-            argType = (BeaConstants.ArgumentType)(argument.ArgType & 0xffff0000);
-            if ((argType & BeaConstants.ArgumentType.MEMORY_TYPE) == BeaConstants.ArgumentType.MEMORY_TYPE)
-            {
-                uint baseRegister = 0;
-
-                if (argument.Memory.IndexRegister != 0 || argument.Memory.Scale != 0)
-                    System.Diagnostics.Debugger.Break();
-                if (argument.Memory.BaseRegister != 0)
-                {
-                    baseRegister = RegisterFromBeaRegister(argument.Memory.BaseRegister);
-                    operand.Address = ReadGeneralRegsiter(baseRegister, PMode ? 32 : 16, false);
-                }
-
-                operand.Address = (uint)(operand.Address + argument.Memory.Displacement);
-                operand.Type = OperandType.Memory;
-                operand.Segment = MemorySegmentToActualSegment((MemorySegment)argument.SegmentReg);
-            }
-            else if ((argType & BeaConstants.ArgumentType.REGISTER_TYPE) == BeaConstants.ArgumentType.REGISTER_TYPE)
-            {
-                operand.RegisterType = (RegisterType)((int)argType & ~0xf0000000);
-                operand.Register = RegisterFromBeaRegister(argument.ArgType & 0x0000ffff);
-                
-                if (argument.ArgPosition == 1)
-                    operand.High = true;
-                else
-                    operand.High = false;
-
-                operand.Type = OperandType.Register;
-            }
-            else if ((argType & BeaConstants.ArgumentType.CONSTANT_TYPE) == BeaConstants.ArgumentType.CONSTANT_TYPE)
-            {
-                operand.Value = (uint)currentInstruction.Instruction.Immediate;
-                operand.Type = OperandType.Immediate;
-            }
-
-            if (currentInstruction.Prefix.CSPrefix == 1)
-                operand.Segment = SegmentRegister.CS;
-            else if (currentInstruction.Prefix.DSPrefix == 1)
-                operand.Segment = SegmentRegister.DS;
-            else if (currentInstruction.Prefix.ESPrefix == 1)
-                operand.Segment = SegmentRegister.ES;
-            else if (currentInstruction.Prefix.FSPrefix == 1)
-                operand.Segment = SegmentRegister.FS;
-            else if (currentInstruction.Prefix.GSPrefix == 1)
-                operand.Segment = SegmentRegister.GS;
-            else if (currentInstruction.Prefix.SSPrefix == 1)
-                operand.Segment = SegmentRegister.SS;
-
-            return operand;
-        }*/
 
         public void Cycle()
         {
@@ -942,18 +789,10 @@ namespace x86CS.CPU
             if (Halted)
                 return;
 
-            CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
-            uint len = (uint)disasm.Disassemble(CurrentAddr);
-            EIP += len;
+            Operand[] operands = ProcessOperands();
 
-            uint[] operands = ProcessOperands();
-
-            if (operands.Length == 0)
-                disasm.Execute(this);
-            else
-                disasm.Execute(this, operands);
-
-            CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
+            EIP += (uint)opLen;
+            disasm.Execute(this, operands);
         }
     }
 }

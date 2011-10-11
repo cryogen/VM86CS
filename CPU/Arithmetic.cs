@@ -18,90 +18,6 @@
 
     public partial class CPU
     {
-        /*private void ProcessArithmetic(Operand[] operands)
-        {
-            uint source, dest;
-            int opSize = (int)operands[0].OperandSize;
-
-            source = dest = 0;
-
-            dest = GetOperandValue(operands[0]);
-            if(operands.Length > 1)
-                source = GetOperandValue(operands[1]);
-
-            switch (currentInstruction.Instruction.Opcode)
-            {
-                case 0x3c:
-                    Subtract(dest, source, opSize);
-                    break;
-                case 0x00:
-                case 0x01:
-                case 0x02:
-                case 0x03:
-                case 0x04:
-                case 0x05:
-                    dest = Add(dest, source, opSize);
-                    SetOperandValue(operands[0], dest);
-                    break;
-                case 0x40:
-                case 0x41:
-                case 0x42:
-                case 0x43:
-                case 0x44:
-                case 0x45:
-                case 0x46:
-                case 0x47:
-                    dest = Increment(dest, opSize);
-                    SetOperandValue(operands[0], dest);
-                    break;
-                case 0x48:
-                case 0x49:
-                case 0x4a:
-                case 0x4b:
-                case 0x4c:
-                case 0x4d:
-                case 0x4e:
-                case 0x4f:
-                    dest = Decrement(dest, opSize);
-                    SetOperandValue(operands[0], dest);
-                    break;
-                case 0x80:
-                case 0x81:
-                case 0x83:
-                    switch (currentInstruction.Instruction.Mnemonic)
-                    {
-                        case "cmp ":
-                            Subtract(dest, source, opSize);
-                            break;
-                        case "add ":
-                            dest = Add(dest, source, opSize);
-                            SetOperandValue(operands[0], dest);
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                case 0xfe:
-                case 0xff:
-                    switch (currentInstruction.Instruction.Mnemonic)
-                    {
-                        case "inc ":
-                            dest = Increment(dest, opSize);
-                            SetOperandValue(operands[0], dest);
-                            break;
-                        case "dec ":
-                            dest = Decrement(dest, opSize);
-                            SetOperandValue(operands[0], dest);
-                            break;
-                        default:
-                            break;
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }*/
-
         private void CheckOverflow(short result)
         {
             if ((sbyte)(byte)result > sbyte.MaxValue || (sbyte)(byte)result < sbyte.MinValue)
@@ -140,7 +56,7 @@
 
         private uint DoAdd(uint dest, uint source, int size, bool carry)
         {
-            ulong ret;
+           /* ulong ret;
             
             if (carry)
                 source += (uint)(CF ? 1 : 0);
@@ -165,7 +81,8 @@
                     CF = ret > uint.MaxValue;
                     SetCPUFlags((uint)ret);
                     return (uint)ret;
-            }
+            }*/
+            return 0;
         }
 
         #endregion
@@ -184,7 +101,8 @@
 
         private uint DoSub(uint dest, uint source, int size, bool borrow)
         {
-            long result;
+            return 0;
+          /*  long result;
 
             if (borrow && CF)
                 source++;
@@ -208,7 +126,7 @@
                     CheckOverflow(result);
                     break;
             }
-            return (uint)result;
+            return (uint)result;*/
         }
 
         #endregion

@@ -101,7 +101,7 @@ namespace x86CS
                     Invoke((MethodInvoker)(() =>
                                                {
                                                    PrintRegisters();
-                                                   SetCPULabel(machine.Operation);
+                                                   SetCPULabel(machine.CPU.InstructionText);
                                                }));
                 }
             }
@@ -109,7 +109,7 @@ namespace x86CS
 
         private void SetCPULabel(string text)
         {
-            cpuLabel.Text = text;
+            cpuLabel.Text = String.Format("{0:X}:{1:X} {2}", machine.CPU.CS, machine.CPU.EIP, text);
         }
 
         private void ExitToolStripMenuItemClick(object sender, EventArgs e)
@@ -185,13 +185,13 @@ namespace x86CS
             if (!machine.Running)
             {
                 machine.Start();
-                SetCPULabel(machine.Operation);
+                SetCPULabel(machine.CPU.InstructionText);
                 PrintRegisters();
                 return;
             }
 
             machine.RunCycle(frequency, timerTicks);
-            SetCPULabel(machine.Operation);
+            SetCPULabel(machine.CPU.InstructionText);
             PrintRegisters();
         }
 

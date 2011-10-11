@@ -4,7 +4,7 @@ namespace x86CS.CPU
     public partial class CPU
     {
         [CPUFunction(OpCode=0xea)]
-        public void DoFarJump(uint address)
+        public void DoFarJump(Operand dest)
         {
             uint segment, offset;
 
@@ -13,8 +13,8 @@ namespace x86CS.CPU
             else if (PMode && ((CR0 & 0x1) == 0))
                 PMode = false;
 
-            segment = (uint)((address & 0xffff0000) >> 4);
-            offset = (uint)address & 0x0000ffff;
+            segment = (uint)((dest.Value & 0xffff0000) >> 4);
+            offset = (uint)dest.Value & 0x0000ffff;
 
             CS = segment;
             if (opSize == 32)

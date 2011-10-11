@@ -10,6 +10,10 @@ namespace x86Disasm
         private Operand[] operands;
         private Dictionary<ushort, Operation> operations;
         private Instruction currentInstruction;
+        private bool gotRM;
+        private byte rmByte;
+
+        public string InstructionText { get; private set; }
 
         public Operand[] Operands
         {
@@ -40,19 +44,25 @@ namespace x86Disasm
             return readFunction(offset, 32);
         }
 
-        private void ProcessRegMem(Operand operand)
-        {
-
-        }
-
         private void ProcessRegMemRegister(ref Operand operand, Argument argument, byte rmByte)
         {
+            byte index = (byte)(rmByte & 0x7);
+
             operand.Type = OperandType.Register;
             operand.Size = argument.Size;
             if (operand.Size == 8)
-                operand.Register = registers8Bit[rmByte & 0x7];
+            {
+                operand.Register = registers8Bit[index];
+                InstructionText += registerStrings8BitLow[index];
+            }
             else
-                operand.Register = registers16Bit[rmByte & 0x7];
+            {
+                operand.Register = registers16Bit[index];
+                if (operand.Size == 16)
+                    InstructionText += registerStrings16Bit[(int)operand.Register.Register];
+                else
+                    InstructionText += registerStrings32Bit[(int)operand.Register.Register];
+            }
         }
 
         private void ProcessRegMemMemory(ref Operand operand, Argument argument, byte rmByte)
@@ -67,7 +77,6 @@ namespace x86Disasm
         private uint ProcessArgument(Argument argument, int operandNumber, uint offset)
         {
             Operand operand = new Operand();
-            byte rmByte;
 
             switch (argument.Type)
             {
@@ -75,13 +84,25 @@ namespace x86Disasm
                     operand.Type = OperandType.Immediate;
                     operand.Size = 32;
                     operand.Value = (uint)(ReadWord(offset) + (ReadWord(offset+2) << 4));
+                    InstructionText += operand.Value.ToString("X");
                     offset += 4;
+                    break;
+                case ArgumentType.Immediate:
+                    operand.Type = OperandType.Immediate;
+                    operand.Size = argument.Size;
+                    operand.Value = readFunction(offset, (int)operand.Size);
+                    InstructionText += operand.Value.ToString("X");
+                    offset += operand.Size / 8;
                     break;
                 case ArgumentType.RegMem:
                 case ArgumentType.RegMemGeneral:
                 case ArgumentType.RegMemMemory:
                 case ArgumentType.RegMemSegment:
-                    rmByte = ReadByte(offset++);
+                    if (!gotRM)
+                    {
+                        rmByte = ReadByte(offset++);
+                        gotRM = true;
+                    }
                     switch (argument.Type)
                     {
                         case ArgumentType.RegMem:
@@ -91,13 +112,33 @@ namespace x86Disasm
                                 ProcessRegMemMemory(ref operand, argument, rmByte);
                             break;
                         case ArgumentType.RegMemGeneral:
-                            ProcessRegMemRegister(ref operand, argument, rmByte);
+                            ProcessRegMemRegister(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         case ArgumentType.RegMemMemory:
                             ProcessRegMemRegister(ref operand, argument, rmByte);
                             break;
                         default:
                             break;
+                    }
+                    break;
+                case ArgumentType.GeneralRegister:
+                    operand.Type = OperandType.Register;
+                    operand.Size = argument.Size;
+                    if (operand.Size == 8)
+                    {
+                        operand.Register = registers8Bit[argument.Value];
+                        if (operand.Register.High)
+                            InstructionText += registerStrings8BitHigh[(int)operand.Register.Register];
+                        else
+                            InstructionText += registerStrings8BitLow[(int)operand.Register.Register];
+                    }
+                    else
+                    {
+                        operand.Register = registers16Bit[argument.Value];
+                        if (operand.Size == 16)
+                            InstructionText += registerStrings16Bit[(int)operand.Register.Register];
+                        else
+                            InstructionText += registerStrings32Bit[(int)operand.Register.Register];
                     }
                     break;
                 default:
@@ -109,7 +150,7 @@ namespace x86Disasm
             return offset;
         }
 
-        public void AddOperation(ushort opCode, MethodInfo method, int numArgs)
+        public void AddOperation(ushort opCode, Delegate method, int numArgs)
         {
             Operation operation = new Operation { OpCode = opCode, Method=method, NumberOfArgs=numArgs };
 
@@ -120,6 +161,9 @@ namespace x86Disasm
         {
             uint offset = 0;
             byte opCode;
+
+            InstructionText = "";
+            gotRM = false;
 
             opCode = (byte)readFunction(offset, 8);
             currentInstruction = instructions[opCode];
@@ -138,41 +182,58 @@ namespace x86Disasm
                 offset++;
             }
 
+            if ((setPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat)
+                InstructionText = "REP ";
+            else if ((setPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual)
+                InstructionText = "REPNE ";
+
+            InstructionText += currentInstruction.Nmumonic + " ";
+
             if (currentInstruction.Arg1.Type != ArgumentType.None)
                 offset = ProcessArgument(currentInstruction.Arg1, 0, offset);
             if (currentInstruction.Arg2.Type != ArgumentType.None)
+            {
+                InstructionText += ", ";
                 offset = ProcessArgument(currentInstruction.Arg2, 1, offset);
+            }
             if (currentInstruction.Arg3.Type != ArgumentType.None)
-                offset = ProcessArgument(currentInstruction.Arg3, 2, offset);            
+            {
+                InstructionText += ", ";
+                offset = ProcessArgument(currentInstruction.Arg3, 2, offset);
+            }
                 
             return (int)offset;
         }
 
-        public void Execute(object invoker, params uint[] operands)
+        public void Execute(object invoker, params Operand[] operands)
         {
             Operation operation;
-            object[] parameters;
 
             if(!operations.TryGetValue(currentInstruction.OpCode, out operation))
                 throw new Exception("Invalid operation");
 
             if (operands.Length != operation.NumberOfArgs)
-                throw new Exception("Not enough arguments");
+                throw new Exception("wrong number of arguments");
 
-            if (operation.NumberOfArgs == 0)
+            switch (operation.NumberOfArgs)
             {
-                operation.Method.Invoke(invoker, null);
-                return;
+                case 0:
+                    CPUCallbackNoargs func = operation.Method as CPUCallbackNoargs;
+                    func();
+                    break;
+                case 1:
+                    CPUCallback1args func1 = operation.Method as CPUCallback1args;
+                    func1(operands[0]);
+                    break;
+                case 2:
+                    CPUCallback2args func2 = operation.Method as CPUCallback2args;
+                    func2(operands[0], operands[1]);
+                    break;
+                case 3:
+                    CPUCallback3args func3 = operation.Method as CPUCallback3args;
+                    func3(operands[0], operands[1], operands[2]);
+                    break;
             }
-
-            parameters = new object[operation.NumberOfArgs];
-
-            for (int i = 0; i < operation.NumberOfArgs; i++)
-            {
-                parameters[i] = operands[i];
-            }
-
-            operation.Method.Invoke(invoker, parameters);
         }
     }
 }

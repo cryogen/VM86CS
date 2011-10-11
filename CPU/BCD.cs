@@ -30,7 +30,7 @@ namespace x86CS.CPU
             AL = (byte)((tempAL + (tempAH * baseNum)) & 0xff);
             AH = 0;
 
-            SetCPUFlags(AL);
+      //      SetCPUFlags(AL);
         }
 
         private void ASCIIAdjustAfterMultiply(byte baseNum)
@@ -42,7 +42,7 @@ namespace x86CS.CPU
             AH = (byte)(tempAL / baseNum);
             AL = (byte)(tempAL % baseNum);
 
-            SetCPUFlags(AL);
+         //   SetCPUFlags(AL);
         }
 
         private void ASCIIAdjustAfterSubtract()

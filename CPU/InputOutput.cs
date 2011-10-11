@@ -1,51 +1,32 @@
-﻿namespace x86CS.CPU
+﻿using x86Disasm;
+namespace x86CS.CPU
 {
     public partial class CPU
-    {/*
-        private void ProcessInputOutput(Operand[] operands)
-        {
-            switch (currentInstruction.Instruction.Opcode)
-            {
-                case 0xe4:
-                case 0xe5:
-                case 0xec:
-                case 0xed:
-                    SetOperandValue(operands[0], DoIORead((ushort)GetOperandValue(operands[1]), (int)operands[0].OperandSize));
-                    break;
-                case 0xe6:
-                case 0xe7:
-                    DoIOWrite((ushort)GetOperandValue(operands[0]), GetOperandValue(operands[1]), (int)operands[1].OperandSize);
-                    break;
-                case 0xee:
-                    DoIOWrite(DX, AL, 8);
-                    break;
-                case 0xef:
-                    if (currentInstruction.Argument2.ArgSize == 16)
-                        DoIOWrite(DX, AX, 16);
-                    else
-                        DoIOWrite(DX, EAX, 32);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private uint DoIORead(ushort addr, int size)
+    {
+        [CPUFunction(OpCode = 0xe4)]
+        [CPUFunction(OpCode = 0xe5)]
+        [CPUFunction(OpCode = 0xec)]
+        [CPUFunction(OpCode = 0xed)]
+        public void DoIORead(Operand dest, Operand source)
         {
             ReadCallback ioRead = IORead;
 
             if (ioRead != null)
-                return ioRead(addr, size);
+                dest.Value = ioRead((ushort)source.Value, (int)dest.Size);
 
-            return 0xffff;
+            dest.Value = 0;
         }
 
-        private void DoIOWrite(ushort addr, uint value, int size)
+        [CPUFunction(OpCode = 0xe6)]
+        [CPUFunction(OpCode = 0xe7)]
+        [CPUFunction(OpCode = 0xee)]
+        [CPUFunction(OpCode = 0xef)]
+        public void DoIOWrite(Operand dest, Operand source)
         {
             WriteCallback ioWrite = IOWrite;
 
             if (ioWrite != null)
-                ioWrite(addr, value, size);
-        }*/
+                ioWrite((ushort)dest.Value, source.Value, (int)source.Size);
+        }
     }
 }

@@ -1,93 +1,31 @@
 ﻿using System.Collections;
+using x86Disasm;
 
 namespace x86CS.CPU
 {
     public partial class CPU
     {
-     /*   private void ProcessLogic(Operand[] operands)
+        private void SetCPUFlags(Operand operand)
         {
-            uint source, dest;
-            int opSize = (int)operands[0].OperandSize;
+            int signed;
 
-            dest = GetOperandValue(operands[0]);
-            source = GetOperandValue(operands[1]);
-
-            switch (currentInstruction.Instruction.Opcode)
+            switch (operand.Size)
             {
-                case 0x30:
-                case 0x31:
-                case 0x32:
-                case 0x33:
-                case 0x34:
-                case 0x35:
-                    dest = Xor(dest, source, opSize);
-                    SetOperandValue(operands[0], dest);
+                case 8:
+                    signed = (sbyte)operand.Value;
                     break;
-                case 0x24:
-                case 0x25:
-                case 0x20:
-                case 0x21:
-                case 0x22:
-                case 0x23:
-                    dest = And(dest, source, opSize);
-                    SetOperandValue(operands[0], dest);
-                    break;
-                case 0x84:
-                case 0x85:
-                case 0xa8:
-                case 0xa9:
-                case 0xf6:
-                case 0xf7:
-                    dest = And(dest, source, opSize);
-                    break;
-                case 0x80:
-                case 0x81:
-                case 0x83:
-                    switch (currentInstruction.Instruction.Mnemonic)
-                    {
-                        case "xor ":
-                            dest = Xor(dest, source, opSize);
-                            SetOperandValue(operands[0], dest);
-                            break;
-                        default:
-                            break;
-                    }
+                case 16:
+                    signed = (short)operand.Value;
                     break;
                 default:
+                    signed = (int)operand.Value;
                     break;
             }
-        }*/
 
-        private void SetCPUFlags(byte operand)
-        {
-            var signed = (sbyte)operand;
-
-            ZF = operand == 0;
+            ZF = operand.Value == 0;
             SF = signed < 0;
 
-            SetParity(operand);
-        }
-
-        private void SetCPUFlags(ushort operand)
-        {
-            var signed = (short)operand;
-
-            ZF = operand == 0;
-
-            SF = signed < 0;
-
-            SetParity(operand);
-        }
-
-        private void SetCPUFlags(uint operand)
-        {
-            var signed = (int)operand;
-
-            ZF = operand == 0;
-
-            SF = signed < 0;
-
-            SetParity(operand);
+            SetParity(operand.Value);
         }
 
         private void SetParity(uint value)
@@ -102,7 +40,8 @@ namespace x86CS.CPU
 
         private uint And(uint dest, uint source, int size)
         {
-            uint temp;
+            return 0;
+          /*  uint temp;
 
             switch (size)
             {
@@ -123,7 +62,7 @@ namespace x86CS.CPU
             CF = false;
             OF = false;
 
-            return temp;
+            return temp;*/
         }
 
         private void Or(byte source)
@@ -170,7 +109,7 @@ namespace x86CS.CPU
         {
             var temp = (byte)(source | dest);
 
-            SetCPUFlags(temp);
+          //  SetCPUFlags(temp);
 
             CF = false;
             OF = false;
@@ -182,7 +121,7 @@ namespace x86CS.CPU
         {
             var temp = (ushort)(source | dest);
 
-            SetCPUFlags(temp);
+         //   SetCPUFlags(temp);
 
             CF = false;
             OF = false;
@@ -194,7 +133,7 @@ namespace x86CS.CPU
         {
             var temp = source | dest;
 
-            SetCPUFlags(temp);
+          //  SetCPUFlags(temp);
 
             CF = false;
             OF = false;
@@ -202,29 +141,24 @@ namespace x86CS.CPU
             return temp;
         }
 
-        private uint Xor(uint dest, uint source, int size)
+        [CPUFunction(OpCode = 0x30)]
+        [CPUFunction(OpCode = 0x31)]
+        [CPUFunction(OpCode = 0x32)]
+        [CPUFunction(OpCode = 0x33)]
+        [CPUFunction(OpCode = 0x34)]
+        [CPUFunction(OpCode = 0x35)]
+        [CPUFunction(OpCode = 0x0680)]
+        [CPUFunction(OpCode = 0x0681)]
+        [CPUFunction(OpCode = 0x0683)]
+        public void Xor(Operand dest, Operand source)
         {
-            uint ret;
-
-            switch (size)
-            {
-                case 8:
-                    ret = (byte)((byte)source ^ (byte)dest);
-                    SetCPUFlags((byte)ret);
-                    break;
-                case 16:
-                    ret = (ushort)((ushort)source ^ (ushort)(short)dest);
-                    SetCPUFlags((ushort)ret);
-                    break;
-                default:
-                    ret = source ^ dest;
-                    SetCPUFlags(ret);
-                    break;
-            }
+            dest.Value = dest.Value ^ source.Value;
+            SetCPUFlags(dest);
 
             CF = false;
             OF = false;
-            return ret;
+
+            WriteOperand(dest);
         }
    }
 }
