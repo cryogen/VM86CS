@@ -16,6 +16,17 @@ namespace x86CS
         GS,
         Default
     }
+
+    public enum MemorySegment
+    {
+        ES = 1, 
+        DS,
+        FS,
+        GS,
+        CS,
+        SS
+    }
+
     public enum CPURegister
     {
         EAX,
@@ -73,6 +84,7 @@ namespace x86CS
         private sbyte flags;
         private sbyte limitHighAndFlags2;
         private byte baseHigh;
+        private uint baseAddress;
 
         public uint Limit
         {
@@ -86,12 +98,13 @@ namespace x86CS
 
         public uint BaseAddress
         {
-            get { return (uint)((baseHigh << 24) + (baseLow2 << 16) + baseLow1); }
+            get { return baseAddress; }
             set 
             {
                 baseLow1 = (ushort)value;
                 baseLow2 = (byte)(value >> 16);
                 baseHigh = (byte)(value >> 24);
+                baseAddress = (uint)((baseHigh << 24) + (baseLow2 << 16) + baseLow1);
             }
         }
 

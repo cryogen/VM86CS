@@ -62,7 +62,7 @@ namespace x86CS
 
             while (running)
             {
-                timerTicks++;
+                ++timerTicks;
 
                 if(timerTicks % 50000 == 0)
                 {
@@ -71,16 +71,18 @@ namespace x86CS
                     if(Created)
                         Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("F2") + "TPS"; }); 
                 }
+
                 if (!machine.Running || (machine.Stepping && machine.CPU.InterruptLevel == 0))
                 {
-                    if(!stepButton.Enabled && Created)
-                        Invoke((MethodInvoker) delegate { stepButton.Enabled = true; });
+                  /*  if(!stepButton.Enabled && Created)
+                        Invoke((MethodInvoker) delegate { stepButton.Enabled = true; });*/
                     continue;
                 }
+
                 try
                 {
-                    if (stepButton.Enabled && Created)
-                        Invoke((MethodInvoker)delegate { stepButton.Enabled = false; });
+                   /* if (stepButton.Enabled && Created)
+                        Invoke((MethodInvoker)delegate { stepButton.Enabled = false; });*/
                     machine.RunCycle(frequency, timerTicks);
                 }
                 catch (ThreadAbortException)
@@ -90,7 +92,6 @@ namespace x86CS
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message, Resources.ErrorTitle);
-                    machine.FlushLog();
                     return;
                 }
 
@@ -100,7 +101,7 @@ namespace x86CS
                     Invoke((MethodInvoker)(() =>
                                                {
                                                    PrintRegisters();
-                                                   //SetCPULabel();
+                                                   SetCPULabel(machine.Operation);
                                                }));
                 }
             }
@@ -180,18 +181,17 @@ namespace x86CS
         private void StepButtonClick(object sender, EventArgs e)
         {
             machine.Stepping = true;
-            string opStr;
 
             if (!machine.Running)
             {
                 machine.Start();
-//                SetCPULabel(opStr);
+                SetCPULabel(machine.Operation);
                 PrintRegisters();
                 return;
             }
 
             machine.RunCycle(frequency, timerTicks);
-//            SetCPULabel(opStr);
+            SetCPULabel(machine.Operation);
             PrintRegisters();
         }
 
@@ -225,8 +225,8 @@ namespace x86CS
                 
             var addr = (uint)((seg << 4) + off);
 
-            memByte.Text = Memory.ReadByte(addr).ToString("X2");
-            memWord.Text = Memory.ReadWord(addr).ToString("X4");
+            memByte.Text = Memory.Read(addr, 16).ToString("X2");
+            memWord.Text = Memory.Read(addr, 16).ToString("X4");
         }
 
         private void BreakpointsToolStripMenuItemClick(object sender, EventArgs e)

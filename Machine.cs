@@ -6,7 +6,6 @@ using System.Runtime.InteropServices;
 using log4net;
 using x86CS.Devices;
 using System.Windows.Forms;
-using Bea;
 
 namespace x86CS
 {
@@ -26,14 +25,16 @@ namespace x86CS
 
         private Dictionary<ushort, IOEntry> ioPorts;
         private int opLen;
-        private Disasm currentInstruction;
 
-        public object[] Operands { get; private set; }
-        public byte OPCode { get; private set; }
         public Floppy FloppyDrive { get; private set; }
         public bool Running { get; private set; }
         public CPU.CPU CPU { get; private set; }
         public bool Stepping { get; set; }
+
+        public string Operation
+        {
+            get { return "";/*return String.Format("{0:X}:{1:X}  {2}", CPU.CS, CPU.EIP, currentInstruction.CompleteInstr);*/ }
+        }
 
         public Machine()
         {
@@ -62,9 +63,6 @@ namespace x86CS
             machineForm.Show();
             machineForm.BringToFront();
             machineForm.Select();
-            currentInstruction = new Disasm();
-            currentInstruction.Archi = 0x10;
-            currentInstruction.Options = (ulong)(Bea.BeaConstants.SpecialInfo.PrefixedNumeral | Bea.BeaConstants.SpecialInfo.NasmSyntax | Bea.BeaConstants.SpecialInfo.ShowSegmentRegs);
         }
 
         [DllImport("user32.dll")]
@@ -213,23 +211,16 @@ namespace x86CS
 
         public bool CheckBreakpoint()
         {
-            var cpuAddr = (uint)(CPU.CurrentAddr - opLen);
-            bool bpHit = breakpoints.Any(kvp => kvp.Value == cpuAddr);
+            //var cpuAddr = (uint)(currentInstruction.VirtualAddr);
+          //  bool bpHit = breakpoints.Any(kvp => kvp.Value == cpuAddr);
 
-            return bpHit;
+          //  return bpHit;
+            return false;
         }
 
         public void Start()
         {
             int addr = (int)((CPU.CS << 4) + CPU.IP);
-
-            GCHandle handler = GCHandle.Alloc(Memory.MemoryArray, GCHandleType.Pinned);
-
-            currentInstruction.EIP = new IntPtr(handler.AddrOfPinnedObject().ToInt64() + addr);
-            currentInstruction.VirtualAddr = (ulong)addr;
-
-            opLen = BeaEngine.Disasm(currentInstruction);
-            handler.Free();
             
             Running = true;
         }
@@ -247,25 +238,26 @@ namespace x86CS
         {
             if (Running)
             {
-                int irq, vector;
+                CPU.Cycle();
+//                int irq, vector;
 
-                foreach (IDevice device in devices)
+         /*       foreach (IDevice device in devices)
                 {
                     var clockDevice = device as INeedsClock;
 
                     if(clockDevice != null)
                         clockDevice.Cycle(frequency, timerTicks);
-                }
+                }*/
 
-                if(picDevice.InterruptService(out irq, out vector))
+                /*if(picDevice.InterruptService(out irq, out vector))
                 {
                     if(CPU.IF)
                     {
                         CPU.Interrupt(vector, irq);
                         picDevice.AckInterrupt((byte)irq);
                     }
-                }
-                CPU.Cycle(currentInstruction, opLen);
+                }*/
+             /*   CPU.Cycle(currentInstruction, opLen);
                 GCHandle handle = GCHandle.Alloc(Memory.MemoryArray, GCHandleType.Pinned);
 
                 currentInstruction.EIP = new IntPtr(handle.AddrOfPinnedObject().ToInt64() + CPU.CurrentAddr);
@@ -275,11 +267,12 @@ namespace x86CS
                 else
                     currentInstruction.Archi = 16;
 
-                handle.Free();
-
                 opLen = BeaEngine.Disasm(currentInstruction);
-                if (timerTicks % 100000 == 0)
-                    machineForm.Invalidate();
+
+                handle.Free();*/
+
+                /*if (timerTicks % 100000 == 0)
+                    machineForm.Invalidate();*/
             }
         }
     }

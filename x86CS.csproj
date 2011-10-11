@@ -74,9 +74,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BeaEngine\Constants.cs" />
-    <Compile Include="BeaEngine\Engine.cs" />
-    <Compile Include="BeaEngine\Structs.cs" />
     <Compile Include="Breakpoints.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -92,6 +89,7 @@
     <Compile Include="CPU\FlagControl.cs" />
     <Compile Include="CPU\InputOutput.cs" />
     <Compile Include="CPU\Logic.cs" />
+    <Compile Include="CPU\Misc.cs" />
     <Compile Include="CPU\Strings.cs" />
     <Compile Include="Devices\ATA.cs" />
     <Compile Include="Devices\DMA.cs" />
@@ -153,6 +151,12 @@
     <Compile Include="Devices\CMOS.cs" />
     <Compile Include="Structs.cs" />
     <Compile Include="Util.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\x86Disasm\x86Disasm.csproj">
+      <Project>{280D1B38-0694-4281-B8E3-2F14F371901D}</Project>
+      <Name>x86Disasm</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
