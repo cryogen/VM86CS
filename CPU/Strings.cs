@@ -3,28 +3,16 @@ namespace x86CS.CPU
 {
     public partial class CPU
     {
-      /*  private void ProcessString(Operand[] operands)
-        {
-            switch (currentInstruction.Instruction.Opcode)
-            {
-                case 0xab:
-                    StringStore(GetOperandValue(operands[1]), 16);
-                    break;
-                default:
-                    break;
-            }
-        }*/
-
         private uint GetCount()
         {
-            if (repeatPrefix == RepeatPrefix.Repeat || repeatPrefix == RepeatPrefix.RepeatNotZero)
+            if ((disasm.SetPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat || ((disasm.SetPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual))
                 return addressSize == 32 ? ECX : CX;
             return 1;
         }
 
         private void SetCount(uint value)
         {
-            if (repeatPrefix == RepeatPrefix.None)
+            if ((disasm.SetPrefixes & OPPrefix.Repeat) != OPPrefix.Repeat && ((disasm.SetPrefixes & OPPrefix.RepeatNotEqual) != OPPrefix.RepeatNotEqual))
                 return;
 
             if (addressSize == 32)
@@ -33,13 +21,13 @@ namespace x86CS.CPU
                 CX = (ushort)value;
         }
 
-        private void StringStore(uint value, int size)
+        [CPUFunction(OpCode=0xab)]
+        public void StringStore(Operand dest, Operand source)
         {
             uint count = GetCount();
 
             while (count > 0)
             {
-                int amount;
                 uint addr;
 
                 if (addressSize == 32)
@@ -47,35 +35,20 @@ namespace x86CS.CPU
                 else
                     addr = DI;
 
-                if (size == 8)
-                {
-                    SegWriteByte(SegmentRegister.ES, addr, (byte)value);
-                    amount = 1;
-                }
-                else if (size == 16)
-                {
-                    SegWriteWord(SegmentRegister.ES, addr, (ushort)value);
-                    amount = 2;
-                }
-                else
-                {
-                    SegWriteDWord(SegmentRegister.ES, addr, value);
-                    amount = 4;
-                }
-
+                SegWrite(SegmentRegister.ES, addr, source.Value, (int)source.Size);
                 if (DF)
                 {
                     if (addressSize == 32)
-                        EDI -= (uint)amount;
+                        EDI -= (uint)dest.Size / 8;
                     else
-                        DI -= (ushort)amount;
+                        DI -= (ushort)(dest.Size / 8);
                 }
                 else
                 {
                     if (addressSize == 32)
-                        EDI += (uint)amount;
+                        EDI += (uint)source.Size / 8;
                     else
-                        DI += (ushort)amount;
+                        DI += (ushort)(source.Size / 8);
                 }
 
                 count--;

@@ -6,14 +6,15 @@ namespace x86Disasm
     public partial class Disassembler
     {
         private ReadCallback readFunction;
-        private OPPrefix setPrefixes;
         private Operand[] operands;
         private Dictionary<ushort, Operation> operations;
         private Instruction currentInstruction;
         private bool gotRM;
         private byte rmByte;
         private uint virtualAddr;
+        private SegmentRegister overrideSegment;
 
+        public OPPrefix SetPrefixes { get; private set; }
         public string InstructionText { get; private set; }
 
         public Operand[] Operands
@@ -28,6 +29,7 @@ namespace x86Disasm
             readFunction = readCallback;
             operands = new Operand[3];
             operations = new Dictionary<ushort, Operation>();
+            overrideSegment = SegmentRegister.Default;
         }
 
         private byte ReadByte(uint offset)
@@ -104,18 +106,8 @@ namespace x86Disasm
                 offset += 2;
             }
 
-            if ((setPrefixes & OPPrefix.CSOverride) == OPPrefix.CSOverride)
-                operand.Memory.Segment = SegmentRegister.CS;
-            else if ((setPrefixes & OPPrefix.DSOverride) == OPPrefix.DSOverride)
-                operand.Memory.Segment = SegmentRegister.DS;
-            else if ((setPrefixes & OPPrefix.ESOverride) == OPPrefix.ESOverride)
-                operand.Memory.Segment = SegmentRegister.ES;
-            else if ((setPrefixes & OPPrefix.FSOverride) == OPPrefix.FSOverride)
-                operand.Memory.Segment = SegmentRegister.FS;
-            else if ((setPrefixes & OPPrefix.GSOverride) == OPPrefix.GSOverride)
-                operand.Memory.Segment = SegmentRegister.GS;
-            else if ((setPrefixes & OPPrefix.SSOverride) == OPPrefix.SSOverride)
-                operand.Memory.Segment = SegmentRegister.SS;
+            if (overrideSegment != SegmentRegister.Default)
+                operand.Memory.Segment = overrideSegment;
 
             InstructionText += registerStringsSegment[(int)operand.Memory.Segment] + ":";
             if (mod == 0 && rm == 6)
@@ -148,18 +140,18 @@ namespace x86Disasm
         {
             Operand operand = new Operand();
 
+            operand.Size = argument.Size;
+
             switch (argument.Type)
             {
                 case ArgumentType.Address:
                     operand.Type = OperandType.Immediate;
-                    operand.Size = 32;
                     operand.Value = (uint)(ReadWord(offset) + (ReadWord(offset+2) << 4));
                     InstructionText += operand.Value.ToString("X");
                     offset += 4;
                     break;
                 case ArgumentType.Immediate:
                     operand.Type = OperandType.Immediate;
-                    operand.Size = argument.Size;
                     operand.Value = readFunction(offset, (int)operand.Size);
                     InstructionText += operand.Value.ToString("X");
                     offset += operand.Size / 8;
@@ -168,8 +160,8 @@ namespace x86Disasm
                     operand.Type = OperandType.Immediate;
                     operand.Size = 32;
                     operand.Value = readFunction(offset, (int)argument.Size);
-                    InstructionText += operand.Value.ToString("X") + " (" + (virtualAddr + operand.Value).ToString("X") + ")";
                     offset += argument.Size / 8;
+                    InstructionText += operand.Value.ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
                     break;
                 case ArgumentType.RegMem:
                 case ArgumentType.RegMemGeneral:
@@ -203,7 +195,6 @@ namespace x86Disasm
                     break;
                 case ArgumentType.GeneralRegister:
                     operand.Type = OperandType.Register;
-                    operand.Size = argument.Size;
                     if (operand.Size == 8)
                     {
                         operand.Register = registers8Bit[argument.Value];
@@ -225,6 +216,23 @@ namespace x86Disasm
                     operand.Type = OperandType.Register;
                     operand.Register = registersSegment[argument.Value];
                     InstructionText += registerStringsSegment[argument.Value];
+                    break;
+                case ArgumentType.Memory:
+                    operand.Type = OperandType.Memory;
+                    operand.Memory.Base = GeneralRegister.EDI;
+                    if (overrideSegment == SegmentRegister.Default)
+                        operand.Memory.Segment = SegmentRegister.DS;
+                    else
+                    {
+                        operand.Memory.Segment = overrideSegment;
+                        InstructionText += registersSegment[(int)operand.Memory.Segment] + ":";
+                    }
+
+                    if (operand.Size == 16)
+                        InstructionText += "[" + registerStrings16Bit[(int)operand.Memory.Base] + "]";
+                    else
+                        InstructionText += "[" + registerStrings32Bit[(int)operand.Memory.Base] + "]";
+
                     break;
                 default:
                     break;
@@ -250,6 +258,8 @@ namespace x86Disasm
             InstructionText = "";
             gotRM = false;
             virtualAddr = addr;
+            SetPrefixes = 0;
+            overrideSegment = SegmentRegister.Default;
 
             opCode = (byte)readFunction(offset, 8);
             currentInstruction = instructions[opCode];
@@ -262,16 +272,29 @@ namespace x86Disasm
 
             while (currentInstruction.Type == InstructionType.Prefix)
             {
-                setPrefixes |= (OPPrefix)currentInstruction.Value;
+                SetPrefixes |= (OPPrefix)currentInstruction.Value;
                 opCode = ReadByte(offset);
                 currentInstruction = instructions[opCode];
                 offset++;
             }
 
-            if ((setPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat)
+            if ((SetPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat)
                 InstructionText = "REP ";
-            else if ((setPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual)
+            else if ((SetPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual)
                 InstructionText = "REPNE ";
+            
+            if ((SetPrefixes & OPPrefix.CSOverride) == OPPrefix.CSOverride)
+                overrideSegment = SegmentRegister.CS;
+            else if ((SetPrefixes & OPPrefix.DSOverride) == OPPrefix.DSOverride)
+                overrideSegment = SegmentRegister.DS;
+            else if ((SetPrefixes & OPPrefix.ESOverride) == OPPrefix.ESOverride)
+                overrideSegment = SegmentRegister.ES;
+            else if ((SetPrefixes & OPPrefix.FSOverride) == OPPrefix.FSOverride)
+                overrideSegment = SegmentRegister.FS;
+            else if ((SetPrefixes & OPPrefix.GSOverride) == OPPrefix.GSOverride)
+                overrideSegment = SegmentRegister.GS;
+            else if ((SetPrefixes & OPPrefix.SSOverride) == OPPrefix.SSOverride)
+                overrideSegment = SegmentRegister.SS;
 
             if (currentInstruction.Type == InstructionType.Group)
             {

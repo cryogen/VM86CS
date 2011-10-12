@@ -33,6 +33,22 @@ namespace x86CS.CPU
                 EIP = (ushort)(EIP + (int)dest.Value);
         }
 
+        [CPUFunction(OpCode = 0xe8)]
+        [CPUFunction(OpCode = 0xff03)]
+        public void Call(Operand dest)
+        {
+            if (opSize == 16)
+            {
+                StackPush(IP);
+                EIP = (uint)(ushort)(IP + (ushort)dest.Value);
+            }
+            else
+            {
+                StackPush(EIP);
+                EIP = dest.Value;
+            }
+        }
+
         [CPUFunction(OpCode = 0x74)]
         public void JumpIfZero(Operand dest)
         {

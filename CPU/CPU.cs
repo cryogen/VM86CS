@@ -7,13 +7,6 @@ using System.Reflection;
 
 namespace x86CS.CPU
 {
-    public enum RepeatPrefix
-    {
-        None = 0,
-        Repeat,
-        RepeatNotZero
-    }
-
     public partial class CPU
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(CPU));
@@ -28,7 +21,6 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private bool inInterrupt;
         private byte interruptToRun;
-        private RepeatPrefix repeatPrefix = RepeatPrefix.None;
         private int opSize = 16;
         private int addressSize = 16;
         private int opLen;

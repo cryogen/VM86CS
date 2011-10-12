@@ -15,6 +15,7 @@ namespace x86Disasm
         Relative,
         RegMemMemory,
         Offset,
+        Memory,
         Constant,
         RegMemSegment,
         GeneralRegister,
@@ -95,5 +96,6 @@ namespace x86Disasm
         DS,
         FS,
         GS,
+        Default
     }
 }
