@@ -479,7 +479,7 @@
         private string[] registerStringsSegment =
         {
             "ES",
-            "DS",
+            "CS",
             "SS",
             "DS",
             "FS",

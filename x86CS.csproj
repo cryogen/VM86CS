@@ -95,6 +95,7 @@
     <Compile Include="CPU\Logic.cs" />
     <Compile Include="CPU\Misc.cs" />
     <Compile Include="CPU\Strings.cs" />
+    <Compile Include="CPU\System.cs" />
     <Compile Include="Devices\ATA.cs" />
     <Compile Include="Devices\DMA.cs" />
     <Compile Include="Devices\Floppy.cs" />

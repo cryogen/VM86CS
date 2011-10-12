@@ -456,6 +456,9 @@ namespace x86CS.CPU
                             case 3:
                                 methodDelegate = Delegate.CreateDelegate(typeof(CPUCallback3args), this, method);
                                 break;
+                            case 4:
+                                methodDelegate = Delegate.CreateDelegate(typeof(CPUCallback4args), this, method);
+                                break;
                             default:
                                 throw new Exception("Method signature not supported");
                         }
@@ -478,19 +481,30 @@ namespace x86CS.CPU
             switch (operand.Type)
             {
                 case OperandType.Register:
-                    switch (operand.Size)
+                    switch (operand.Register.Type)
                     {
-                        case 8:
-                            if (operand.Register.High)
-                                registers[(int)operand.Register.Index].HighByte = (byte)operand.Value;
-                            else
-                                registers[(int)operand.Register.Index].LowByte = (byte)operand.Value;
+                        case RegisterType.GeneralRegister:
+                            switch (operand.Size)
+                            {
+                                case 8:
+                                    if (operand.Register.High)
+                                        registers[(int)operand.Register.Index].HighByte = (byte)operand.Value;
+                                    else
+                                        registers[(int)operand.Register.Index].LowByte = (byte)operand.Value;
+                                    break;
+                                case 16:
+                                    registers[(int)operand.Register.Index].Word = (ushort)operand.Value;
+                                    break;
+                                case 32:
+                                    registers[(int)operand.Register.Index].DWord = operand.Value;
+                                    break;
+                            }
                             break;
-                        case 16:
-                            registers[(int)operand.Register.Index].Word = (ushort)operand.Value;
+                        case RegisterType.SegmentRegister:
+                            SetSelector((SegmentRegister)operand.Register.Index, operand.Value);
                             break;
-                        case 32:
-                            registers[(int)operand.Register.Index].DWord = operand.Value;
+                        default:
+                            System.Diagnostics.Debugger.Break();
                             break;
                     }
                     break;
@@ -498,6 +512,7 @@ namespace x86CS.CPU
                     SegWrite(operand.Memory.Segment, operand.Memory.Address, operand.Value, (int)operand.Size);
                     break;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
         }
@@ -509,19 +524,30 @@ namespace x86CS.CPU
                 case OperandType.Immediate:
                     return operand;
                 case OperandType.Register:
-                    switch (operand.Size)
+                    switch (operand.Register.Type)
                     {
-                        case 8:
-                            if (operand.Register.High)
-                                operand.Value = registers[(int)operand.Register.Index].HighByte;
-                            else
-                                operand.Value = registers[(int)operand.Register.Index].LowByte;
+                        case RegisterType.GeneralRegister:
+                            switch (operand.Size)
+                            {
+                                case 8:
+                                    if (operand.Register.High)
+                                        operand.Value = registers[(int)operand.Register.Index].HighByte;
+                                    else
+                                        operand.Value = registers[(int)operand.Register.Index].LowByte;
+                                    break;
+                                case 16:
+                                    operand.Value = registers[(int)operand.Register.Index].Word;
+                                    break;
+                                case 32:
+                                    operand.Value = registers[(int)operand.Register.Index].DWord;
+                                    break;
+                            }
                             break;
-                        case 16:
-                            operand.Value = registers[(int)operand.Register.Index].Word;
+                        case RegisterType.SegmentRegister:
+                            operand.Value = segments[operand.Register.Index].Selector;
                             break;
-                        case 32:
-                            operand.Value =  registers[(int)operand.Register.Index].DWord;
+                        default:
+                            System.Diagnostics.Debugger.Break();
                             break;
                     }
                     break;
@@ -538,6 +564,7 @@ namespace x86CS.CPU
                     operand.Value = (byte)SegRead(operand.Memory.Segment, operand.Memory.Address, (int)operand.Size);
                     break;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
 

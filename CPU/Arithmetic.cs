@@ -51,114 +51,83 @@ namespace x86CS.CPU
             WriteOperand(result);
         }
 
-        #region Addition
-
-        private uint Add(uint dest, uint source, int size)
+        [CPUFunction(OpCode = 0x40, Count = 8)]
+        [CPUFunction(OpCode = 0xfe00)]
+        [CPUFunction(OpCode = 0xff00)]
+        public void Increment(Operand dest)
         {
-            return DoAdd(dest, source, size, false);
+            Operand result = dest;
+
+            result.Value++;
+            SetCPUFlags(result);
+            int overFlow = (int)((dest.Value & 1 & ~result.Value) | (~dest.Value & ~1 & result.Value));
+            OF = overFlow < 0;
+
+            WriteOperand(result);
         }
 
-        private uint AddWithCarry(uint dest, uint source, int size)
+        [CPUFunction(OpCode = 0x28, Count = 6)]
+        [CPUFunction(OpCode = 0x8005)]
+        [CPUFunction(OpCode = 0x8105)]
+        [CPUFunction(OpCode = 0x8305)]
+        public void Subtract(Operand dest, Operand source)
         {
-            return DoAdd(dest, source, size, true);
+            Operand result = dest;
+
+            result.Value = dest.Value - source.Value;
+            SetCPUFlags(result);
+            int overFlow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
+            OF = overFlow < 0;
+            CF = dest.Value < source.Value;
+
+            WriteOperand(result);
         }
 
-        private uint DoAdd(uint dest, uint source, int size, bool carry)
+        [CPUFunction(OpCode = 0x18, Count = 6)]
+        [CPUFunction(OpCode = 0x8003)]
+        [CPUFunction(OpCode = 0x8103)]
+        [CPUFunction(OpCode = 0x8303)]
+        public void SubtractWithBorrow(Operand dest, Operand source)
         {
-           /* ulong ret;
-            
-            if (carry)
-                source += (uint)(CF ? 1 : 0);
+            Operand result = dest;
 
-            switch (size)
-            {
-                case 8:
-                    ret = (ushort)((byte)source + (byte)dest);
-                    CheckOverflow((short)ret);
-                    CF = ret > byte.MaxValue;
-                    SetCPUFlags((byte)ret);
-                    return (byte)ret;
-                case 16:
-                    ret = (uint)((ushort)(short)(sbyte)source + (ushort)dest);
-                    CheckOverflow((int)ret);
-                    CF = ret > ushort.MaxValue;
-                    SetCPUFlags((ushort)ret);
-                    return (ushort)ret;
-                default:
-                    ret = (ulong)((uint)source + (uint)dest);
-                    CheckOverflow((long)ret);
-                    CF = ret > uint.MaxValue;
-                    SetCPUFlags((uint)ret);
-                    return (uint)ret;
-            }*/
-            return 0;
+            if (CF)
+                source.Value++;
+
+            result.Value = dest.Value - source.Value;
+            SetCPUFlags(result);
+            int overFlow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
+            OF = overFlow < 0;
+            CF = dest.Value < source.Value;
+
+            WriteOperand(result);
         }
 
-        #endregion
-
-        #region Subtraction
-
-        private uint Subtract(uint dest, uint source, int size)
+        [CPUFunction(OpCode = 0x48, Count = 8)]
+        [CPUFunction(OpCode = 0xfe01)]
+        [CPUFunction(OpCode = 0xff01)]
+        public void Decrement(Operand dest)
         {
-            return DoSub(dest, source, size, false);
+            Operand result = dest;
+
+            result.Value--;
+            SetCPUFlags(result);
+            int overFlow = (int)((dest.Value & ~1 & ~result.Value) | (~dest.Value & 1 & result.Value));
+            OF = overFlow < 0;
+
+            WriteOperand(result);
         }
 
-        private uint SubWithBorrow(uint dest, uint source, int size)
+        [CPUFunction(OpCode = 0xf607)]
+        [CPUFunction(OpCode = 0xf707)]
+        public void IntegerDivide(Operand quotient, Operand remainder, Operand dividend, Operand divisor)
         {
-            return DoSub(dest, source, size, true);
+            quotient.Value = dividend.Value / divisor.Value;
+            remainder.Value = dividend.Value % dividend.Value;
+
+            WriteOperand(quotient);
+            WriteOperand(remainder);
         }
-
-        private uint DoSub(uint dest, uint source, int size, bool borrow)
-        {
-            return 0;
-          /*  long result;
-
-            if (borrow && CF)
-                source++;
-            CF = dest < source;
-
-            switch (size)
-            {
-                case 8:
-                    result = (byte)((byte)dest - (byte)source);
-                    SetCPUFlags((byte)result);
-                    CheckOverflow((short)result);
-                    break;
-                case 16:
-                    result = (ushort)((ushort)dest - (ushort)(short)source);
-                    SetCPUFlags((ushort)result);
-                    CheckOverflow((int)result);
-                    break;
-                default:
-                    result = (int)(dest - source);
-                    SetCPUFlags((uint)result);
-                    CheckOverflow(result);
-                    break;
-            }
-            return (uint)result;*/
-        }
-
-        #endregion
-
-        #region Inc/Dec
-        private uint Increment(uint dest, int size)
-        {
-            bool tempCF = CF;
-            uint ret = Add(dest, 1, size);
-            CF = tempCF;
-
-            return ret;
-        }
-
-        private uint Decrement(uint dest, int size)
-        {
-            bool tempCF = CF;
-            uint ret = Subtract(dest, 1, size);
-            CF = tempCF;
-
-            return ret;
-        }
-        #endregion
 
         #region Multiply
 
@@ -339,15 +308,6 @@ namespace x86CS.CPU
 
             AL = temp;
             AH = remainder;
-        }
-
-        private void SDivide(byte source)
-        {
-            var temp = (sbyte) ((short) AX/(sbyte) source);
-            var remainder = (sbyte)((short)AX % (sbyte)source);
-
-            AL = (byte) temp;
-            AH = (byte)remainder;
         }
 
         private void Divide(ushort source)

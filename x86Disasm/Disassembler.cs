@@ -27,7 +27,7 @@ namespace x86Disasm
         public Disassembler(ReadCallback readCallback)
         {
             readFunction = readCallback;
-            operands = new Operand[3];
+            operands = new Operand[4];
             operations = new Dictionary<ushort, Operation>();
             overrideSegment = SegmentRegister.Default;
         }
@@ -193,6 +193,7 @@ namespace x86Disasm
                             ProcessRegMemSegment(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         default:
+                            System.Diagnostics.Debugger.Break();
                             break;
                     }
                     break;
@@ -238,6 +239,7 @@ namespace x86Disasm
 
                     break;
                 default:
+                    System.Diagnostics.Debugger.Break();
                     break;
             }
 
@@ -271,7 +273,7 @@ namespace x86Disasm
             System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);
 
             if (currentInstruction.Type == InstructionType.Invalid)
-                return -1;
+                throw new Exception("Invalid operation");
 
             while (currentInstruction.Type == InstructionType.Prefix)
             {
@@ -328,6 +330,11 @@ namespace x86Disasm
             {
                 InstructionText += ", ";
                 offset = ProcessArgument(currentInstruction.Arg3, 2, offset);
+            }
+            if (currentInstruction.Arg4.Type != ArgumentType.None)
+            {
+                InstructionText += ", ";
+                offset = ProcessArgument(currentInstruction.Arg4, 3, offset);
             }
                 
             return (int)offset;
