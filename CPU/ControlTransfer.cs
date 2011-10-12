@@ -49,6 +49,19 @@ namespace x86CS.CPU
             }
         }
 
+        [CPUFunction(OpCode = 0xc3)]
+        public void Return()
+        {
+            if (opSize == 16)
+            {
+                EIP = (ushort)StackPop();
+            }
+            else
+            {
+                EIP = StackPop();
+            }
+        }
+
         [CPUFunction(OpCode = 0x74)]
         public void JumpIfZero(Operand dest)
         {

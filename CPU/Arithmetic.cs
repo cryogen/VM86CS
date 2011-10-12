@@ -29,9 +29,26 @@ namespace x86CS.CPU
 
             result.Value = dest.Value - source.Value;
             SetCPUFlags(result);
-            int Overflow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
-            OF = Overflow < 0;
+            int overFlow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
+            OF = overFlow < 0;
             CF = dest.Value < source.Value;
+        }
+
+        [CPUFunction(OpCode = 0x00, Count = 5)]
+        [CPUFunction(OpCode = 0x8000)]
+        [CPUFunction(OpCode = 0x8100)]
+        [CPUFunction(OpCode = 0x8300)]
+        public void Add(Operand dest, Operand source)
+        {
+            Operand result = dest;
+
+            result.Value = dest.Value + source.Value;
+            SetCPUFlags(result);
+            int overFlow = (int)((dest.Value & source.Value & ~result.Value) | (~dest.Value & ~source.Value & result.Value));
+            OF = overFlow < 0;
+            CF = result.Value < dest.Value;
+
+            WriteOperand(result);
         }
 
         #region Addition

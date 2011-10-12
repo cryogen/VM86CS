@@ -153,7 +153,10 @@ namespace x86Disasm
                 case ArgumentType.Immediate:
                     operand.Type = OperandType.Immediate;
                     operand.Value = readFunction(offset, (int)operand.Size);
-                    InstructionText += operand.Value.ToString("X");
+                    if(operand.Size == 8)
+                        InstructionText += ((int)(sbyte)operand.Value).ToString("X");
+                    else
+                        InstructionText += ((int)(short)operand.Value).ToString("X");
                     offset += operand.Size / 8;
                     break;
                 case ArgumentType.Relative:
@@ -184,7 +187,7 @@ namespace x86Disasm
                             ProcessRegMemRegister(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         case ArgumentType.RegMemMemory:
-                            ProcessRegMemRegister(ref operand, argument, rmByte);
+                            ProcessRegMemMemory(ref operand, argument, rmByte, offset);
                             break;
                         case ArgumentType.RegMemSegment:
                             ProcessRegMemSegment(ref operand, argument, (byte)(rmByte >> 3));

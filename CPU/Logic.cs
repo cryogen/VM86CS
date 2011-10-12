@@ -7,62 +7,33 @@ namespace x86CS.CPU
     {
         private void SetCPUFlags(Operand operand)
         {
-            int signed;
-
             switch (operand.Size)
             {
                 case 8:
-                    signed = (sbyte)operand.Value;
+                    SF = ((operand.Value & 0x80) == 0x80);
                     break;
                 case 16:
-                    signed = (short)operand.Value;
+                    SF = ((operand.Value & 0x8000) == 0x8000);
                     break;
                 default:
-                    signed = (int)operand.Value;
+                    SF = ((operand.Value & 0x80000000) == 0x80000000);
                     break;
             }
 
             ZF = operand.Value == 0;
-            SF = signed < 0;
-
-            SetParity(operand.Value);
+            PF = (((((byte)operand.Value * 0x0101010101010101UL) & 0x8040201008040201UL) % 0x1FF) & 1) == 0;
         }
 
-        private void SetParity(uint value)
+        [CPUFunction(OpCode = 0x20, Count = 6)]
+        [CPUFunction(OpCode = 0x8004)]
+        [CPUFunction(OpCode = 0x8104)]
+        [CPUFunction(OpCode = 0x8304)]
+        public void And(Operand dest, Operand source)
         {
-            value ^= value >> 1;
-            value ^= value >> 2;
-            value ^= value >> 4;
-            value ^= value >> 8;
-            value ^= value >> 16;
-            PF = ((value & 1) == 1);
-        }
-
-        private uint And(uint dest, uint source, int size)
-        {
-            return 0;
-          /*  uint temp;
-
-            switch (size)
-            {
-                case 8:
-                    temp = (byte)((byte)dest & (byte)source);
-                    SetCPUFlags((byte)temp);
-                    break;
-                case 16:
-                    temp = (ushort)((ushort)dest & (ushort)source);
-                    SetCPUFlags((ushort)temp);
-                    break;
-                default:
-                    temp = dest & source;
-                    SetCPUFlags(temp);
-                    break;
-            }
-
+            dest.Value = dest.Value & source.Value;
+            SetCPUFlags(dest);
             CF = false;
             OF = false;
-
-            return temp;*/
         }
 
         private void Or(byte source)

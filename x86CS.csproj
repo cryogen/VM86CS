@@ -85,6 +85,7 @@
     </Compile>
     <Compile Include="CPU\Arithmetic.cs" />
     <Compile Include="CPU\BCD.cs" />
+    <Compile Include="CPU\BitByte.cs" />
     <Compile Include="CPU\ControlTransfer.cs" />
     <Compile Include="CPU\CPU.cs" />
     <Compile Include="CPU\DataTransfer.cs" />

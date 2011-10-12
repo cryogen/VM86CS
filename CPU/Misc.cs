@@ -1,17 +1,13 @@
-﻿namespace x86CS.CPU
+﻿using x86Disasm;
+namespace x86CS.CPU
 {
     public partial class CPU
-    {/*
-        private void ProcessMisc(Operand[] operands)
+    {
+        [CPUFunction(OpCode = 0x8d)]
+        public void LoadEffectiveAddress(Operand dest, Operand source)
         {
-            switch (currentInstruction.Instruction.Opcode)
-            {
-                case 0x8d:
-                    SetOperandValue(operands[0], operands[1].Address);
-                    break;
-                default:
-                    break;
-            }
-        }*/
+            dest.Value = source.Memory.Address;
+            WriteOperand(dest);
+        }
     }
 }
