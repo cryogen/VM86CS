@@ -33,12 +33,51 @@ namespace x86CS.CPU
                 EIP = (ushort)(EIP + (int)dest.Value);
         }
 
+        [CPUFunction(OpCode = 0x74)]
+        [CPUFunction(OpCode = 0x0f84)]
+        public void JumpIfZero(Operand dest)
+        {
+            if (ZF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x75)]
+        [CPUFunction(OpCode = 0x0f85)]
+        public void JumpIfNotZero(Operand dest)
+        {
+            if (!ZF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x77)]
+        public void JumpIfNotBelowOrEqual(Operand dest)
+        {
+            if (!CF && !ZF)
+                Jump(dest);
+        }
+
         [CPUFunction(OpCode = 0xe8)]
-        [CPUFunction(OpCode = 0xff03)]
+        [CPUFunction(OpCode = 0xff02)]
         public void Call(Operand dest)
         {
             if (opSize == 16)
             {
+                StackPush(IP);
+                EIP = (uint)(ushort)(IP + (ushort)dest.Value);
+            }
+            else
+            {
+                StackPush(EIP);
+                EIP = dest.Value;
+            }
+        }
+
+        [CPUFunction(OpCode = 0xff03)]
+        public void CallFar(Operand dest)
+        {
+            if (opSize == 16)
+            {
+                StackPush(CS);
                 StackPush(IP);
                 EIP = (uint)(ushort)(IP + (ushort)dest.Value);
             }
@@ -62,20 +101,18 @@ namespace x86CS.CPU
             }
         }
 
-        [CPUFunction(OpCode = 0x74)]
-        [CPUFunction(OpCode = 0x0f84)]
-        public void JumpIfZero(Operand dest)
+        [CPUFunction(OpCode = 0xcd)]
+        public void Interrupt(Operand dest)
         {
-            if (ZF)
-                Jump(dest);
-        }
+            StackPush((ushort)Flags);
+            IF = false;
+            TF = false;
+            AC = false;
+            StackPush(CS);
+            StackPush(IP);
 
-        [CPUFunction(OpCode = 0x75)]
-        [CPUFunction(OpCode = 0x0f85)]
-        public void JumpIfNotZero(Operand dest)
-        {
-            if (!ZF)
-                Jump(dest);
+            CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
+            EIP = Memory.Read((uint)(dest.Value * 4), 16);
         }
     }
 }

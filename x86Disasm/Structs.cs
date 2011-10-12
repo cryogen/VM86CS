@@ -22,6 +22,7 @@ namespace x86Disasm
         public uint Size;
         public int Value;
         public bool High;
+        public bool SignExtend;
     }
 
     public struct Operation
@@ -38,6 +39,23 @@ namespace x86Disasm
         public uint Size;
         public RegisterOperand Register;
         public MemoryOperand Memory;
+        public uint Address;
+
+        public int SignedValue
+        {
+            get
+            {
+                switch (Size)
+                {
+                    case 8:
+                        return (sbyte)value;
+                    case 16:
+                        return (short)value;
+                    default:
+                        return (int)value;
+                }
+            }
+        }
 
         public uint Value
         {
@@ -67,6 +85,19 @@ namespace x86Disasm
                         this.value = value;
                         break;
                 }
+            }
+        }
+
+        public override string ToString()
+        {
+            switch (Size)
+            {
+                case 8:
+                    return ((byte)Value).ToString("X");
+                case 16:
+                    return ((ushort)Value).ToString("X");
+                default:
+                    return Value.ToString("X");
             }
         }
     }

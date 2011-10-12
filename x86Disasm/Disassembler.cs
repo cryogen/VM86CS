@@ -152,19 +152,33 @@ namespace x86Disasm
                     break;
                 case ArgumentType.Immediate:
                     operand.Type = OperandType.Immediate;
-                    operand.Value = readFunction(offset, (int)operand.Size);
-                    if(operand.Size == 8)
-                        InstructionText += ((int)(sbyte)operand.Value).ToString("X");
+                    if (argument.SignExtend)
+                    {
+                        switch (operand.Size)
+                        {
+                            case 8:
+                                operand.Size = 16;
+                                operand.Value = (ushort)(short)(sbyte)ReadByte(offset);
+                                break;
+                            case 16:
+                                operand.Size = 32;
+                                operand.Value = (uint)(int)(short)ReadWord(offset);
+                                break;
+                        }
+                    }
                     else
-                        InstructionText += ((int)(short)operand.Value).ToString("X");
-                    offset += operand.Size / 8;
+                        operand.Value = readFunction(offset, (int)argument.Size);
+                    InstructionText += operand;
+                    offset += argument.Size / 8;
                     break;
                 case ArgumentType.Relative:
                     operand.Type = OperandType.Immediate;
-                    operand.Size = 32;
                     operand.Value = readFunction(offset, (int)argument.Size);
                     offset += argument.Size / 8;
-                    InstructionText += operand.Value.ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
+                    if(operand.SignedValue < 0)
+                        InstructionText += "-" + (-operand.SignedValue).ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
+                    else
+                        InstructionText += operand.Value.ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
                     break;
                 case ArgumentType.RegMem:
                 case ArgumentType.RegMemGeneral:
