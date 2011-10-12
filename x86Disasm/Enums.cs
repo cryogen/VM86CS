@@ -41,6 +41,7 @@ namespace x86Disasm
         SegmentRegister,
         Misc,
         System,
+        Extended,
         Invalid
     }
 

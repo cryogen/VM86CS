@@ -316,6 +316,18 @@ namespace x86Disasm
 
                 System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);                
             }
+            else if (currentInstruction.Type == InstructionType.Extended)
+            {
+                byte extended;
+
+                extended = ReadByte(offset++);
+
+                currentInstruction = extendedInstructions[extended];
+
+                opCode = (ushort)((opCode << 8) + extended);
+
+                System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);
+            }
 
             InstructionText += currentInstruction.Nmumonic + " ";
 

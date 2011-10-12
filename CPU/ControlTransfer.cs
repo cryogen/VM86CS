@@ -63,6 +63,7 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0x74)]
+        [CPUFunction(OpCode = 0x0f84)]
         public void JumpIfZero(Operand dest)
         {
             if (ZF)
@@ -70,91 +71,11 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0x75)]
+        [CPUFunction(OpCode = 0x0f85)]
         public void JumpIfNotZero(Operand dest)
         {
             if (!ZF)
                 Jump(dest);
         }
-
-/*        private void DoCall()
-        {
-            if (opSize == 16)
-                StackPush(IP);
-            else
-                StackPush(EIP);
-
-            EIP = (ushort)currentInstruction.Instruction.AddrValue;
-        }
-
-        private void DoFarCall()
-        {
-            StackPush(CS);
-
-            if (opSize == 16)
-                StackPush(IP);
-            else
-                StackPush(EIP);
-        }
-
-        private void ProcessCall()
-        {
-            switch (currentInstruction.Instruction.Opcode)
-            {
-                case 0xe8:
-                    DoCall();
-                    break;
-                case 0x9a:
-                    DoFarCall();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void ProcessRet()
-        {
-            switch (currentInstruction.Instruction.Opcode)
-            {
-                case 0xc3:
-                    EIP = (ushort)StackPop();
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void ProcessControlTransfer(Operand[] operands)
-        {
-            switch ((BeaConstants.BranchType)currentInstruction.Instruction.BranchType)
-            {
-                case BeaConstants.BranchType.JmpType:
-                    ProcessJump();
-                    break;
-                case BeaConstants.BranchType.CallType:
-                    ProcessCall();
-                    break;
-                case BeaConstants.BranchType.RetType:
-                    ProcessRet();
-                    break;
-                case BeaConstants.BranchType.JE:
-                    if (ZF)
-                        DoJump();
-                    break;
-                case BeaConstants.BranchType.JNE:
-                    if(!ZF)
-                        DoJump();
-                    break;
-                case BeaConstants.BranchType.JC:
-                    if (CF)
-                        DoJump();
-                    break;
-                case BeaConstants.BranchType.JA:
-                    if (!CF && !ZF)
-                        DoJump();
-                    break;
-                default:
-                    break;
-            }
-        }*/
     }
 }
