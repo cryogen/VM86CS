@@ -20,9 +20,9 @@ namespace x86CS.CPU
     public partial class CPU
     {
         [CPUFunction(OpCode = 0x38, Count = 6)]
-        [CPUFunction(OpCode = 0x0780)]
-        [CPUFunction(OpCode = 0x0781)]
-        [CPUFunction(OpCode = 0x0783)]
+        [CPUFunction(OpCode = 0x8007)]
+        [CPUFunction(OpCode = 0x8107)]
+        [CPUFunction(OpCode = 0x8307)]
         public void Compare(Operand dest, Operand source)
         {
             Operand result = dest;
@@ -31,6 +31,7 @@ namespace x86CS.CPU
             SetCPUFlags(result);
             int Overflow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
             OF = Overflow < 0;
+            CF = dest.Value < source.Value;
         }
 
         #region Addition

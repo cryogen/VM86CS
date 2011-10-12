@@ -40,6 +40,13 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
+        [CPUFunction(OpCode = 0x75)]
+        public void JumpIfNotZero(Operand dest)
+        {
+            if (!ZF)
+                Jump(dest);
+        }
+
 /*        private void DoCall()
         {
             if (opSize == 16)

@@ -245,7 +245,7 @@ namespace x86Disasm
         public int Disassemble(uint addr)
         {
             uint offset = 0;
-            byte opCode;
+            ushort opCode;
 
             InstructionText = "";
             gotRM = false;
@@ -272,6 +272,22 @@ namespace x86Disasm
                 InstructionText = "REP ";
             else if ((setPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual)
                 InstructionText = "REPNE ";
+
+            if (currentInstruction.Type == InstructionType.Group)
+            {
+                byte index;
+
+                rmByte = ReadByte(offset++);
+                gotRM = true;
+
+                index = (byte)((rmByte >> 3) & 0x7);
+
+                currentInstruction = groups[currentInstruction.Value, index];
+
+                opCode = (ushort)((opCode << 8) + index);
+
+                System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);                
+            }
 
             InstructionText += currentInstruction.Nmumonic + " ";
 

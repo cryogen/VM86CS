@@ -12,6 +12,7 @@ namespace x86Disasm
         public Argument Arg1;
         public Argument Arg2;
         public Argument Arg3;
+        public Argument Arg4;
         public string Nmumonic;
     }
 

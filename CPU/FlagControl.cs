@@ -8,5 +8,12 @@ namespace x86CS.CPU
         {
             IF = false;
         }
+
+        [CPUFunction(OpCode = 0xfc)]
+        public void ClearDirectionFlag()
+        {
+            DF = false;
+        }
+
     }
 }
