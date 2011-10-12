@@ -141,12 +141,7 @@ namespace x86CS.CPU
             return temp;
         }
 
-        [CPUFunction(OpCode = 0x30)]
-        [CPUFunction(OpCode = 0x31)]
-        [CPUFunction(OpCode = 0x32)]
-        [CPUFunction(OpCode = 0x33)]
-        [CPUFunction(OpCode = 0x34)]
-        [CPUFunction(OpCode = 0x35)]
+        [CPUFunction(OpCode = 0x30, Count=6)]
         [CPUFunction(OpCode = 0x0680)]
         [CPUFunction(OpCode = 0x0681)]
         [CPUFunction(OpCode = 0x0683)]

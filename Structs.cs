@@ -6,27 +6,6 @@ namespace x86CS
     public delegate uint ReadCallback(ushort addr, int size);
     public delegate void WriteCallback(ushort addr, uint value, int size);
 
-    public enum SegmentRegister
-    {
-        ES = 0,
-        CS,
-        SS,
-        DS,
-        FS,
-        GS,
-        Default
-    }
-
-    public enum MemorySegment
-    {
-        ES = 1, 
-        DS,
-        FS,
-        GS,
-        CS,
-        SS
-    }
-
     public enum CPURegister
     {
         EAX,
@@ -39,6 +18,7 @@ namespace x86CS
         EDI,
         EIP,
     }
+
     [Flags]
     public enum CPUFlags : uint
     {

@@ -470,10 +470,13 @@ namespace x86CS.CPU
                     }
                     catch (Exception)
                     {
-                        throw new Exception("Method signatire not supported");
+                        throw new Exception("Method signature not supported");
                     }
 
-                    disasm.AddOperation(function.OpCode, methodDelegate, method.GetParameters().Length);
+                    for (int i = 0; i < function.Count; i++)
+                    {
+                        disasm.AddOperation((ushort)(function.OpCode + i), methodDelegate, method.GetParameters().Length);
+                    }
                 }
             }
         }
@@ -487,17 +490,20 @@ namespace x86CS.CPU
                     {
                         case 8:
                             if (operand.Register.High)
-                                registers[(int)operand.Register.Register].HighByte = (byte)operand.Value;
+                                registers[(int)operand.Register.Index].HighByte = (byte)operand.Value;
                             else
-                                registers[(int)operand.Register.Register].LowByte = (byte)operand.Value;
+                                registers[(int)operand.Register.Index].LowByte = (byte)operand.Value;
                             break;
                         case 16:
-                            registers[(int)operand.Register.Register].Word = (ushort)operand.Value;
+                            registers[(int)operand.Register.Index].Word = (ushort)operand.Value;
                             break;
                         case 32:
-                            registers[(int)operand.Register.Register].DWord = operand.Value;
+                            registers[(int)operand.Register.Index].DWord = operand.Value;
                             break;
                     }
+                    break;
+                case OperandType.Memory:
+                    SegWrite(operand.Memory.Segment, operand.Memory.Address, operand.Value, (int)operand.Size);
                     break;
                 default:
                     break;
@@ -515,17 +521,29 @@ namespace x86CS.CPU
                     {
                         case 8:
                             if (operand.Register.High)
-                                operand.Value = registers[(int)operand.Register.Register].HighByte;
+                                operand.Value = registers[(int)operand.Register.Index].HighByte;
                             else
-                                operand.Value = registers[(int)operand.Register.Register].LowByte;
+                                operand.Value = registers[(int)operand.Register.Index].LowByte;
                             break;
                         case 16:
-                            operand.Value = registers[(int)operand.Register.Register].Word;
+                            operand.Value = registers[(int)operand.Register.Index].Word;
                             break;
                         case 32:
-                            operand.Value =  registers[(int)operand.Register.Register].DWord;
+                            operand.Value =  registers[(int)operand.Register.Index].DWord;
                             break;
                     }
+                    break;
+                case OperandType.Memory:
+                    if (operand.Memory.Base != 0)
+                        operand.Memory.Address = registers[(int)operand.Memory.Base].Word;
+                    else
+                        operand.Memory.Address = 0;
+
+                    if (operand.Memory.Index != 0)
+                        operand.Memory.Address += registers[(int)operand.Memory.Index].Word;
+
+                    operand.Memory.Address = (uint)(operand.Memory.Address + operand.Memory.Displacement);
+                    operand.Value = (byte)SegRead(operand.Memory.Segment, operand.Memory.Address, (int)operand.Size);
                     break;
                 default:
                     break;
@@ -591,25 +609,26 @@ namespace x86CS.CPU
             return SegRead(segment, offset, 32);
         }
 
-        private void SegWriteByte(SegmentRegister segment, uint offset, byte value)
+        private void SegWrite(SegmentRegister segment, uint offset, uint value, int size)
         {
             uint virtAddr = GetVirtualAddress(segment, offset);
 
-            Memory.WriteByte(virtAddr, value);
+            Memory.Write(virtAddr, value, size);
+        }
+
+        private void SegWriteByte(SegmentRegister segment, uint offset, byte value)
+        {
+            SegWrite(segment, offset, value, 8);
         }
 
         private void SegWriteWord(SegmentRegister segment, uint offset, ushort value)
         {
-            uint virtAddr = GetVirtualAddress(segment, offset);
-
-            Memory.WriteWord(virtAddr, value);
+            SegWrite(segment, offset, value, 16);
         }
 
         private void SegWriteDWord(SegmentRegister segment, uint offset, uint value)
         {
-            uint virtAddr = GetVirtualAddress(segment, offset);
-
-            Memory.WriteDWord(virtAddr, value);
+            SegWrite(segment, offset, value, 32);
         }
 
         public uint StackPop()

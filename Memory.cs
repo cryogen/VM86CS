@@ -56,23 +56,24 @@ namespace x86CS
             }
         }
 
-        public static void WriteByte(uint addr, byte value)
+        public static void Write(uint addr, uint value, int size)
         {
-            memory[addr] = value;
-        }
-
-        public static void WriteWord(uint addr, ushort value)
-        {
-            memory[addr] = (byte)value;
-            memory[addr + 1] = (byte)value.GetHigh();
-        }
-
-        public static void WriteDWord(uint addr, uint value)
-        {
-            memory[addr] = (byte)value;
-            memory[addr + 1] = (byte)(value >> 8);
-            memory[addr + 2] = (byte)(value >> 16);
-            memory[addr + 3] = (byte)(value >> 24);
+            switch (size)
+            {
+                case 8:
+                    memory[addr] = (byte)value;
+                    break;
+                case 16:
+                    memory[addr] = (byte)value;
+                    memory[addr + 1] = (byte)((ushort)value).GetHigh();
+                    break;
+                default:
+                    memory[addr] = (byte)value;
+                    memory[addr + 1] = (byte)(value >> 8);
+                    memory[addr + 2] = (byte)(value >> 16);
+                    memory[addr + 3] = (byte)(value >> 24);
+                    break;
+            }
         }
     }
 }

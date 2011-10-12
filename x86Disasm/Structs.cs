@@ -72,7 +72,8 @@ namespace x86Disasm
 
     public struct RegisterOperand
     {
-        public GeneralRegister Register;
+        public int Index;
+        public RegisterType Type;
         public bool High;
     }
 
@@ -83,5 +84,6 @@ namespace x86Disasm
         public int Displacement;
         public int Scale;
         public SegmentRegister Segment;
+        public uint Address;
     }
 }

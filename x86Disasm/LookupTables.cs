@@ -144,9 +144,9 @@
             new Instruction { OpCode=0x0089, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "MOV", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 }, Arg2=new Argument {Type=ArgumentType.RegMemGeneral, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
             new Instruction { OpCode=0x008a, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "MOV", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=8 }, Arg2=new Argument {Type=ArgumentType.RegMem, Size=8}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
             new Instruction { OpCode=0x008b, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "MOV", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument {Type=ArgumentType.RegMem, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
-            new Instruction { OpCode=0x008c, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "MOV", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument {Type=ArgumentType.SegmentRegister, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
+            new Instruction { OpCode=0x008c, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "MOV", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 }, Arg2=new Argument {Type=ArgumentType.RegMemSegment, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
             new Instruction { OpCode=0x008d, Type=InstructionType.Misc, NumberOfArguments = 2, Nmumonic = "LEA", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument {Type=ArgumentType.RegMemMemory, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
-            new Instruction { OpCode=0x008e, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "MOV", Arg1=new Argument { Type=ArgumentType.SegmentRegister, Size=16 }, Arg2=new Argument {Type=ArgumentType.RegMemGeneral, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
+            new Instruction { OpCode=0x008e, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "MOV", Arg1=new Argument { Type=ArgumentType.RegMemSegment, Size=16 }, Arg2=new Argument {Type=ArgumentType.RegMem, Size=16}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
             new Instruction { OpCode=0x008f, Type=InstructionType.DataTransfer, NumberOfArguments = 1, Nmumonic = "POP", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 }, Arg2=new Argument {Type=ArgumentType.None, Size=0}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
             new Instruction { OpCode=0x0090, Type=InstructionType.Misc, NumberOfArguments = 0, Nmumonic = "NOP", Arg1=new Argument { Type=ArgumentType.None, Size=0 }, Arg2=new Argument{Type=ArgumentType.None, Size=0}, Arg3=new Argument{Type=ArgumentType.None, Size=0} } ,
             new Instruction { OpCode=0x0091, Type=InstructionType.DataTransfer, NumberOfArguments = 2, Nmumonic = "XCHG", Arg1=new Argument { Type=ArgumentType.GeneralRegister, Size=16, Value=(int)GeneralRegister.ECX }, Arg2=new Argument {Type=ArgumentType.GeneralRegister, Size=16, Value=(int)GeneralRegister.EAX}, Arg3=new Argument{Type=ArgumentType.None, Size=0} },
@@ -276,26 +276,36 @@
 
         private RegisterOperand[] registers8Bit = 
         {
-            new RegisterOperand { Register=GeneralRegister.EAX, High = false },
-            new RegisterOperand { Register=GeneralRegister.ECX, High = false },
-            new RegisterOperand { Register=GeneralRegister.EDX, High = false },
-            new RegisterOperand { Register=GeneralRegister.EBX, High = false },
-            new RegisterOperand { Register=GeneralRegister.EAX, High = true },
-            new RegisterOperand { Register=GeneralRegister.ECX, High = true },
-            new RegisterOperand { Register=GeneralRegister.EDX, High = true },
-            new RegisterOperand { Register=GeneralRegister.EBX, High = true },
+            new RegisterOperand { Index=(int)GeneralRegister.EAX, Type=RegisterType.GeneralRegister, High = false },
+            new RegisterOperand { Index=(int)GeneralRegister.ECX, Type=RegisterType.GeneralRegister, High = false },
+            new RegisterOperand { Index=(int)GeneralRegister.EDX, Type=RegisterType.GeneralRegister, High = false },
+            new RegisterOperand { Index=(int)GeneralRegister.EBX, Type=RegisterType.GeneralRegister, High = false },
+            new RegisterOperand { Index=(int)GeneralRegister.EAX, Type=RegisterType.GeneralRegister, High = true },
+            new RegisterOperand { Index=(int)GeneralRegister.ECX, Type=RegisterType.GeneralRegister, High = true },
+            new RegisterOperand { Index=(int)GeneralRegister.EDX, Type=RegisterType.GeneralRegister, High = true },
+            new RegisterOperand { Index=(int)GeneralRegister.EBX, Type=RegisterType.GeneralRegister, High = true },
         };
 
         private RegisterOperand[] registers16Bit = 
         {
-            new RegisterOperand { Register=GeneralRegister.EAX },
-            new RegisterOperand { Register=GeneralRegister.ECX },
-            new RegisterOperand { Register=GeneralRegister.EDX },
-            new RegisterOperand { Register=GeneralRegister.EBX },
-            new RegisterOperand { Register=GeneralRegister.ESP },
-            new RegisterOperand { Register=GeneralRegister.EBP },
-            new RegisterOperand { Register=GeneralRegister.ESI },
-            new RegisterOperand { Register=GeneralRegister.EDI },
+            new RegisterOperand { Index=(int)GeneralRegister.EAX, Type=RegisterType.GeneralRegister },
+            new RegisterOperand { Index=(int)GeneralRegister.ECX, Type=RegisterType.GeneralRegister },
+            new RegisterOperand { Index=(int)GeneralRegister.EDX, Type=RegisterType.GeneralRegister },
+            new RegisterOperand { Index=(int)GeneralRegister.EBX, Type=RegisterType.GeneralRegister },
+            new RegisterOperand { Index=(int)GeneralRegister.ESP, Type=RegisterType.GeneralRegister },
+            new RegisterOperand { Index=(int)GeneralRegister.EBP, Type=RegisterType.GeneralRegister },
+            new RegisterOperand { Index=(int)GeneralRegister.ESI, Type=RegisterType.GeneralRegister },
+            new RegisterOperand { Index=(int)GeneralRegister.EDI, Type=RegisterType.GeneralRegister },
+        };
+
+        private RegisterOperand[] registersSegment =
+        {
+            new RegisterOperand { Index=(int)SegmentRegister.ES, Type=RegisterType.SegmentRegister },
+            new RegisterOperand { Index=(int)SegmentRegister.CS, Type=RegisterType.SegmentRegister },
+            new RegisterOperand { Index=(int)SegmentRegister.SS, Type=RegisterType.SegmentRegister },
+            new RegisterOperand { Index=(int)SegmentRegister.DS, Type=RegisterType.SegmentRegister },
+            new RegisterOperand { Index=(int)SegmentRegister.FS, Type=RegisterType.SegmentRegister },
+            new RegisterOperand { Index=(int)SegmentRegister.GS, Type=RegisterType.SegmentRegister },
         };
 
         private string[] registerStrings8BitLow =
@@ -342,5 +352,14 @@
             "EDI",
         };
 
+        private string[] registerStringsSegment =
+        {
+            "ES",
+            "DS",
+            "SS",
+            "DS",
+            "FS",
+            "GS"
+        };
     }
 }

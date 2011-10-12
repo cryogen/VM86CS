@@ -1,4 +1,5 @@
-﻿namespace x86CS.CPU
+﻿using x86Disasm;
+namespace x86CS.CPU
 {
     public enum ShiftType
     {
@@ -18,28 +19,18 @@
 
     public partial class CPU
     {
-        private void CheckOverflow(short result)
+        [CPUFunction(OpCode = 0x38, Count = 6)]
+        [CPUFunction(OpCode = 0x0780)]
+        [CPUFunction(OpCode = 0x0781)]
+        [CPUFunction(OpCode = 0x0783)]
+        public void Compare(Operand dest, Operand source)
         {
-            if ((sbyte)(byte)result > sbyte.MaxValue || (sbyte)(byte)result < sbyte.MinValue)
-                OF = true;
-            else
-                OF = false;
-        }
+            Operand result = dest;
 
-        private void CheckOverflow(int result)
-        {
-            if ((short)(ushort)result > short.MaxValue || (short)(ushort)result < short.MinValue)
-                OF = true;
-            else
-                OF = false;
-        }
-
-        private void CheckOverflow(long result)
-        {
-            if ((int)(uint)result > int.MaxValue || (int)(uint)result < int.MinValue)
-                OF = true;
-            else
-                OF = false;
+            result.Value = dest.Value - source.Value;
+            SetCPUFlags(result);
+            int Overflow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
+            OF = Overflow < 0;
         }
 
         #region Addition

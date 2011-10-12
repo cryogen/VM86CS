@@ -4,7 +4,7 @@ namespace x86CS.CPU
     public partial class CPU
     {
         [CPUFunction(OpCode=0xea)]
-        public void DoFarJump(Operand dest)
+        public void FarJump(Operand dest)
         {
             uint segment, offset;
 
@@ -23,33 +23,24 @@ namespace x86CS.CPU
                 EIP = (ushort)offset;
         }
 
-        /*private void DoJump()
+        [CPUFunction(OpCode = 0xeb)]
+        [CPUFunction(OpCode = 0xe9)]
+        public void Jump(Operand dest)
         {
-            if(opSize == 32)
-                EIP = (uint)currentInstruction.Instruction.AddrValue;
+            if (opSize == 32)
+                EIP = (uint)(EIP + (int)dest.Value);
             else
-                EIP = (ushort)currentInstruction.Instruction.AddrValue;
+                EIP = (ushort)(EIP + (int)dest.Value);
         }
 
-        private void ProcessJump()
+        [CPUFunction(OpCode = 0x74)]
+        public void JumpIfZero(Operand dest)
         {
-            switch (currentInstruction.Instruction.Opcode)
-            {
-                case 0xe9:
-                case 0xeb:
-                    DoJump();
-                    break;
-                case 0xea:
-                    DoFarJump();
-                    break;
-                case 0xff:
-                    break;
-                default:
-                    break;
-            }
+            if (ZF)
+                Jump(dest);
         }
 
-        private void DoCall()
+/*        private void DoCall()
         {
             if (opSize == 16)
                 StackPush(IP);

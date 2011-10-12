@@ -51,6 +51,13 @@ namespace x86Disasm
         Immediate
     }
 
+    public enum RegisterType
+    {
+        GeneralRegister,
+        SegmentRegister,
+        ControlRegister
+    }
+
     public enum GeneralRegister
     {
         EAX = 0,

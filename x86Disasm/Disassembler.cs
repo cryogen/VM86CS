@@ -12,6 +12,7 @@ namespace x86Disasm
         private Instruction currentInstruction;
         private bool gotRM;
         private byte rmByte;
+        private uint virtualAddr;
 
         public string InstructionText { get; private set; }
 
@@ -59,19 +60,88 @@ namespace x86Disasm
             {
                 operand.Register = registers16Bit[index];
                 if (operand.Size == 16)
-                    InstructionText += registerStrings16Bit[(int)operand.Register.Register];
+                    InstructionText += registerStrings16Bit[(int)operand.Register.Index];
                 else
-                    InstructionText += registerStrings32Bit[(int)operand.Register.Register];
+                    InstructionText += registerStrings32Bit[(int)operand.Register.Index];
             }
         }
 
-        private void ProcessRegMemMemory(ref Operand operand, Argument argument, byte rmByte)
+        private void ProcessRegMemSegment(ref Operand operand, Argument argument, byte rmByte)
         {
+            byte index = (byte)(rmByte & 0x7);
+
+            operand.Type = OperandType.Register;
+            operand.Size = argument.Size;
+            operand.Register = registersSegment[index];
+            InstructionText += registerStringsSegment[index];
+        }
+
+        private uint ProcessRegMemMemory(ref Operand operand, Argument argument, byte rmByte, uint offset)
+        {
+            byte mod, rm;
+
             operand.Type = OperandType.Memory;
             operand.Size = argument.Size;
             operand.Memory = regMemMemory16[rmByte & 0x7];
             if (rmByte < 0x40)
                 operand.Memory.Base = 0;
+
+            mod = (byte)((rmByte >> 6) & 0x3);
+            rm = (byte)(rmByte & 0x7);
+
+            if (mod == 0 && rm == 6)
+            {
+                operand.Memory.Base = 0;
+                operand.Memory.Displacement = (short)ReadWord(offset);
+                operand.Memory.Segment = SegmentRegister.DS;
+                offset += 2;
+            }
+            else if (mod == 1)
+                operand.Memory.Displacement = (sbyte)ReadByte(offset++);
+            else if (mod == 2)
+            {
+                operand.Memory.Displacement = (short)ReadWord(offset);
+                offset += 2;
+            }
+
+            if ((setPrefixes & OPPrefix.CSOverride) == OPPrefix.CSOverride)
+                operand.Memory.Segment = SegmentRegister.CS;
+            else if ((setPrefixes & OPPrefix.DSOverride) == OPPrefix.DSOverride)
+                operand.Memory.Segment = SegmentRegister.DS;
+            else if ((setPrefixes & OPPrefix.ESOverride) == OPPrefix.ESOverride)
+                operand.Memory.Segment = SegmentRegister.ES;
+            else if ((setPrefixes & OPPrefix.FSOverride) == OPPrefix.FSOverride)
+                operand.Memory.Segment = SegmentRegister.FS;
+            else if ((setPrefixes & OPPrefix.GSOverride) == OPPrefix.GSOverride)
+                operand.Memory.Segment = SegmentRegister.GS;
+            else if ((setPrefixes & OPPrefix.SSOverride) == OPPrefix.SSOverride)
+                operand.Memory.Segment = SegmentRegister.SS;
+
+            InstructionText += registerStringsSegment[(int)operand.Memory.Segment] + ":";
+            if (mod == 0 && rm == 6)
+                InstructionText += operand.Memory.Displacement.ToString("X");
+            else
+            {
+                int displacement;
+                string sign;
+
+                if (operand.Memory.Displacement < 0)
+                {
+                    displacement = -operand.Memory.Displacement;
+                    sign = "-";
+                }
+                else
+                {
+                    displacement = operand.Memory.Displacement;
+                    sign = "+";
+                }
+
+                InstructionText += String.Format("[{0}{1}{2}{3}{4}]", registerStrings16Bit[(int)operand.Memory.Base], operand.Memory.Index > 0 ? "+" : "",
+                    operand.Memory.Index > 0 ? registerStrings16Bit[(int)operand.Memory.Index] : "", operand.Memory.Displacement != 0 ? sign : "",
+                    operand.Memory.Displacement != 0 ? displacement.ToString("X") : "");
+            }
+
+            return offset;
         }
 
         private uint ProcessArgument(Argument argument, int operandNumber, uint offset)
@@ -94,6 +164,13 @@ namespace x86Disasm
                     InstructionText += operand.Value.ToString("X");
                     offset += operand.Size / 8;
                     break;
+                case ArgumentType.Relative:
+                    operand.Type = OperandType.Immediate;
+                    operand.Size = 32;
+                    operand.Value = readFunction(offset, (int)argument.Size);
+                    InstructionText += operand.Value.ToString("X") + " (" + (virtualAddr + operand.Value).ToString("X") + ")";
+                    offset += argument.Size / 8;
+                    break;
                 case ArgumentType.RegMem:
                 case ArgumentType.RegMemGeneral:
                 case ArgumentType.RegMemMemory:
@@ -109,13 +186,16 @@ namespace x86Disasm
                             if (rmByte >= 0xc0)
                                 ProcessRegMemRegister(ref operand, argument, rmByte);
                             else
-                                ProcessRegMemMemory(ref operand, argument, rmByte);
+                                offset = ProcessRegMemMemory(ref operand, argument, rmByte, offset);
                             break;
                         case ArgumentType.RegMemGeneral:
                             ProcessRegMemRegister(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         case ArgumentType.RegMemMemory:
                             ProcessRegMemRegister(ref operand, argument, rmByte);
+                            break;
+                        case ArgumentType.RegMemSegment:
+                            ProcessRegMemSegment(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         default:
                             break;
@@ -128,18 +208,23 @@ namespace x86Disasm
                     {
                         operand.Register = registers8Bit[argument.Value];
                         if (operand.Register.High)
-                            InstructionText += registerStrings8BitHigh[(int)operand.Register.Register];
+                            InstructionText += registerStrings8BitHigh[(int)operand.Register.Index];
                         else
-                            InstructionText += registerStrings8BitLow[(int)operand.Register.Register];
+                            InstructionText += registerStrings8BitLow[(int)operand.Register.Index];
                     }
                     else
                     {
                         operand.Register = registers16Bit[argument.Value];
                         if (operand.Size == 16)
-                            InstructionText += registerStrings16Bit[(int)operand.Register.Register];
+                            InstructionText += registerStrings16Bit[(int)operand.Register.Index];
                         else
-                            InstructionText += registerStrings32Bit[(int)operand.Register.Register];
+                            InstructionText += registerStrings32Bit[(int)operand.Register.Index];
                     }
+                    break;
+                case ArgumentType.SegmentRegister:
+                    operand.Type = OperandType.Register;
+                    operand.Register = registersSegment[argument.Value];
+                    InstructionText += registerStringsSegment[argument.Value];
                     break;
                 default:
                     break;
@@ -157,13 +242,14 @@ namespace x86Disasm
             operations.Add(opCode, operation);
         }
 
-        public int Disassemble(uint virtualAddr)
+        public int Disassemble(uint addr)
         {
             uint offset = 0;
             byte opCode;
 
             InstructionText = "";
             gotRM = false;
+            virtualAddr = addr;
 
             opCode = (byte)readFunction(offset, 8);
             currentInstruction = instructions[opCode];

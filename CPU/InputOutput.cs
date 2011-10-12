@@ -3,24 +3,22 @@ namespace x86CS.CPU
 {
     public partial class CPU
     {
-        [CPUFunction(OpCode = 0xe4)]
-        [CPUFunction(OpCode = 0xe5)]
-        [CPUFunction(OpCode = 0xec)]
-        [CPUFunction(OpCode = 0xed)]
+        [CPUFunction(OpCode = 0xe4, Count=2)]
+        [CPUFunction(OpCode = 0xec, Count=2)]
         public void DoIORead(Operand dest, Operand source)
         {
             ReadCallback ioRead = IORead;
 
             if (ioRead != null)
                 dest.Value = ioRead((ushort)source.Value, (int)dest.Size);
+            else
+                dest.Value = 0;
 
-            dest.Value = 0;
+            WriteOperand(dest);
         }
 
-        [CPUFunction(OpCode = 0xe6)]
-        [CPUFunction(OpCode = 0xe7)]
-        [CPUFunction(OpCode = 0xee)]
-        [CPUFunction(OpCode = 0xef)]
+        [CPUFunction(OpCode = 0xe6, Count=2)]
+        [CPUFunction(OpCode = 0xee, Count=2)]
         public void DoIOWrite(Operand dest, Operand source)
         {
             WriteCallback ioWrite = IOWrite;

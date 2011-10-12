@@ -5,5 +5,11 @@ namespace x86Disasm
     public class CPUFunction : Attribute
     {
         public ushort OpCode;
+        public int Count;
+
+        public CPUFunction()
+        {
+            Count = 1;
+        }
     }
 }
