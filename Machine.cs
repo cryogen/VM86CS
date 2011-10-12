@@ -234,8 +234,6 @@ namespace x86CS
             {
                 CPU.Cycle();
                 CPU.Fetch();
-                /*if (timerTicks % 100000 == 0)
-                    machineForm.Invalidate();*/
             }
         }
     }

@@ -187,7 +187,7 @@ namespace x86Disasm
                             ProcessRegMemRegister(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         case ArgumentType.RegMemMemory:
-                            ProcessRegMemMemory(ref operand, argument, rmByte, offset);
+                            offset = ProcessRegMemMemory(ref operand, argument, rmByte, offset);
                             break;
                         case ArgumentType.RegMemSegment:
                             ProcessRegMemSegment(ref operand, argument, (byte)(rmByte >> 3));
@@ -265,7 +265,7 @@ namespace x86Disasm
             virtualAddr = addr;
             SetPrefixes = 0;
             overrideSegment = SegmentRegister.Default;
-
+                
             opCode = (byte)readFunction(offset, 8);
             currentInstruction = instructions[opCode];
             offset++;

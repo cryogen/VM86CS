@@ -561,7 +561,7 @@ namespace x86CS.CPU
                         operand.Memory.Address += registers[(int)operand.Memory.Index].Word;
 
                     operand.Memory.Address = (uint)(operand.Memory.Address + operand.Memory.Displacement);
-                    operand.Value = (byte)SegRead(operand.Memory.Segment, operand.Memory.Address, (int)operand.Size);
+                    operand.Value = SegRead(operand.Memory.Segment, operand.Memory.Address, (int)operand.Size);
                     break;
                 default:
                     System.Diagnostics.Debugger.Break();
@@ -828,6 +828,8 @@ namespace x86CS.CPU
                 return;
 
             Operand[] operands = ProcessOperands();
+
+            Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
 
             EIP += (uint)opLen;
             disasm.Execute(this, operands);
