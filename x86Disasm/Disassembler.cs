@@ -272,6 +272,10 @@ namespace x86Disasm
 
                     InstructionText += registersSegment[(int)operand.Memory.Segment] + ":" + operand.Memory.Displacement.ToString("X");
                     break;
+                case ArgumentType.Constant:
+                    operand.Type = OperandType.Immediate;
+                    operand.Value = (uint)argument.Value;
+                    break;
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;

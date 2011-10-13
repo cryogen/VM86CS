@@ -69,6 +69,13 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
+        [CPUFunction(OpCode = 0x73)]
+        public void JumpIfNotBelow(Operand dest)
+        {
+            if (!CF)
+                Jump(dest);
+        }
+
         [CPUFunction(OpCode = 0x77)]
         public void JumpIfNotBelowOrEqual(Operand dest)
         {

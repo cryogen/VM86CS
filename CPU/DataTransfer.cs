@@ -28,6 +28,62 @@ namespace x86CS.CPU
             StackPush(dest.Value);
         }
 
+        [CPUFunction(OpCode = 0x60)]
+        public void PushAll()
+        {
+            uint oldESP = ESP;
+
+            if (opSize == 32)
+            {
+                StackPush(AX);
+                StackPush(CX);
+                StackPush(DX);
+                StackPush(BX);
+                StackPush((ushort)oldESP);
+                StackPush(BP);
+                StackPush(SI);
+                StackPush(DI);
+            }
+            else
+            {
+                StackPush(EAX);
+                StackPush(ECX);
+                StackPush(EDX);
+                StackPush(EBX);
+                StackPush(oldESP);
+                StackPush(EBP);
+                StackPush(ESI);
+                StackPush(EDI);
+            }
+        }
+
+        [CPUFunction(OpCode = 0x61)]
+        public void PopAll()
+        {
+            if (opSize == 32)
+            {
+                EDI = StackPop();
+                ESI = StackPop();
+                EBP = StackPop();
+                ESP += 4;
+                EBX = StackPop();
+                EDX = StackPop();
+                ECX = StackPop();
+                EAX = StackPop();
+            }
+            else
+            {
+                DI = (ushort)StackPop();
+                SI = (ushort)StackPop();
+                BP = (ushort)StackPop();
+                SP += 2;
+                BX = (ushort)StackPop();
+                DX = (ushort)StackPop();
+                CX = (ushort)StackPop();
+                AX = (ushort)StackPop();
+            }
+        }
+
         [CPUFunction(OpCode = 0x07)]
         [CPUFunction(OpCode = 0x0f)]
         [CPUFunction(OpCode = 0x17)]
