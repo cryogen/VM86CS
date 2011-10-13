@@ -561,7 +561,10 @@ namespace x86CS.CPU
                     if (operand.Memory.Index != 0)
                         operand.Memory.Address += registers[(int)operand.Memory.Index].Word;
 
-                    operand.Memory.Address = (uint)(operand.Memory.Address + operand.Memory.Displacement);
+                    if(operand.Size == 16)
+                        operand.Memory.Address = (ushort)(operand.Memory.Address + operand.Memory.Displacement);
+                    else
+                        operand.Memory.Address = (uint)(operand.Memory.Address + operand.Memory.Displacement);
                     operand.Value = SegRead(operand.Memory.Segment, operand.Memory.Address, (int)operand.Size);
                     break;
                 default:

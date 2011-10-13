@@ -106,11 +106,14 @@ namespace x86CS.CPU
             {
                 StackPush(CS);
                 StackPush(IP);
-                EIP = (uint)(ushort)(IP + (ushort)dest.Value);
+                SetSelector(SegmentRegister.CS, (ushort)(dest.Value >> 16));
+                EIP = (ushort)dest.Value;
             }
             else
             {
+                StackPush(CS);
                 StackPush(EIP);
+                SetSelector(SegmentRegister.CS, (ushort)(dest.Value >> 16));
                 EIP = dest.Value;
             }
         }
