@@ -34,13 +34,33 @@ namespace x86CS.CPU
             CF = dest.Value < source.Value;
         }
 
-        [CPUFunction(OpCode = 0x00, Count = 5)]
+        [CPUFunction(OpCode = 0x00, Count = 6)]
         [CPUFunction(OpCode = 0x8000)]
         [CPUFunction(OpCode = 0x8100)]
         [CPUFunction(OpCode = 0x8300)]
         public void Add(Operand dest, Operand source)
         {
             Operand result = dest;
+
+            result.Value = dest.Value + source.Value;
+            SetCPUFlags(result);
+            int overFlow = (int)((dest.Value & source.Value & ~result.Value) | (~dest.Value & ~source.Value & result.Value));
+            OF = overFlow < 0;
+            CF = result.Value < dest.Value;
+
+            WriteOperand(result);
+        }
+
+        [CPUFunction(OpCode = 0x10, Count = 6)]
+        [CPUFunction(OpCode = 0x8002)]
+        [CPUFunction(OpCode = 0x8102)]
+        [CPUFunction(OpCode = 0x8302)]
+        public void AddWithCarry(Operand dest, Operand source)
+        {
+            Operand result = dest;
+
+            if (CF)
+                source.Value++;
 
             result.Value = dest.Value + source.Value;
             SetCPUFlags(result);
@@ -120,237 +140,155 @@ namespace x86CS.CPU
 
         [CPUFunction(OpCode = 0xf607)]
         [CPUFunction(OpCode = 0xf707)]
-        public void IntegerDivide(Operand quotient, Operand remainder, Operand dividend, Operand divisor)
+        public void SignedDivide(Operand dest, Operand source)
         {
-            quotient.Value = dividend.Value / divisor.Value;
-            remainder.Value = dividend.Value % dividend.Value;
+            ulong dividend;
+            uint result, remainder;
 
-            WriteOperand(quotient);
-            WriteOperand(remainder);
-        }
-
-        #region Multiply
-
-        private void SignedMultiply(byte source)
-        {
-            var signedSource = (sbyte) source;
-            var temp = (short) ((sbyte) AX*signedSource);
-
-            AX = (ushort) temp;
-
-            if (AH == 0x00 || AH == 0xff)
+            switch (source.Size)
             {
-                CF = false;
-                OF = false;
+                case 8:
+                    dividend = AX;
+                    break;
+                case 16:
+                    dividend = (ulong)((DX << 16) + AX);
+                    break;
+                default:
+                    dividend = (ulong)((EDX << 32) + EAX);
+                    break;
             }
-            else
-            {
-                CF = true;
-                OF = true;
-            }
-        }
 
-        private void SignedMultiply(ushort source)
-        {
-            var signedSource = (short) source;
-            var temp = (short)AX*signedSource;
+            result = (uint)(dividend / source.Value);
+            remainder = (uint)(dividend % source.Value);
 
-            AX = (ushort) (temp & 0xFFFF);
-            DX = (ushort) ((temp >> 16) & 0xFFFF);
-
-            if (DX == 0x0000 || DX == 0xffff)
+            switch (source.Size)
             {
-                CF = false;
-                OF = false;
-            }
-            else
-            {
-                CF = true;
-                OF = true;
+                case 8:
+                    AL = (byte)result;
+                    AH = (byte)remainder;
+                    break;
+                case 16:
+                    AX = (ushort)result;
+                    DX = (ushort)remainder;
+                    break;
+                default:
+                    EAX = result;
+                    EDX = remainder;
+                    break;
             }
         }
 
-        private void SignedMultiply(uint source)
+        [CPUFunction(OpCode = 0xf606)]
+        [CPUFunction(OpCode = 0xf706)]
+        public void UnSignedDivide(Operand dest, Operand source)
         {
-            var signedSource = (int) source;
-            long temp = ((int) EAX*signedSource);
+            ulong dividend;
+            uint result, remainder;
 
-            EAX = (uint) (temp & 0xffffffff);
-            EDX = (uint) ((temp >> 32) & 0xffffffff);
-
-            if (EDX == 0x0000 || EDX == 0xffffffff)
+            switch (source.Size)
             {
-                CF = false;
-                OF = false;
-            }
-            else
-            {
-                CF = true;
-                OF = true;
-            }
-        }
-
-        private ushort SignedMultiply(ushort dest, byte source)
-        {
-            return SignedMultiply(dest, (ushort)(sbyte)source);
-        }
-
-        private uint SignedMultiply(uint dest, byte source)
-        {
-            return SignedMultiply(dest, (uint)(sbyte)source);
-        }
-
-        private ushort SignedMultiply(ushort dest, ushort source)
-        {
-            var signedDest = (short) dest;
-            var signedSource = (short) source;
-            var temp = signedDest*signedSource;
-            var ret = (short) (signedDest*signedSource);
-
-            if (temp != ret)
-            {
-                CF = true;
-                OF = true;
-            }
-            else
-            {
-                CF = false;
-                OF = false;
+                case 8:
+                    dividend = AX;
+                    break;
+                case 16:
+                    dividend = (ulong)((DX << 16) + AX);
+                    break;
+                default:
+                    dividend = (ulong)((EDX << 32) + EAX);
+                    break;
             }
 
-            return (ushort) ret;
-        }
-
-        private uint SignedMultiply(uint dest, uint source)
-        {
-            var signedDest = (int) dest;
-            var signedSource = (int) source;
-
-            long temp = signedDest*signedSource;
-            var ret = signedDest*signedSource;
-
-            if (temp != ret)
+            result = (uint)(dividend / source.Value);
+            remainder = (uint)(dividend % source.Value);
+            
+            switch (source.Size)
             {
-                CF = true;
-                OF = true;
-            }
-            else
-            {
-                CF = false;
-                OF = false;
-            }
-
-            return (uint) ret;
-        }
-
-        private void Multiply(byte source)
-        {
-            AX = (ushort) (AL*source);
-
-            if (AH == 0)
-            {
-                OF = false;
-                CF = false;
-            }
-            else
-            {
-                OF = true;
-                CF = true;
+                case 8:
+                    AL = (byte)result;
+                    AH = (byte)remainder;
+                    break;
+                case 16:
+                    AX = (ushort)result;
+                    DX = (ushort)remainder;
+                    break;
+                default:
+                    EAX = result;
+                    EDX = remainder;
+                    break;
             }
         }
 
-        private void Multiply(ushort source)
+        [CPUFunction(OpCode = 0xf604)]
+        [CPUFunction(OpCode = 0xf704)]
+        public void UnsignedMultiply(Operand dest, Operand source)
         {
-            uint mulResult = (uint) AX*source;
+            ulong temp = dest.Value * source.Value;
+            bool setflags = false;
 
-            AX = (ushort) (mulResult & 0xFFFF);
-            DX = (ushort) (mulResult >> 16);
-
-            if (DX == 0)
+            switch (source.Size)
             {
-                OF = false;
-                CF = false;
+                case 8:
+                    dest.Value = (byte)temp;
+                    if ((dest.Value & 0xff00) == 0)
+                        setflags = true;
+                    break;
+                case 16:
+                    dest.Value = (ushort)temp;
+                    DX = (ushort)(temp >> 16);
+                    if (dest.Value == 0)
+                        setflags = true;
+                    break;
+                default:
+                    dest.Value = (uint)temp;
+                    EDX = (uint)(temp >> 32);
+                    if (dest.Value == 0)
+                        setflags = true;
+                    break;
             }
-            else
+
+            if (setflags)
             {
-                OF = true;
-                CF = true;
+                OF = CF = true;
             }
+
+            WriteOperand(dest);
         }
 
-        private void Multiply(uint source)
+        [CPUFunction(OpCode = 0xf605)]
+        [CPUFunction(OpCode = 0xf705)]
+        public void SignedMultiply(Operand dest, Operand source)
         {
-            ulong mulResult = (ulong) EAX*source;
+            ulong temp = dest.Value * source.Value;
+            bool setflags = false;
 
-            EAX = (ushort) (mulResult & 0xffffffff);
-            EDX = (ushort) (mulResult >> 32);
-
-            if (EDX == 0)
+            switch (source.Size)
             {
-                OF = false;
-                CF = false;
+                case 8:
+                    dest.Value = (byte)temp;
+                    if ((dest.Value & 0xff00) == 0)
+                        setflags = true;
+                    break;
+                case 16:
+                    dest.Value = (ushort)temp;
+                    DX = (ushort)(temp >> 16);
+                    if (dest.Value == 0)
+                        setflags = true;
+                    break;
+                default:
+                    dest.Value = (uint)temp;
+                    EDX = (uint)(temp >> 32);
+                    if (dest.Value == 0)
+                        setflags = true;
+                    break;
             }
-            else
+
+            if (setflags)
             {
-                OF = true;
-                CF = true;
+                OF = CF = true;
             }
+
+            WriteOperand(dest);
         }
-
-        #endregion
-
-        #region Divides
-
-        private void Divide(byte source)
-        {
-            var temp = (byte) (AX/source);
-            var remainder = (byte)(AX%source);
-
-            AL = temp;
-            AH = remainder;
-        }
-
-        private void Divide(ushort source)
-        {
-            var dividend = (uint) (((DX << 16) & 0xFFFF0000) + AX);
-            var temp = (ushort) (dividend/source);
-            var remainder = (ushort)(dividend%source);
-
-            AX = temp;
-            DX = remainder;
-        }
-
-        private void Divide(uint source)
-        {
-            var dividend = ((EDX << 32) & 0xffffffff00000000) + EAX;
-            var temp = (uint) (dividend/source);
-            var remainder = (uint) (dividend%source);
-
-            EAX = temp;
-            EDX = remainder;
-        }
-
-        private void SDivide(ushort source)
-        {
-            var dividend = (uint) ((DX << 16 & 0xffff0000) + AX);
-            var temp = (short) ((int) dividend/(short) source);
-            var remainder = (short) ((int) dividend%(short) source);
-
-            AX = (ushort) temp;
-            DX = (ushort) remainder;
-        }
-
-        private void SDivide(uint source)
-        {
-            var dividend = (EDX << 32 & 0xffffffff00000000) + EAX;
-            var temp = (int) ((long) dividend/(int) source);
-            var remainder = (int) ((long) dividend%(int) source);
-
-            EAX = (uint) temp;
-            EDX = (uint) remainder;
-        }
-
-        #endregion
 
         private byte Rotate(byte dest, byte count, RotateType type)
         {

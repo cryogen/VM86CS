@@ -168,16 +168,19 @@ namespace x86Disasm
                                 operand.Value = (uint)(int)(short)ReadWord(offset);
                                 break;
                         }
+                        offset += argument.Size / 8;
                     }
                     else
-                        operand.Value = readFunction(offset, (int)argument.Size);
+                    {
+                        operand.Value = readFunction(offset, (int)operand.Size);
+                        offset += operand.Size / 8;
+                    }
                     InstructionText += operand;
-                    offset += argument.Size / 8;
                     break;
                 case ArgumentType.Relative:
                     operand.Type = OperandType.Immediate;
-                    operand.Value = readFunction(offset, (int)argument.Size);
-                    offset += argument.Size / 8;
+                    operand.Value = readFunction(offset, (int)operand.Size);
+                    offset += operand.Size / 8;
                     if(operand.SignedValue < 0)
                         InstructionText += "-" + (-operand.SignedValue).ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
                     else
@@ -258,12 +261,14 @@ namespace x86Disasm
                 case ArgumentType.Offset:
                     operand.Type = OperandType.Memory;
                     
-                    operand.Memory.Displacement = (int)readFunction(offset, 16);
+                    operand.Memory.Displacement = (int)readFunction(offset, operandSize);
                     offset += 2;
                     if (overrideSegment == SegmentRegister.Default)
                         operand.Memory.Segment = SegmentRegister.DS;
                     else
                         operand.Memory.Segment = overrideSegment;
+
+                    operand.Size = (uint)addressSize;
 
                     InstructionText += registersSegment[(int)operand.Memory.Segment] + ":" + operand.Memory.Displacement.ToString("X");
                     break;
