@@ -142,6 +142,8 @@ namespace x86Disasm
 
             if (argument.Size == 16)
                 operand.Size = (uint)operandSize;
+            else
+                operand.Size = argument.Size;
 
             switch (argument.Type)
             {
