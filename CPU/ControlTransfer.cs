@@ -22,7 +22,7 @@ namespace x86CS.CPU
             segment = (uint)((dest.Value & 0xffff0000) >> 4);
             offset = (uint)dest.Value & 0x0000ffff;
 
-            CS = segment;
+            SetSelector(SegmentRegister.CS, segment);
             if (opSize == 32)
                 EIP = offset;
             else
@@ -37,6 +37,15 @@ namespace x86CS.CPU
                 EIP = (uint)(EIP + dest.SignedValue);
             else
                 EIP = (ushort)(EIP + dest.SignedValue);
+        }
+
+        [CPUFunction(OpCode = 0xff04)]
+        public void JumpAbsolute(Operand dest)
+        {
+            if (opSize == 32)
+                EIP = dest.Value;
+            else
+                EIP = (ushort)dest.Value;
         }
 
         [CPUFunction(OpCode = 0x74)]
@@ -83,6 +92,13 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
+        [CPUFunction(OpCode = 0x7c)]
+        public void JumpIfLess(Operand dest)
+        {
+            if (SF != OF)
+                Jump(dest);
+        }
+
         [CPUFunction(OpCode = 0xe8)]
         [CPUFunction(OpCode = 0xff02)]
         public void Call(Operand dest)
@@ -118,7 +134,9 @@ namespace x86CS.CPU
             }
         }
 
+
         [CPUFunction(OpCode = 0xc3)]
+        [CPUFunction(OpCode = 0xcb)]
         public void Return()
         {
             if (opSize == 16)
@@ -141,8 +159,16 @@ namespace x86CS.CPU
             StackPush(CS);
             StackPush(IP);
 
-            CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
+            SetSelector(SegmentRegister.CS, Memory.Read((uint)(dest.Value * 4) + 2, 16));
             EIP = Memory.Read((uint)(dest.Value * 4), 16);
+        }
+
+        [CPUFunction(OpCode = 0xcf)]
+        public void InterruptReturn()
+        {
+            EIP = (ushort)StackPop();
+            SetSelector(SegmentRegister.CS, StackPop());
+            eFlags = (CPUFlags)StackPop();
         }
 
         [CPUFunction(OpCode = 0xe2)]

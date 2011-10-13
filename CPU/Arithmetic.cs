@@ -290,6 +290,15 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
+        [CPUFunction(OpCode = 0xf602)]
+        [CPUFunction(OpCode = 0xf702)]
+        public void Not(Operand dest)
+        {
+            dest.Value = ~dest.Value;
+
+            WriteOperand(dest);
+        }
+
         private byte Rotate(byte dest, byte count, RotateType type)
         {
             return (byte) DoRotate(dest, count, type, 8);
