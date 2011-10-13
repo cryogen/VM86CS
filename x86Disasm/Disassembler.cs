@@ -55,7 +55,6 @@ namespace x86Disasm
             byte index = (byte)(rmByte & 0x7);
 
             operand.Type = OperandType.Register;
-            operand.Size = argument.Size;
             if (operand.Size == 8)
             {
                 operand.Register = registers8Bit[index];
@@ -141,7 +140,8 @@ namespace x86Disasm
         {
             Operand operand = new Operand();
 
-            operand.Size = argument.Size;
+            if (argument.Size == 16)
+                operand.Size = (uint)operandSize;
 
             switch (argument.Type)
             {
@@ -394,7 +394,7 @@ namespace x86Disasm
             Operation operation;
 
             if(!operations.TryGetValue(currentInstruction.OpCode, out operation))
-                throw new Exception("Invalid operation");
+                throw new Exception("Instruction not implemented");
 
             if (operands.Length != operation.NumberOfArgs)
                 throw new Exception("wrong number of arguments");

@@ -106,7 +106,7 @@
             new Instruction { OpCode=0x0063, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0064, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0065, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0066, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0066, Type=InstructionType.Prefix, Value=(int)OPPrefix.OperandSize },
             new Instruction { OpCode=0x0067, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0068, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0069, Type=InstructionType.Invalid },
