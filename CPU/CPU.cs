@@ -384,6 +384,7 @@ namespace x86CS.CPU
             idtRegister = new TableRegister();
             gdtRegister = new TableRegister();
             disasm = new Disassembler(DisassemblerRead);
+            disasm.CodeSize = 16;
             ProcessOperations();
             realModeEntry = new GDTEntry
                                 {
@@ -829,7 +830,7 @@ namespace x86CS.CPU
 
             Operand[] operands = ProcessOperands();
 
-            Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
+//            Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
 
             EIP += (uint)opLen;
             disasm.Execute(this, operands);

@@ -41,6 +41,22 @@ namespace x86Disasm
         public MemoryOperand Memory;
         public uint Address;
 
+        public byte MSB
+        {
+            get
+            {
+                switch (Size)
+                {
+                    case 8:
+                        return (byte)(value & 0x80);
+                    case 16:
+                        return (byte)(value & 0x8000);
+                    default:
+                        return (byte)(value & 0x80000000);
+                }
+            }
+        }
+
         public int SignedValue
         {
             get

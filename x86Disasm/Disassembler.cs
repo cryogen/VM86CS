@@ -13,9 +13,12 @@ namespace x86Disasm
         private byte rmByte;
         private uint virtualAddr;
         private SegmentRegister overrideSegment;
+        private int operandSize;
+        private int addressSize;
 
         public OPPrefix SetPrefixes { get; private set; }
         public string InstructionText { get; private set; }
+        public int CodeSize { get; set; }
 
         public Operand[] Operands
         {
@@ -85,9 +88,7 @@ namespace x86Disasm
             operand.Type = OperandType.Memory;
             operand.Size = argument.Size;
             operand.Memory = regMemMemory16[rmByte & 0x7];
-            if (rmByte < 0x40)
-                operand.Memory.Base = 0;
-
+            
             mod = (byte)((rmByte >> 6) & 0x3);
             rm = (byte)(rmByte & 0x7);
 
@@ -252,6 +253,18 @@ namespace x86Disasm
                         InstructionText += "[" + registerStrings32Bit[(int)operand.Memory.Base] + "]";
 
                     break;
+                case ArgumentType.Offset:
+                    operand.Type = OperandType.Memory;
+                    
+                    operand.Memory.Displacement = (int)readFunction(offset, 16);
+                    offset += 2;
+                    if (overrideSegment == SegmentRegister.Default)
+                        operand.Memory.Segment = SegmentRegister.DS;
+                    else
+                        operand.Memory.Segment = overrideSegment;
+
+                    InstructionText += registersSegment[(int)operand.Memory.Segment] + ":" + operand.Memory.Displacement.ToString("X");
+                    break;
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;
@@ -314,6 +327,16 @@ namespace x86Disasm
                 overrideSegment = SegmentRegister.GS;
             else if ((SetPrefixes & OPPrefix.SSOverride) == OPPrefix.SSOverride)
                 overrideSegment = SegmentRegister.SS;
+
+            if ((SetPrefixes & OPPrefix.OperandSize) == OPPrefix.OperandSize)
+                operandSize = CodeSize == 32 ? 16 : 32;
+            else
+                operandSize = CodeSize;
+
+            if ((SetPrefixes & OPPrefix.AddressSize) == OPPrefix.AddressSize)
+                addressSize = CodeSize == 32 ? 16 : 32;
+            else
+                addressSize = CodeSize;
 
             if (currentInstruction.Type == InstructionType.Group)
             {

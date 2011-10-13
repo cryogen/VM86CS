@@ -9,9 +9,15 @@ namespace x86CS.CPU
             uint segment, offset;
 
             if (PMode == false && ((CR0 & 0x1) == 0x1))
+            {
                 PMode = true;
+                disasm.CodeSize = 32;
+            }
             else if (PMode && ((CR0 & 0x1) == 0))
+            {
                 PMode = false;
+                disasm.CodeSize = 16;
+            }
 
             segment = (uint)((dest.Value & 0xffff0000) >> 4);
             offset = (uint)dest.Value & 0x0000ffff;
@@ -28,9 +34,9 @@ namespace x86CS.CPU
         public void Jump(Operand dest)
         {
             if (opSize == 32)
-                EIP = (uint)(EIP + (int)dest.Value);
+                EIP = (uint)(EIP + dest.SignedValue);
             else
-                EIP = (ushort)(EIP + (int)dest.Value);
+                EIP = (ushort)(EIP + dest.SignedValue);
         }
 
         [CPUFunction(OpCode = 0x74)]
@@ -46,6 +52,20 @@ namespace x86CS.CPU
         public void JumpIfNotZero(Operand dest)
         {
             if (!ZF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x72)]
+        public void JumpIfBelow(Operand dest)
+        {
+            if (CF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x76)]
+        public void JumpIfBelowOrEqual(Operand dest)
+        {
+            if (CF && ZF)
                 Jump(dest);
         }
 
@@ -113,6 +133,32 @@ namespace x86CS.CPU
 
             CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
             EIP = Memory.Read((uint)(dest.Value * 4), 16);
+        }
+
+        [CPUFunction(OpCode = 0xe2)]
+        public void Loop(Operand dest)
+        {
+            uint count;
+
+            if (addressSize == 32)
+                count = ECX;
+            else
+                count = CX;
+
+            count--;
+
+            if (count != 0)
+            {
+                if (opSize == 32)
+                    EIP = (uint)(EIP + dest.SignedValue);
+                else
+                    EIP = (ushort)(EIP + dest.SignedValue);
+            }
+
+            if (addressSize == 32)
+                ECX = count;
+            else
+                CX = (ushort)count;
         }
     }
 }
