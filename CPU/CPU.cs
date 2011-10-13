@@ -687,16 +687,6 @@ namespace x86CS.CPU
             return ret;
         }
 
-        /*public void StackPush(ushort value)
-        {
-            if (opSize == 32)
-                ESP -= 2;
-            else
-                SP -= 2;
-
-            SegWriteWord(SegmentRegister.SS, SP, value);
-        }*/
-
         public void StackPush(uint value)
         {
             if (opSize == 32)

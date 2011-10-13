@@ -12,13 +12,13 @@ namespace x86Disasm
         private bool gotRM;
         private byte rmByte;
         private uint virtualAddr;
-        private SegmentRegister overrideSegment;
         private int operandSize;
         private int addressSize;
 
         public OPPrefix SetPrefixes { get; private set; }
         public string InstructionText { get; private set; }
         public int CodeSize { get; set; }
+        public SegmentRegister OverrideSegment { get; private set; }
 
         public Operand[] Operands
         {
@@ -32,7 +32,7 @@ namespace x86Disasm
             readFunction = readCallback;
             operands = new Operand[4];
             operations = new Dictionary<ushort, Operation>();
-            overrideSegment = SegmentRegister.Default;
+            OverrideSegment = SegmentRegister.Default;
         }
 
         private byte ReadByte(uint offset)
@@ -106,8 +106,8 @@ namespace x86Disasm
                 offset += 2;
             }
 
-            if (overrideSegment != SegmentRegister.Default)
-                operand.Memory.Segment = overrideSegment;
+            if (OverrideSegment != SegmentRegister.Default)
+                operand.Memory.Segment = OverrideSegment;
 
             InstructionText += registerStringsSegment[(int)operand.Memory.Segment] + ":";
             if (mod == 0 && rm == 6)
@@ -244,11 +244,11 @@ namespace x86Disasm
                 case ArgumentType.Memory:
                     operand.Type = OperandType.Memory;
                     operand.Memory.Base = GeneralRegister.EDI;
-                    if (overrideSegment == SegmentRegister.Default)
+                    if (OverrideSegment == SegmentRegister.Default)
                         operand.Memory.Segment = SegmentRegister.DS;
                     else
                     {
-                        operand.Memory.Segment = overrideSegment;
+                        operand.Memory.Segment = OverrideSegment;
                         InstructionText += registersSegment[(int)operand.Memory.Segment] + ":";
                     }
 
@@ -263,10 +263,10 @@ namespace x86Disasm
                     
                     operand.Memory.Displacement = (int)readFunction(offset, operandSize);
                     offset += 2;
-                    if (overrideSegment == SegmentRegister.Default)
+                    if (OverrideSegment == SegmentRegister.Default)
                         operand.Memory.Segment = SegmentRegister.DS;
                     else
-                        operand.Memory.Segment = overrideSegment;
+                        operand.Memory.Segment = OverrideSegment;
 
                     operand.Size = (uint)addressSize;
 
@@ -302,7 +302,7 @@ namespace x86Disasm
             gotRM = false;
             virtualAddr = addr;
             SetPrefixes = 0;
-            overrideSegment = SegmentRegister.Default;
+            OverrideSegment = SegmentRegister.Default;
                 
             opCode = (byte)readFunction(offset, 8);
             currentInstruction = instructions[opCode];
@@ -327,17 +327,17 @@ namespace x86Disasm
                 InstructionText = "REPNE ";
             
             if ((SetPrefixes & OPPrefix.CSOverride) == OPPrefix.CSOverride)
-                overrideSegment = SegmentRegister.CS;
+                OverrideSegment = SegmentRegister.CS;
             else if ((SetPrefixes & OPPrefix.DSOverride) == OPPrefix.DSOverride)
-                overrideSegment = SegmentRegister.DS;
+                OverrideSegment = SegmentRegister.DS;
             else if ((SetPrefixes & OPPrefix.ESOverride) == OPPrefix.ESOverride)
-                overrideSegment = SegmentRegister.ES;
+                OverrideSegment = SegmentRegister.ES;
             else if ((SetPrefixes & OPPrefix.FSOverride) == OPPrefix.FSOverride)
-                overrideSegment = SegmentRegister.FS;
+                OverrideSegment = SegmentRegister.FS;
             else if ((SetPrefixes & OPPrefix.GSOverride) == OPPrefix.GSOverride)
-                overrideSegment = SegmentRegister.GS;
+                OverrideSegment = SegmentRegister.GS;
             else if ((SetPrefixes & OPPrefix.SSOverride) == OPPrefix.SSOverride)
-                overrideSegment = SegmentRegister.SS;
+                OverrideSegment = SegmentRegister.SS;
 
             if ((SetPrefixes & OPPrefix.OperandSize) == OPPrefix.OperandSize)
                 operandSize = CodeSize == 32 ? 16 : 32;

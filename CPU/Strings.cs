@@ -99,5 +99,48 @@ namespace x86CS.CPU
             }
             SetCount(count);
         }
-   }
+
+        [CPUFunction(OpCode = 0xa4)]
+        [CPUFunction(OpCode = 0xa5)]
+        public void StringMove(Operand dest, Operand source)
+        {
+            uint count = GetCount();
+            int size = (int)(dest.Size / 8);
+
+            while (count > 0)
+            {
+                uint destAddr, sourceAddr;
+
+                if (addressSize == 32)
+                {
+                    destAddr = EDI;
+                    sourceAddr = ESI;
+                }
+                else
+                {
+                    destAddr = DI;
+                    sourceAddr = SI;
+                }
+
+                SegWrite(SegmentRegister.ES, destAddr, SegRead(disasm.OverrideSegment == SegmentRegister.Default ? SegmentRegister.DS : disasm.OverrideSegment, sourceAddr, (int)source.Size), (int)dest.Size);
+                if (DF)
+                {
+                    if (addressSize == 32)
+                        EDI = (uint)(EDI - size);
+                    else
+                        DI = (ushort)(DI - size);
+                }
+                else
+                {
+                    if (addressSize == 32)
+                        EDI = (uint)(EDI + size);
+                    else
+                        DI = (ushort)(DI + size);
+                }
+
+                count--;
+            }
+            SetCount(count);
+        }
+    }
 }

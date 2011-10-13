@@ -9,6 +9,12 @@ namespace x86CS.CPU
             IF = false;
         }
 
+        [CPUFunction(OpCode = 0xfb)]
+        public void SetInterruptFlag()
+        {
+            IF = true;
+        }
+
         [CPUFunction(OpCode = 0xfc)]
         public void ClearDirectionFlag()
         {

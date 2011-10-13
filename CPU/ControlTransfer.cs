@@ -22,7 +22,7 @@ namespace x86CS.CPU
             segment = (uint)((dest.Value & 0xffff0000) >> 4);
             offset = (uint)dest.Value & 0x0000ffff;
 
-            SetSelector(SegmentRegister.CS, segment);
+            CS = segment;
             if (opSize == 32)
                 EIP = offset;
             else
@@ -65,6 +65,7 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0x72)]
+        [CPUFunction(OpCode = 0x0f82)]
         public void JumpIfBelow(Operand dest)
         {
             if (CF)
@@ -122,21 +123,20 @@ namespace x86CS.CPU
             {
                 StackPush(CS);
                 StackPush(IP);
-                SetSelector(SegmentRegister.CS, (ushort)(dest.Value >> 16));
+                CS = (ushort)(dest.Value >> 16);
                 EIP = (ushort)dest.Value;
             }
             else
             {
                 StackPush(CS);
                 StackPush(EIP);
-                SetSelector(SegmentRegister.CS, (ushort)(dest.Value >> 16));
+                CS = (ushort)(dest.Value >> 16);
                 EIP = dest.Value;
             }
         }
 
 
         [CPUFunction(OpCode = 0xc3)]
-        [CPUFunction(OpCode = 0xcb)]
         public void Return()
         {
             if (opSize == 16)
@@ -146,6 +146,21 @@ namespace x86CS.CPU
             else
             {
                 EIP = StackPop();
+            }
+        }
+
+        [CPUFunction(OpCode = 0xcb)]
+        public void FarReturn()
+        {
+            if (opSize == 16)
+            {
+                EIP = (ushort)StackPop();
+                CS = StackPop();
+            }
+            else
+            {
+                EIP = StackPop();
+                CS = StackPop();
             }
         }
 
@@ -159,7 +174,7 @@ namespace x86CS.CPU
             StackPush(CS);
             StackPush(IP);
 
-            SetSelector(SegmentRegister.CS, Memory.Read((uint)(dest.Value * 4) + 2, 16));
+            CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
             EIP = Memory.Read((uint)(dest.Value * 4), 16);
         }
 
@@ -167,7 +182,7 @@ namespace x86CS.CPU
         public void InterruptReturn()
         {
             EIP = (ushort)StackPop();
-            SetSelector(SegmentRegister.CS, StackPop());
+            CS = StackPop();
             eFlags = (CPUFlags)StackPop();
         }
 
