@@ -184,7 +184,6 @@ namespace x86CS
             Running = false;
             CPU.Reset();
             SetupSystem();
-            Running = true;
         }
 
         public void SetBreakpoint(int addr)

@@ -102,7 +102,10 @@ namespace x86CS
                     Invoke((MethodInvoker)(() =>
                                                {
                                                    PrintRegisters();
+                                                   machine.CPU.ReFetch();
                                                    SetCPULabel(machine.CPU.InstructionText);
+                                                   stepButton.Enabled = true;
+                                                   PrintStack();
                                                }));
                 }
             }
@@ -186,36 +189,7 @@ namespace x86CS
             machine.RunCycle(true);
             SetCPULabel(machine.CPU.InstructionText);
             PrintRegisters();
-
-            stackList.Items.Clear();
-            baseList.Items.Clear();
-
-            uint stackPointer = machine.CPU.StackPointer;
-            int stackSize = machine.CPU.PMode ? 4 : 2;
-            for (uint i = stackPointer, j = 0; i < (uint)(stackPointer + (machine.CPU.PMode ? 52 : 26)); i += (uint)stackSize, j++)
-            {
-                if (i == 0)
-                    break;
-
-                stackList.Items.Add((j * stackSize).ToString("X2") + " " + (Memory.Read(i, stackSize * 8)).ToString("X"));
-            }
-
-            stackPointer = (uint)(machine.CPU.BasePointer - (6 * stackSize));
-            int k = -6;
-            for (uint i = stackPointer; i < (uint)(stackPointer + (machine.CPU.PMode ? 52 : 26)); i += (uint)stackSize, k++)
-            {
-                if (i == 0)
-                    break;
-
-                int index = k * stackSize;
-                string str;
-
-                if (index < 0)
-                    str = "-" + (-index).ToString("X2");
-                else
-                    str = "+" + index.ToString("X2");
-                baseList.Items.Add(str + " " + (Memory.Read(i, stackSize * 8)).ToString("X"));
-            }
+            PrintStack();
         }
 
         private void GoButtonClick(object sender, EventArgs e)
@@ -290,6 +264,43 @@ namespace x86CS
         private void RestartToolStripMenuItemClick(object sender, EventArgs e)
         {
             machine.Restart();
+            machine.CPU.ReFetch();
+            SetCPULabel(machine.CPU.InstructionText);
+            PrintRegisters();
+            PrintStack();
+        }
+
+        private void PrintStack()
+        {
+            stackList.Items.Clear();
+            baseList.Items.Clear();
+
+            uint stackPointer = machine.CPU.StackPointer;
+            int stackSize = machine.CPU.PMode ? 4 : 2;
+            for (uint i = stackPointer, j = 0; i < (uint)(stackPointer + (machine.CPU.PMode ? 52 : 26)); i += (uint)stackSize, j++)
+            {
+                if (i == 0)
+                    break;
+
+                stackList.Items.Add((j * stackSize).ToString("X2") + " " + (Memory.Read(i, stackSize * 8)).ToString("X"));
+            }
+
+            stackPointer = (uint)(machine.CPU.BasePointer - (6 * stackSize));
+            int k = -6;
+            for (uint i = stackPointer; i < (uint)(stackPointer + (machine.CPU.PMode ? 52 : 26)); i += (uint)stackSize, k++)
+            {
+                if (i == 0)
+                    break;
+
+                int index = k * stackSize;
+                string str;
+
+                if (index < 0)
+                    str = "-" + (-index).ToString("X2");
+                else
+                    str = "+" + index.ToString("X2");
+                baseList.Items.Add(str + " " + (Memory.Read(i, stackSize * 8)).ToString("X"));
+            }
         }
     }
 }

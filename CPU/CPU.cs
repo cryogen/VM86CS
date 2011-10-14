@@ -788,6 +788,12 @@ namespace x86CS.CPU
             opLen = disasm.Disassemble(CurrentAddr, doStrings);
         }
 
+        public void ReFetch()
+        {
+            CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
+            opLen = disasm.Disassemble(CurrentAddr, true);
+        }
+
         public void Cycle()
         {
             Cycle(false);
