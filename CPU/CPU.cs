@@ -786,6 +786,8 @@ namespace x86CS.CPU
         {
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
             opLen = disasm.Disassemble(CurrentAddr, doStrings);
+            opSize = disasm.OperandSize;
+            addressSize = disasm.AddressSize;
         }
 
         public void ReFetch()

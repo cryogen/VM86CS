@@ -60,8 +60,10 @@ namespace x86Disasm
             operand.Type = OperandType.Register;
             if (operand.Size == 8)
                 operand.Register = registers8Bit[index];
-            else
+            else if (operand.Size == 16)
                 operand.Register = registers16Bit[index];
+            else
+                operand.Register = registers32Bit[index];
 
             if(buildString)
                 InstructionText += operand.Register;
@@ -203,8 +205,10 @@ namespace x86Disasm
                     operand.Type = OperandType.Register;
                     if (operand.Size == 8)
                         operand.Register = registers8Bit[argument.Value];
-                    else
+                    else if(operand.Size == 16)
                         operand.Register = registers16Bit[argument.Value];
+                    else
+                        operand.Register = registers32Bit[argument.Value];
 
                     if(buildString)
                         InstructionText += operand.Register;

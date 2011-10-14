@@ -1,5 +1,7 @@
 ﻿using System.Drawing;
 using System.Drawing.Imaging;
+using log4net;
+using System;
 
 namespace x86CS.Devices
 {
@@ -13,6 +15,8 @@ namespace x86CS.Devices
             CharacterMap,
             SequencerMemoryMode
         }
+
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(VGA));
 
         private readonly int[] portsUsed = {
                                                0x3b4, 0x3b5, 0x3ba, 0x3c0, 0x3c1, 0x3c2, 0x3c4, 0x3c5, 0x3c7, 0x3c8, 0x3c9,
@@ -68,28 +72,39 @@ namespace x86CS.Devices
 
         public uint Read(ushort addr, int size)
         {
+            uint ret = 0;
+
             switch (addr)
             {
                 case 0x3da:
                     attributeControlFlipFlop = false;
-                    return 0;
+                    ret = 0;
+                    break;
                 case 0x3ba:
                 case 0x3c2:
-                    return 0;
+                    ret = 0;
+                    break;
                 case 0x3ca:
-                    return featureControl;
+                    ret = featureControl;
+                    break;
                 case 0x3cc:
-                    return miscOutputRegister;
+                    ret = miscOutputRegister;
+                    break;
+                case 0x3c5:
+                    ret = sequencer[(int)sequencerAddress];
+                    break;
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;
             }
 
-            return 0;
+            Logger.Debug(String.Format("Read {0:X} returned {1:X}", addr, ret));
+            return ret;
         }
 
         public void Write(ushort addr, uint value, int size)
         {
+            Logger.Debug(String.Format("Write {0:X} value {1:X}", addr, value));
             switch (addr)
             {
                 case 0x3b4:

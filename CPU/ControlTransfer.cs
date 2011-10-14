@@ -75,7 +75,7 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0x76)]
         public void JumpIfBelowOrEqual(Operand dest)
         {
-            if (CF && ZF)
+            if (CF || ZF)
                 Jump(dest);
         }
 

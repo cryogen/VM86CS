@@ -15,6 +15,21 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
+        [CPUFunction(OpCode = 0x86)]
+        [CPUFunction(OpCode = 0x87)]
+        [CPUFunction(OpCode = 0x91, Count = 7)]
+        public void Exchange(Operand dest, Operand source)
+        {
+            Operand temp;
+
+            temp = dest;
+            dest.Value = source.Value;
+            source.Value = temp.Value;
+
+            WriteOperand(source);
+            WriteOperand(dest);
+        }
+
         [CPUFunction(OpCode = 0x06)]
         [CPUFunction(OpCode = 0x0e)]
         [CPUFunction(OpCode = 0x16)]
