@@ -217,7 +217,7 @@ namespace x86CS
         {
             int addr = (int)((CPU.CS << 4) + CPU.IP);
 
-            CPU.Fetch();
+            CPU.Fetch(true);
             
             Running = true;
         }
@@ -227,12 +227,21 @@ namespace x86CS
             Running = false;
         }
 
-        public void RunCycle(double frequency, ulong timerTicks)
+        public void RunCycle()
         {
             if (Running)
             {
                 CPU.Cycle();
                 CPU.Fetch();
+            }
+        }
+
+        public void RunCycle(bool doStrings)
+        {
+            if (Running)
+            {
+                CPU.Cycle();
+                CPU.Fetch(doStrings);
             }
         }
     }

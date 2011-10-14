@@ -83,7 +83,7 @@ namespace x86CS
                 {
                    /* if (stepButton.Enabled && Created)
                         Invoke((MethodInvoker)delegate { stepButton.Enabled = false; });*/
-                    machine.RunCycle(frequency, timerTicks);
+                    machine.RunCycle();
                 }
                 catch (ThreadAbortException)
                 {
@@ -190,9 +190,39 @@ namespace x86CS
                 return;
             }
 
-            machine.RunCycle(frequency, timerTicks);
+            machine.RunCycle(true);
             SetCPULabel(machine.CPU.InstructionText);
             PrintRegisters();
+
+            stackList.Items.Clear();
+            baseList.Items.Clear();
+
+            uint stackPointer = machine.CPU.StackPointer;
+            int stackSize = machine.CPU.PMode ? 4 : 2;
+            for (uint i = stackPointer, j = 0; i < (uint)(stackPointer + (machine.CPU.PMode ? 52 : 26)); i += (uint)stackSize, j++)
+            {
+                if (i == 0)
+                    break;
+
+                stackList.Items.Add((j * stackSize).ToString("X2") + " " + (Memory.Read(i, stackSize * 8)).ToString("X"));
+            }
+
+            stackPointer = (uint)(machine.CPU.BasePointer - (6 * stackSize));
+            int k = -6;
+            for (uint i = stackPointer; i < (uint)(stackPointer + (machine.CPU.PMode ? 52 : 26)); i += (uint)stackSize, k++)
+            {
+                if (i == 0)
+                    break;
+
+                int index = k * stackSize;
+                string str;
+
+                if (index < 0)
+                    str = "-" + (-index).ToString("X2");
+                else
+                    str = "+" + index.ToString("X2");
+                baseList.Items.Add(str + " " + (Memory.Read(i, stackSize * 8)).ToString("X"));
+            }
         }
 
         private void GoButtonClick(object sender, EventArgs e)
@@ -210,23 +240,55 @@ namespace x86CS
 
         private void MemoryButtonClick(object sender, EventArgs e)
         {
-            ushort seg = 0;
-            ushort off = 0;
+            uint addr = 0;
+            byte[] block = new byte[180];
 
-            try
+            if (String.IsNullOrEmpty(memOffset.Text))
+                addr = 0;
+            else
             {
-                seg = ushort.Parse(memSegment.Text, NumberStyles.HexNumber);
-                off = ushort.Parse(memOffset.Text, NumberStyles.HexNumber);
+                try
+                {
+                    addr = uint.Parse(memOffset.Text, NumberStyles.HexNumber);
+                }
+                catch
+                {
+                    MessageBox.Show(Resources.Invalid_address, Resources.ErrorTitle);
+                }
             }
-            catch
-            {
-                MessageBox.Show(Resources.Invalid_address, Resources.ErrorTitle);
-            }
-                
-            var addr = (uint)((seg << 4) + off);
 
-            memByte.Text = Memory.Read(addr, 16).ToString("X2");
-            memWord.Text = Memory.Read(addr, 16).ToString("X4");
+            Memory.BlockRead(addr, block, block.Length);
+
+            memoryChar.Text = ((char)block[0]).ToString();
+            memoryByte.Text = block[0].ToString("X2");
+            memoryWord.Text = ((ushort)(block[0] | block[1] << 8)).ToString("X4");
+            memoryDWord.Text = ((uint)(block[0] | block[1] << 8 | block[2] << 16 | block[3] << 24)).ToString("X8");
+
+            string memBlock = "";
+            string charList = "";
+            int offset = 0;
+
+            memoryList.Items.Clear();
+            memoryCharList.Items.Clear();
+
+            for (int i = 0; i < block.Length / 18; i++)
+            {
+                for (offset = 0; offset < 18; offset++)
+                {
+                    byte b = block[i * 18 + offset];
+                    memBlock += b.ToString("X2") + " ";
+
+                    char c = Convert.ToChar(b);
+                    if (Char.IsControl(c))
+                        c = '.';
+                    charList += c + " ";
+                }
+
+                memoryList.Items.Add(memBlock);
+                memoryCharList.Items.Add(charList);
+                memBlock = "";
+                charList = "";
+            }
         }
 
         private void BreakpointsToolStripMenuItemClick(object sender, EventArgs e)

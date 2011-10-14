@@ -35,6 +35,22 @@ namespace x86CS.CPU
             get { return disasm.InstructionText; }
         }
 
+        public uint StackPointer
+        {
+            get
+            {
+                return segments[(int)SegmentRegister.SS].GDTEntry.BaseAddress + ESP;
+            }
+        }
+
+        public uint BasePointer
+        {
+            get
+            {
+                return segments[(int)SegmentRegister.SS].GDTEntry.BaseAddress + EBP;
+            }
+        }
+
         #region Registers
 
         public uint CR0
@@ -763,8 +779,13 @@ namespace x86CS.CPU
 
         public void Fetch()
         {
+            Fetch(false);
+        }
+
+        public void Fetch(bool doStrings)
+        {
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
-            opLen = disasm.Disassemble(CurrentAddr);
+            opLen = disasm.Disassemble(CurrentAddr, doStrings);
         }
 
         public void Cycle()

@@ -12,6 +12,7 @@ namespace x86Disasm
         private Instruction currentInstruction;
         private bool gotRM;
         private byte rmByte;
+        private bool buildString;
         private uint virtualAddr;
 
         public OPPrefix SetPrefixes { get; private set; }
@@ -62,7 +63,8 @@ namespace x86Disasm
             else
                 operand.Register = registers16Bit[index];
 
-            InstructionText += operand.Register;
+            if(buildString)
+                InstructionText += operand.Register;
         }
 
         private void ProcessRegMemSegment(ref Operand operand, Argument argument, byte rmByte)
@@ -72,7 +74,8 @@ namespace x86Disasm
             operand.Type = OperandType.Register;
             operand.Size = argument.Size;
             operand.Register = registersSegment[index];
-            InstructionText += operand.Register;
+            if(buildString)
+                InstructionText += operand.Register;
         }
 
         private uint ProcessRegMemMemory(ref Operand operand, Argument argument, byte rmByte, uint offset)
@@ -104,7 +107,8 @@ namespace x86Disasm
             if (OverrideSegment != SegmentRegister.Default)
                 operand.Memory.Segment = OverrideSegment;
 
-            InstructionText += operand.Memory;
+            if(buildString)
+                InstructionText += operand.Memory;
 
             return offset;
         }
@@ -123,7 +127,8 @@ namespace x86Disasm
                 case ArgumentType.Address:
                     operand.Type = OperandType.Immediate;
                     operand.Value = (uint)(ReadWord(offset) + (ReadWord(offset+2) << 4));
-                    InstructionText += operand.Value.ToString("X");
+                    if(buildString)
+                        InstructionText += operand.Value.ToString("X");
                     offset += 4;
                     break;
                 case ArgumentType.Immediate:
@@ -148,16 +153,20 @@ namespace x86Disasm
                         operand.Value = readFunction(offset, (int)operand.Size);
                         offset += operand.Size / 8;
                     }
-                    InstructionText += operand;
+                    if(buildString)
+                        InstructionText += operand;
                     break;
                 case ArgumentType.Relative:
                     operand.Type = OperandType.Immediate;
                     operand.Value = readFunction(offset, (int)operand.Size);
                     offset += operand.Size / 8;
-                    if(operand.SignedValue < 0)
-                        InstructionText += "-" + (-operand.SignedValue).ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
-                    else
-                        InstructionText += operand.Value.ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
+                    if (buildString)
+                    {
+                        if (operand.SignedValue < 0)
+                            InstructionText += "-" + (-operand.SignedValue).ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
+                        else
+                            InstructionText += operand.Value.ToString("X") + " (" + ((virtualAddr & 0xffff0000) + (ushort)((ushort)virtualAddr + operand.Value + offset)).ToString("X") + ")";
+                    }
                     break;
                 case ArgumentType.RegMem:
                 case ArgumentType.RegMemGeneral:
@@ -197,12 +206,14 @@ namespace x86Disasm
                     else
                         operand.Register = registers16Bit[argument.Value];
 
-                    InstructionText += operand.Register;
+                    if(buildString)
+                        InstructionText += operand.Register;
                     break;
                 case ArgumentType.SegmentRegister:
                     operand.Type = OperandType.Register;
                     operand.Register = registersSegment[argument.Value];
-                    InstructionText += operand.Register;
+                    if(buildString)
+                        InstructionText += operand.Register;
                     break;
                 case ArgumentType.Memory:
                     operand.Type = OperandType.Memory;
@@ -220,7 +231,8 @@ namespace x86Disasm
                             operand.Memory.Segment = OverrideSegment;
                     }
 
-                    InstructionText += operand.Memory;
+                    if(buildString)
+                        InstructionText += operand.Memory;
                     break;
                 case ArgumentType.Offset:
                     operand.Type = OperandType.Memory;
@@ -234,13 +246,15 @@ namespace x86Disasm
 
                     operand.Size = (uint)AddressSize;
 
-                    InstructionText += operand.Memory;
+                    if(buildString)
+                        InstructionText += operand.Memory;
                     break;
                 case ArgumentType.Constant:
                     operand.Type = OperandType.Immediate;
                     operand.Value = (uint)argument.Value;
 
-                    InstructionText += operand;
+                    if(buildString)
+                        InstructionText += operand;
                     break;
                 default:
                     System.Diagnostics.Debugger.Break();
@@ -261,6 +275,11 @@ namespace x86Disasm
 
         public int Disassemble(uint addr)
         {
+            return Disassemble(addr, false);
+        }
+
+        public int Disassemble(uint addr, bool doStrings)
+        {
             uint offset = 0;
             ushort opCode;
 
@@ -269,6 +288,7 @@ namespace x86Disasm
             virtualAddr = addr;
             SetPrefixes = 0;
             OverrideSegment = SegmentRegister.Default;
+            buildString = doStrings;
                 
             opCode = (byte)readFunction(offset, 8);
             currentInstruction = instructions[opCode];
@@ -287,10 +307,13 @@ namespace x86Disasm
                 offset++;
             }
 
-            if ((SetPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat)
-                InstructionText = "REP ";
-            else if ((SetPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual)
-                InstructionText = "REPNE ";
+            if (buildString)
+            {
+                if ((SetPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat)
+                    InstructionText = "REP ";
+                else if ((SetPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual)
+                    InstructionText = "REPNE ";
+            }
             
             if ((SetPrefixes & OPPrefix.CSOverride) == OPPrefix.CSOverride)
                 OverrideSegment = SegmentRegister.CS;
@@ -343,23 +366,27 @@ namespace x86Disasm
                 System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);
             }
 
-            InstructionText += currentInstruction.Nmumonic + " ";
+            if(buildString)
+                InstructionText += currentInstruction.Nmumonic + " ";
 
             if (currentInstruction.Arg1.Type != ArgumentType.None)
                 offset = ProcessArgument(currentInstruction.Arg1, 0, offset);
             if (currentInstruction.Arg2.Type != ArgumentType.None)
             {
-                InstructionText += ", ";
+                if(buildString)
+                    InstructionText += ", ";
                 offset = ProcessArgument(currentInstruction.Arg2, 1, offset);
             }
             if (currentInstruction.Arg3.Type != ArgumentType.None)
             {
-                InstructionText += ", ";
+                if(buildString)
+                    InstructionText += ", ";
                 offset = ProcessArgument(currentInstruction.Arg3, 2, offset);
             }
             if (currentInstruction.Arg4.Type != ArgumentType.None)
             {
-                InstructionText += ", ";
+                if(buildString)
+                    InstructionText += ", ";
                 offset = ProcessArgument(currentInstruction.Arg4, 3, offset);
             }
                 
