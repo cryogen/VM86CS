@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 namespace x86Disasm
 {
     internal struct Instruction
@@ -23,6 +24,7 @@ namespace x86Disasm
         public int Value;
         public bool High;
         public bool SignExtend;
+        public bool UsesES;
     }
 
     public struct Operation
@@ -121,8 +123,34 @@ namespace x86Disasm
     public struct RegisterOperand
     {
         public int Index;
+        public int Size;
         public RegisterType Type;
         public bool High;
+
+        public override string ToString()
+        {
+            switch (Type)
+            {
+                case RegisterType.GeneralRegister:
+                    switch (Size)
+                    {
+                        case 8:
+                            if (High)
+                                return Disassembler.registerStrings8BitHigh[Index];
+                            else
+                                return Disassembler.registerStrings8BitLow[Index];
+                        case 16:
+                            return Disassembler.registerStrings16Bit[Index];
+                        default:
+                            return Disassembler.registerStrings32Bit[Index];
+                    }
+                case RegisterType.SegmentRegister:
+                    return Disassembler.registerStringsSegment[Index];
+                case RegisterType.ControlRegister:
+                    return Disassembler.registerStringsControl[Index];
+            }
+            return "";
+        }
     }
 
     public struct MemoryOperand
@@ -133,5 +161,45 @@ namespace x86Disasm
         public int Scale;
         public SegmentRegister Segment;
         public uint Address;
+
+        public override string ToString()
+        {
+            StringBuilder builder = new StringBuilder();
+
+            if (Segment == SegmentRegister.Default)
+                builder.Append(Disassembler.registerStringsSegment[(int)SegmentRegister.DS]);
+            else
+                builder.Append(Disassembler.registerStringsSegment[(int)Segment]);
+
+            builder.Append(":[");
+
+            if ((int)Base != 0)
+                builder.Append(Disassembler.registerStrings16Bit[(int)Base]);
+
+            if((int)Index != 0)
+            {
+                builder.Append(" + ");
+                builder.Append(Disassembler.registerStrings16Bit[(int)Index]);
+            }
+
+            if (Displacement != 0)
+            {
+                if (Displacement < 0)
+                {
+                    builder.Append("-");
+                    builder.Append((-Displacement).ToString("X"));
+                }
+                else
+                {
+                    if ((int)Base != 0)
+                        builder.Append("+");
+                    builder.Append(Displacement.ToString("X"));
+                }
+            }
+
+            builder.Append("]");
+
+            return builder.ToString();
+        }
     }
 }

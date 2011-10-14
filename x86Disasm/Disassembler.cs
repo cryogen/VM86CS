@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
 using System.Reflection;
+
 namespace x86Disasm
 {
     public partial class Disassembler
@@ -12,12 +13,13 @@ namespace x86Disasm
         private bool gotRM;
         private byte rmByte;
         private uint virtualAddr;
-        private int operandSize;
-        private int addressSize;
 
         public OPPrefix SetPrefixes { get; private set; }
         public string InstructionText { get; private set; }
         public int CodeSize { get; set; }
+        public int OperandSize { get; private set; }
+        public int AddressSize { get; private set; }
+
         public SegmentRegister OverrideSegment { get; private set; }
 
         public Operand[] Operands
@@ -56,18 +58,11 @@ namespace x86Disasm
 
             operand.Type = OperandType.Register;
             if (operand.Size == 8)
-            {
                 operand.Register = registers8Bit[index];
-                InstructionText += registerStrings8BitLow[index];
-            }
             else
-            {
                 operand.Register = registers16Bit[index];
-                if (operand.Size == 16)
-                    InstructionText += registerStrings16Bit[(int)operand.Register.Index];
-                else
-                    InstructionText += registerStrings32Bit[(int)operand.Register.Index];
-            }
+
+            InstructionText += operand.Register;
         }
 
         private void ProcessRegMemSegment(ref Operand operand, Argument argument, byte rmByte)
@@ -77,7 +72,7 @@ namespace x86Disasm
             operand.Type = OperandType.Register;
             operand.Size = argument.Size;
             operand.Register = registersSegment[index];
-            InstructionText += registerStringsSegment[index];
+            InstructionText += operand.Register;
         }
 
         private uint ProcessRegMemMemory(ref Operand operand, Argument argument, byte rmByte, uint offset)
@@ -109,29 +104,7 @@ namespace x86Disasm
             if (OverrideSegment != SegmentRegister.Default)
                 operand.Memory.Segment = OverrideSegment;
 
-            InstructionText += registerStringsSegment[(int)operand.Memory.Segment] + ":";
-            if (mod == 0 && rm == 6)
-                InstructionText += operand.Memory.Displacement.ToString("X");
-            else
-            {
-                int displacement;
-                string sign;
-
-                if (operand.Memory.Displacement < 0)
-                {
-                    displacement = -operand.Memory.Displacement;
-                    sign = "-";
-                }
-                else
-                {
-                    displacement = operand.Memory.Displacement;
-                    sign = "+";
-                }
-
-                InstructionText += String.Format("[{0}{1}{2}{3}{4}]", registerStrings16Bit[(int)operand.Memory.Base], operand.Memory.Index > 0 ? "+" : "",
-                    operand.Memory.Index > 0 ? registerStrings16Bit[(int)operand.Memory.Index] : "", operand.Memory.Displacement != 0 ? sign : "",
-                    operand.Memory.Displacement != 0 ? displacement.ToString("X") : "");
-            }
+            InstructionText += operand.Memory;
 
             return offset;
         }
@@ -141,7 +114,7 @@ namespace x86Disasm
             Operand operand = new Operand();
 
             if (argument.Size == 16)
-                operand.Size = (uint)operandSize;
+                operand.Size = (uint)OperandSize;
             else
                 operand.Size = argument.Size;
 
@@ -220,61 +193,54 @@ namespace x86Disasm
                 case ArgumentType.GeneralRegister:
                     operand.Type = OperandType.Register;
                     if (operand.Size == 8)
-                    {
                         operand.Register = registers8Bit[argument.Value];
-                        if (operand.Register.High)
-                            InstructionText += registerStrings8BitHigh[(int)operand.Register.Index];
-                        else
-                            InstructionText += registerStrings8BitLow[(int)operand.Register.Index];
-                    }
                     else
-                    {
                         operand.Register = registers16Bit[argument.Value];
-                        if (operand.Size == 16)
-                            InstructionText += registerStrings16Bit[(int)operand.Register.Index];
-                        else
-                            InstructionText += registerStrings32Bit[(int)operand.Register.Index];
-                    }
+
+                    InstructionText += operand.Register;
                     break;
                 case ArgumentType.SegmentRegister:
                     operand.Type = OperandType.Register;
                     operand.Register = registersSegment[argument.Value];
-                    InstructionText += registerStringsSegment[argument.Value];
+                    InstructionText += operand.Register;
                     break;
                 case ArgumentType.Memory:
                     operand.Type = OperandType.Memory;
-                    operand.Memory.Base = GeneralRegister.EDI;
-                    if (OverrideSegment == SegmentRegister.Default)
-                        operand.Memory.Segment = SegmentRegister.DS;
+                    if (argument.UsesES)
+                    {
+                        operand.Memory.Base = GeneralRegister.EDI;
+                        operand.Memory.Segment = SegmentRegister.ES;
+                    }
                     else
                     {
-                        operand.Memory.Segment = OverrideSegment;
-                        InstructionText += registersSegment[(int)operand.Memory.Segment] + ":";
+                        operand.Memory.Base = GeneralRegister.ESI;
+                        if (OverrideSegment == SegmentRegister.Default)
+                            operand.Memory.Segment = SegmentRegister.DS;
+                        else
+                            operand.Memory.Segment = OverrideSegment;
                     }
 
-                    if (operand.Size == 16)
-                        InstructionText += "[" + registerStrings16Bit[(int)operand.Memory.Base] + "]";
-                    else
-                        InstructionText += "[" + registerStrings32Bit[(int)operand.Memory.Base] + "]";
-
+                    InstructionText += operand.Memory;
                     break;
                 case ArgumentType.Offset:
                     operand.Type = OperandType.Memory;
                     
-                    operand.Memory.Displacement = (int)readFunction(offset, operandSize);
+                    operand.Memory.Displacement = (int)readFunction(offset, OperandSize);
                     offset += 2;
                     if (OverrideSegment == SegmentRegister.Default)
                         operand.Memory.Segment = SegmentRegister.DS;
                     else
                         operand.Memory.Segment = OverrideSegment;
 
-                    operand.Size = (uint)addressSize;
+                    operand.Size = (uint)AddressSize;
 
-                    InstructionText += registersSegment[(int)operand.Memory.Segment] + ":" + operand.Memory.Displacement.ToString("X");
+                    InstructionText += operand.Memory;
                     break;
                 case ArgumentType.Constant:
                     operand.Type = OperandType.Immediate;
                     operand.Value = (uint)argument.Value;
+
+                    InstructionText += operand;
                     break;
                 default:
                     System.Diagnostics.Debugger.Break();
@@ -340,14 +306,14 @@ namespace x86Disasm
                 OverrideSegment = SegmentRegister.SS;
 
             if ((SetPrefixes & OPPrefix.OperandSize) == OPPrefix.OperandSize)
-                operandSize = CodeSize == 32 ? 16 : 32;
+                OperandSize = CodeSize == 32 ? 16 : 32;
             else
-                operandSize = CodeSize;
+                OperandSize = CodeSize;
 
             if ((SetPrefixes & OPPrefix.AddressSize) == OPPrefix.AddressSize)
-                addressSize = CodeSize == 32 ? 16 : 32;
+                AddressSize = CodeSize == 32 ? 16 : 32;
             else
-                addressSize = CodeSize;
+                AddressSize = CodeSize;
 
             if (currentInstruction.Type == InstructionType.Group)
             {
