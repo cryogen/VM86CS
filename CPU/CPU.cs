@@ -19,8 +19,6 @@ namespace x86CS.CPU
         public event WriteCallback IOWrite;
         private TableRegister idtRegister, gdtRegister;
         private readonly GDTEntry realModeEntry;
-        private bool inInterrupt;
-        private byte interruptToRun;
         private int opSize = 16;
         private int addressSize = 16;
         private int opLen;
@@ -416,7 +414,6 @@ namespace x86CS.CPU
             ES = 0;
             FS = 0;
             GS = 0;
-            inInterrupt = false;
         }
 
         private bool GetFlag(CPUFlags flag)
@@ -757,49 +754,11 @@ namespace x86CS.CPU
             BP = (ushort)StackPop();
         }
 
-        private void CallInterrupt(byte vector)
-        {
-            //Logger.Debug("INT" + vector.ToString("X"));
-            StackPush((ushort)Flags);
-            IF = false;
-            TF = false;
-            AC = false;
-            StackPush(CS);
-            StackPush(IP);
-
-            CS = Memory.Read((uint)(vector * 4) + 2, 16);
-            EIP = Memory.Read((uint)(vector * 4), 16);
-
-            InterruptLevel++;
-        }
-
-        public void Interrupt(int vector, int irq)
-        {
-            inInterrupt = true;
-            interruptToRun = (byte)vector;
-        }
-
         private void DumpRegisters()
         {
             Logger.Debug(String.Format("AX {0:X4} BX {1:X4} CX {2:X4} DX {3:X4}", AX, BX, CX, DX));
             Logger.Debug(String.Format("SI {0:X4} DI {1:X4} SP {2:X4} BP {3:X4}", SI, DI, SP, BP));
             Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
-        }
-
-        private uint ReadGeneralRegsiter(uint register, int size, bool high)
-        {
-            if (size == 32)
-                return registers[register].DWord;
-            else if (size == 16)
-                return registers[register].Word;
-            else if (size == 8 && high)
-                return registers[register].HighByte;
-            else if (size == 8)
-                return registers[register].LowByte;
-            else
-                System.Diagnostics.Debugger.Break();
-
-            return 0xffffffff;
         }
 
         public void Fetch()
@@ -810,20 +769,12 @@ namespace x86CS.CPU
 
         public void Cycle()
         {
-            if(inInterrupt)
-            {
-                CallInterrupt(interruptToRun);
-                inInterrupt = false;
-                Halted = false;
-                return;
-            }
-
             if (Halted)
                 return;
 
             Operand[] operands = ProcessOperands();
 
-//            Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
+            //Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
 
             EIP += (uint)opLen;
             disasm.Execute(this, operands);

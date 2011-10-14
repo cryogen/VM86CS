@@ -24,7 +24,6 @@ namespace x86CS
         private readonly Keyboard keyboard;
 
         private Dictionary<ushort, IOEntry> ioPorts;
-        private int opLen;
 
         public Floppy FloppyDrive { get; private set; }
         public CPU.CPU CPU { get; private set; }
