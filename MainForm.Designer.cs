@@ -105,6 +105,7 @@
             this.stackGroup = new System.Windows.Forms.GroupBox();
             this.stackList = new System.Windows.Forms.ListBox();
             this.baseList = new System.Windows.Forms.ListBox();
+            this.loggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mainMenu.SuspendLayout();
             this.registersGroup.SuspendLayout();
             this.segmentGroup.SuspendLayout();
@@ -184,7 +185,8 @@
             // debugToolStripMenuItem
             // 
             this.debugToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.breakpointsToolStripMenuItem});
+            this.breakpointsToolStripMenuItem,
+            this.loggingToolStripMenuItem});
             this.debugToolStripMenuItem.Name = "debugToolStripMenuItem";
             this.debugToolStripMenuItem.Size = new System.Drawing.Size(54, 20);
             this.debugToolStripMenuItem.Text = "&Debug";
@@ -821,6 +823,13 @@
             this.baseList.Size = new System.Drawing.Size(108, 186);
             this.baseList.TabIndex = 1;
             // 
+            // loggingToolStripMenuItem
+            // 
+            this.loggingToolStripMenuItem.CheckOnClick = true;
+            this.loggingToolStripMenuItem.Name = "loggingToolStripMenuItem";
+            this.loggingToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.loggingToolStripMenuItem.Text = "&Logging";
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -937,6 +946,7 @@
         private System.Windows.Forms.GroupBox stackGroup;
         private System.Windows.Forms.ListBox stackList;
         private System.Windows.Forms.ListBox baseList;
+        private System.Windows.Forms.ToolStripMenuItem loggingToolStripMenuItem;
     }
 }
 

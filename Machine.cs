@@ -29,7 +29,6 @@ namespace x86CS
         public CPU.CPU CPU { get; private set; }
 
         public bool Running;
-        public bool Stepping;
 
         public Machine()
         {
@@ -206,11 +205,9 @@ namespace x86CS
 
         public bool CheckBreakpoint()
         {
-            //var cpuAddr = (uint)(currentInstruction.VirtualAddr);
-          //  bool bpHit = breakpoints.Any(kvp => kvp.Value == cpuAddr);
-
-          //  return bpHit;
-            return false;
+            uint cpuAddr = CPU.CurrentAddr;
+            
+            return breakpoints.ContainsKey((int)cpuAddr);
         }
 
         public void Start()
@@ -218,31 +215,17 @@ namespace x86CS
             int addr = (int)((CPU.CS << 4) + CPU.IP);
 
             CPU.Fetch(true);
-            
-            Running = true;
-        }
-
-        public void Stop()
-        {
-            Running = false;
         }
 
         public void RunCycle()
         {
-            if (Running)
-            {
-                CPU.Cycle();
-                CPU.Fetch();
-            }
+            RunCycle(false);
         }
 
-        public void RunCycle(bool doStrings)
+        public void RunCycle(bool logging)
         {
-            if (Running)
-            {
-                CPU.Cycle();
-                CPU.Fetch(doStrings);
-            }
+            CPU.Cycle(logging);
+            CPU.Fetch(logging);
         }
     }
 

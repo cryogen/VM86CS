@@ -790,12 +790,18 @@ namespace x86CS.CPU
 
         public void Cycle()
         {
+            Cycle(false);
+        }
+
+        public void Cycle(bool logging)
+        {
             if (Halted)
                 return;
 
             Operand[] operands = ProcessOperands();
 
-            //Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
+            if(logging)
+                Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
 
             EIP += (uint)opLen;
             disasm.Execute(this, operands);

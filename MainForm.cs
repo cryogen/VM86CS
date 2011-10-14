@@ -36,6 +36,10 @@ namespace x86CS
             machineThread = new Thread(RunMachine);
             running = true;
             machineThread.Start();
+
+            machine.Start();
+            SetCPULabel(machine.CPU.InstructionText);
+            PrintRegisters();
         }
 
         void ApplicationApplicationExit(object sender, EventArgs e)
@@ -62,6 +66,12 @@ namespace x86CS
 
             while (running)
             {
+                if (!machine.Running)
+                {
+                    System.Threading.Thread.Sleep(100);
+                    continue;
+                }
+
                 ++timerTicks;
 
                 if(timerTicks % 50000 == 0)
@@ -72,18 +82,9 @@ namespace x86CS
                         Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("n") + "TPS"; }); 
                 }
 
-                if (!machine.Running || (machine.Stepping && machine.CPU.InterruptLevel == 0))
-                {
-                  /*  if(!stepButton.Enabled && Created)
-                        Invoke((MethodInvoker) delegate { stepButton.Enabled = true; });*/
-                    continue;
-                }
-
                 try
                 {
-                   /* if (stepButton.Enabled && Created)
-                        Invoke((MethodInvoker)delegate { stepButton.Enabled = false; });*/
-                    machine.RunCycle();
+                    machine.RunCycle(loggingToolStripMenuItem.Checked);
                 }
                 catch (ThreadAbortException)
                 {
@@ -97,7 +98,7 @@ namespace x86CS
 
                 if (machine.CheckBreakpoint())
                 {
-                    machine.Stepping = true;
+                    machine.Running = false;
                     Invoke((MethodInvoker)(() =>
                                                {
                                                    PrintRegisters();
@@ -114,7 +115,7 @@ namespace x86CS
 
         private void ExitToolStripMenuItemClick(object sender, EventArgs e)
         {
-            machine.Stop();
+            machine.Running = false;
             running = false;
             Application.Exit();
         }
@@ -167,7 +168,7 @@ namespace x86CS
         {
             stopToolStripMenuItem.Enabled = false;
             runToolStripMenuItem.Enabled = true;
-            machine.Stop();
+            machine.Running = false;
         }
 
         private void MountToolStripMenuItemClick(object sender, EventArgs e)
@@ -180,15 +181,7 @@ namespace x86CS
 
         private void StepButtonClick(object sender, EventArgs e)
         {
-            machine.Stepping = true;
-
-            if (!machine.Running)
-            {
-                machine.Start();
-                SetCPULabel(machine.CPU.InstructionText);
-                PrintRegisters();
-                return;
-            }
+            machine.Running = false;
 
             machine.RunCycle(true);
             SetCPULabel(machine.CPU.InstructionText);
@@ -227,10 +220,8 @@ namespace x86CS
 
         private void GoButtonClick(object sender, EventArgs e)
         {
-            if (!machine.Running)
-                machine.Start();
-
-            machine.Stepping = false;
+            machine.Running = true;
+            stepButton.Enabled = false;
         }
 
         private void MainFormFormClosed(object sender, FormClosedEventArgs e)
@@ -299,8 +290,6 @@ namespace x86CS
         private void RestartToolStripMenuItemClick(object sender, EventArgs e)
         {
             machine.Restart();
-
-            machine.Stepping = false;
         }
     }
 }
