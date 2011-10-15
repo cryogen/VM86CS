@@ -216,6 +216,17 @@ namespace x86CS
             CPU.Fetch(true);
         }
 
+        public void Stop()
+        {
+            foreach (IDevice device in devices)
+            {
+                IShutdown shutdown = device as IShutdown;
+
+                if (shutdown != null)
+                    shutdown.Shutdown();
+            }
+        }
+
         public void RunCycle()
         {
             RunCycle(false);

@@ -29,13 +29,14 @@ namespace x86CS.Devices
         event EventHandler<ByteArrayEventArgs> DMA;
     }
 
-    public interface INeedsClock
-    {
-        void Cycle(double frequency, ulong tickCount);
-    }
-
     public interface INeedsMMIO
     {
         MemoryMapRegion[] MemoryMap { get; }
+    }
+
+
+    public interface IShutdown
+    {
+        void Shutdown();
     }
 }

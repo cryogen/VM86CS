@@ -86,10 +86,6 @@ namespace x86CS
                 {
                     machine.RunCycle(loggingToolStripMenuItem.Checked);
                 }
-                catch (ThreadAbortException)
-                {
-                    return;
-                }
                 catch (Exception ex)
                 {
                     MessageBox.Show(ex.Message, Resources.ErrorTitle);
@@ -120,6 +116,7 @@ namespace x86CS
         {
             machine.Running = false;
             running = false;
+            machine.Stop();
             Application.Exit();
         }
 
@@ -200,7 +197,9 @@ namespace x86CS
 
         private void MainFormFormClosed(object sender, FormClosedEventArgs e)
         {
-            machineThread.Abort();
+            machine.Running = false;
+            running = false;
+            machine.Stop();
         }
 
         private void MemoryButtonClick(object sender, EventArgs e)

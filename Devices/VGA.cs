@@ -5,7 +5,7 @@ using System;
 
 namespace x86CS.Devices
 {
-    public class VGA : IDevice, INeedsClock, INeedsMMIO
+    public class VGA : IDevice, INeedsMMIO
     {
         private enum SequenceRegister
         {
@@ -63,11 +63,6 @@ namespace x86CS.Devices
             attributeControlFlipFlop = false;
             attributeControl = new byte[0x15];
             crtControl = new byte[0x19];
-        }
-
-        public void Cycle(double frequency, ulong tickCount)
-        {
-            
         }
 
         public uint Read(ushort addr, int size)
