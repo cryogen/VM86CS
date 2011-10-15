@@ -48,6 +48,38 @@ namespace x86CS.CPU
                 EIP = (ushort)dest.Value;
         }
 
+        [CPUFunction(OpCode = 0x70)]
+        [CPUFunction(OpCode = 0x0f80)]
+        public void JumpIfOverflow(Operand dest)
+        {
+            if (OF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x71)]
+        [CPUFunction(OpCode = 0x0f81)]
+        public void JumpIfNotOverflow(Operand dest)
+        {
+            if (!OF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x72)]
+        [CPUFunction(OpCode = 0x0f82)]
+        public void JumpIfBelow(Operand dest)
+        {
+            if (CF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x73)]
+        [CPUFunction(OpCode = 0x0f83)]
+        public void JumpIfNotBelow(Operand dest)
+        {
+            if (!CF)
+                Jump(dest);
+        }
+
         [CPUFunction(OpCode = 0x74)]
         [CPUFunction(OpCode = 0x0f84)]
         public void JumpIfZero(Operand dest)
@@ -64,29 +96,16 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
-        [CPUFunction(OpCode = 0x72)]
-        [CPUFunction(OpCode = 0x0f82)]
-        public void JumpIfBelow(Operand dest)
-        {
-            if (CF)
-                Jump(dest);
-        }
-
         [CPUFunction(OpCode = 0x76)]
+        [CPUFunction(OpCode = 0x0f86)]
         public void JumpIfBelowOrEqual(Operand dest)
         {
             if (CF || ZF)
                 Jump(dest);
         }
 
-        [CPUFunction(OpCode = 0x73)]
-        public void JumpIfNotBelow(Operand dest)
-        {
-            if (!CF)
-                Jump(dest);
-        }
-
         [CPUFunction(OpCode = 0x77)]
+        [CPUFunction(OpCode = 0x0f87)]
         public void JumpIfNotBelowOrEqual(Operand dest)
         {
             if (!CF && !ZF)
@@ -94,9 +113,34 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0x7c)]
+        [CPUFunction(OpCode = 0x0f8c)]
         public void JumpIfLess(Operand dest)
         {
             if (SF != OF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x7d)]
+        [CPUFunction(OpCode = 0x0f8d)]
+        public void JumpIfNotLess(Operand dest)
+        {
+            if (SF == OF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x7e)]
+        [CPUFunction(OpCode = 0x0f8e)]
+        public void JumpIfLessOrEqual(Operand dest)
+        {
+            if (ZF || (SF != OF))
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x7f)]
+        [CPUFunction(OpCode = 0x0f8f)]
+        public void JumpIfNotLessOrEqual(Operand dest)
+        {
+            if (!ZF && SF == OF)
                 Jump(dest);
         }
 
