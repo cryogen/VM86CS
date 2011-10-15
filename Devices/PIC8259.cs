@@ -5,14 +5,12 @@ using System;
 
 namespace x86CS.Devices
 {
-    public class PIC8259 : IDevice, IShutdown
+    public class PIC8259 : IDevice
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory)); 
 
         private readonly int[] portsUsed = {0x20, 0x21, 0xa0, 0xa1};
         private readonly PIController[] controllers;
-        private bool running;
-        private Thread controlThread;
 
         public event EventHandler<InterruptEventArgs> Interrupt;
 
@@ -21,9 +19,6 @@ namespace x86CS.Devices
             controllers = new PIController[2];
             controllers[0] = new PIController();
             controllers[1] = new PIController();
-            running = true;
-            controlThread = new Thread(RunController);
-            controlThread.Start();
         }
 
         private void OnInterrupt(InterruptEventArgs e)
@@ -35,29 +30,22 @@ namespace x86CS.Devices
 
         public void RunController()
         {
-            while (running)
+            int runningIRQ = LowestRunningInt();
+            int pendingIRQ = LowestPending();
+            byte irq, vector;
+
+            if (pendingIRQ == -1)
+                return;
+
+            if (runningIRQ < 0)
             {
-                int runningIRQ = LowestRunningInt();
-                int pendingIRQ = LowestPending();
-                byte irq, vector;
+                irq = (byte)pendingIRQ;
+                if (irq < 8)
+                    vector = (byte)(controllers[0].VectorBase + irq);
+                else
+                    vector = (byte)(controllers[1].VectorBase + irq);
 
-                if (pendingIRQ == -1)
-                {
-                    Thread.Sleep(0);
-                    continue;
-                }
-
-                if (runningIRQ < 0)
-                {
-                    irq = (byte)pendingIRQ;
-                    if (irq < 8)
-                        vector = (byte)(controllers[0].VectorBase + irq);
-                    else
-                        vector = (byte)(controllers[1].VectorBase + irq);
-
-                    OnInterrupt(new InterruptEventArgs(irq, vector));
-                }
-                Thread.Sleep(0);
+                OnInterrupt(new InterruptEventArgs(irq, vector));
             }
         }
 
@@ -174,11 +162,6 @@ namespace x86CS.Devices
             }
             else
                 controller.MaskRegister = (byte) value;
-        }
-
-        public void Shutdown()
-        {
-            running = false;
         }
     }
 

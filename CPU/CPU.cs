@@ -4,6 +4,7 @@ using log4net;
 using System.Collections.Generic;
 using x86Disasm;
 using System.Reflection;
+using System.Threading;
 
 namespace x86CS.CPU
 {
@@ -23,6 +24,7 @@ namespace x86CS.CPU
         private int addressSize = 16;
         private int opLen;
         private Disassembler disasm;
+        private Operand interruptOperand;
 
         public bool Halted { get; private set; }
         public uint CurrentAddr { get; private set; }
@@ -398,6 +400,7 @@ namespace x86CS.CPU
             idtRegister = new TableRegister();
             gdtRegister = new TableRegister();
             disasm = new Disassembler(DisassemblerRead);
+
             disasm.CodeSize = 16;
             ProcessOperations();
             realModeEntry = new GDTEntry
@@ -411,6 +414,11 @@ namespace x86CS.CPU
                                 };
 
             Halted = false;
+
+            interruptOperand = new Operand();
+            interruptOperand.Size = 8;
+            interruptOperand.Type = OperandType.Immediate;
+
             Reset();
         }
 
@@ -430,6 +438,9 @@ namespace x86CS.CPU
             ES = 0;
             FS = 0;
             GS = 0;
+
+            Halted = false;
+            opSize = addressSize = 16;
         }
 
         private bool GetFlag(CPUFlags flag)
@@ -777,10 +788,19 @@ namespace x86CS.CPU
             Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
         }
 
-        public void ExecuteInterrupt()
+        public void ExecuteInterrupt(byte vector)
         {
+            interruptOperand.Value = vector;
+
             if (Halted)
                 Halted = false;
+
+            DumpRegisters();
+            opSize = PMode ? 32 : 16;
+            addressSize = PMode ? 32 : 16;
+            Interrupt(interruptOperand);
+            IF = false;
+            Fetch(true);
         }
 
         public void Fetch()
@@ -790,6 +810,9 @@ namespace x86CS.CPU
 
         public void Fetch(bool doStrings)
         {
+            if (Halted)
+                return;
+
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
             opLen = disasm.Disassemble(CurrentAddr, doStrings);
             opSize = disasm.OperandSize;
@@ -814,7 +837,7 @@ namespace x86CS.CPU
 
             Operand[] operands = ProcessOperands();
 
-            if(logging)
+            if (logging)
                 Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
 
             EIP += (uint)opLen;

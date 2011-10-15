@@ -142,7 +142,8 @@ namespace x86CS.Devices
                     else
                         counter = Reload;
                     Running = true;
-                    counterThread.Start();
+                    if(!counterThread.IsAlive)
+                        counterThread.Start();
 
                 }
                 else if (accessMode == AccessMode.LoByteOnly || accessMode == AccessMode.LoByteHiByte)

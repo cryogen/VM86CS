@@ -66,8 +66,7 @@ namespace x86CS
             if (CPU.IF)
             {
                 picDevice.AckInterrupt(e.IRQ);
-                picDevice.Write(0x20, 0x20, 8);
-                CPU.ExecuteInterrupt();
+                CPU.ExecuteInterrupt(e.Vector);
             }
         }
 
@@ -246,6 +245,7 @@ namespace x86CS
 
         public void RunCycle(bool logging)
         {
+            picDevice.RunController();
             CPU.Cycle(logging);
             CPU.Fetch(logging);
         }

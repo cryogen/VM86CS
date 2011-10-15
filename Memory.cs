@@ -11,6 +11,7 @@ namespace x86CS
 
         private const uint MemorySize = 0xFFFFF;
         private static readonly byte[] memory;
+        private static bool loggingEnabled = Logger.IsDebugEnabled;
 
         public static bool A20 { get; set; }
         public static byte[] MemoryArray { get { return memory; } }
@@ -29,7 +30,8 @@ namespace x86CS
 
         public static void BlockWrite(uint addr, byte[] buffer, int length)
         {
-            Logger.Debug(String.Format("Block write {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
+            if(loggingEnabled)
+                Logger.Debug(String.Format("Block write {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
             Buffer.BlockCopy(buffer, 0, memory, (int)addr, length);
         }
@@ -38,26 +40,39 @@ namespace x86CS
         {
             Buffer.BlockCopy(memory, (int)addr, buffer, 0, length);
 
-            Logger.Debug(String.Format("Block read {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
+            if(loggingEnabled)
+                Logger.Debug(String.Format("Block read {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
             return buffer.Length;
         }
 
         public static uint Read(uint addr, int size)
         {
+            uint ret;
+
             switch (size)
             {
                 case 8:
-                    return memory[addr];
+                    ret = memory[addr];
+                    break;
                 case 16:
-                    return (ushort)(memory[addr] | memory[addr + 1] << 8);
+                    ret = (ushort)(memory[addr] | memory[addr + 1] << 8);
+                    break;
                 default:
-                    return (uint)(memory[addr] | memory[addr + 1] << 8 | memory[addr + 2] << 16 | memory[addr + 3] << 24);
+                    ret = (uint)(memory[addr] | memory[addr + 1] << 8 | memory[addr + 2] << 16 | memory[addr + 3] << 24);
+                    break;
             }
+            if(loggingEnabled)
+                Logger.Debug(String.Format("Read {0} address {1:X} value {2:X}", size, addr, ret));
+
+            return ret;
         }
 
         public static void Write(uint addr, uint value, int size)
         {
+            if(loggingEnabled)
+                Logger.Debug(String.Format("Write {0} address {1:X} value {2:X}", size, addr, value));
+
             switch (size)
             {
                 case 8:

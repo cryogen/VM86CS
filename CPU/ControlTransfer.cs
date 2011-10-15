@@ -228,6 +228,7 @@ namespace x86CS.CPU
             EIP = (ushort)StackPop();
             CS = StackPop();
             eFlags = (CPUFlags)StackPop();
+            DumpRegisters();
         }
 
         [CPUFunction(OpCode = 0xe2)]
