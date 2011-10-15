@@ -78,8 +78,8 @@ namespace x86CS
                 {
                     frequency = 50000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
                     lastSeconds = stopwatch.Elapsed.TotalSeconds;
-                    if(Created && !Disposing)
-                        Invoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("n") + "TPS"; }); 
+                    if(Created)
+                        BeginInvoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("n") + "TPS"; }); 
                 }
 
                 try
@@ -117,7 +117,6 @@ namespace x86CS
             machine.Running = false;
             running = false;
             machine.Stop();
-            Thread.Sleep(500);
             Application.Exit();
         }
 
@@ -201,7 +200,6 @@ namespace x86CS
             machine.Running = false;
             running = false;
             machine.Stop();
-            Thread.Sleep(500);
         }
 
         private void MemoryButtonClick(object sender, EventArgs e)
