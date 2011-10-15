@@ -191,6 +191,7 @@ namespace x86CS.Devices
                     else
                         counter = Reload;
                 }
+                Thread.Sleep(0);
             }
         }
 

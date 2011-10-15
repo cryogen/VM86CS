@@ -42,7 +42,10 @@ namespace x86CS.Devices
                 byte irq, vector;
 
                 if (pendingIRQ == -1)
+                {
+                    Thread.Sleep(0);
                     continue;
+                }
 
                 if (runningIRQ < 0)
                 {
@@ -53,9 +56,8 @@ namespace x86CS.Devices
                         vector = (byte)(controllers[1].VectorBase + irq);
 
                     OnInterrupt(new InterruptEventArgs(irq, vector));
-
-                    continue;
                 }
+                Thread.Sleep(0);
             }
         }
 
