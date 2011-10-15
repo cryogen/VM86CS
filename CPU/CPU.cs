@@ -777,6 +777,12 @@ namespace x86CS.CPU
             Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
         }
 
+        public void ExecuteInterrupt()
+        {
+            if (Halted)
+                Halted = false;
+        }
+
         public void Fetch()
         {
             Fetch(false);

@@ -10,7 +10,6 @@ namespace x86CS.Devices
 
         private readonly int[] portsUsed = { 0x40, 0x41, 0x42, 0x43 };
         private readonly Counter[] counters;
-        private Stopwatch stopwatch = new Stopwatch();
 
         public event EventHandler IRQ;
 
@@ -31,14 +30,10 @@ namespace x86CS.Devices
             counters[0].TimerTick += PIT8253TimerCycle;
             counters[1] = new Counter();
             counters[2] = new Counter();
-            stopwatch.Start();
         }
 
         void PIT8253TimerCycle(object sender, EventArgs e)
         {
-            Console.WriteLine(stopwatch.Elapsed.TotalMilliseconds);
-            stopwatch.Reset();
-            stopwatch.Start();
             OnIRQ(e);
         }
 

@@ -45,7 +45,9 @@ namespace x86CS
                           };
 
             CPU = new CPU.CPU();
-            
+
+            picDevice.Interrupt += PicDeviceInterrupt;
+
             SetupSystem();
 
             CPU.IORead += CPUIORead;
@@ -57,6 +59,16 @@ namespace x86CS
             machineForm.Show();
             machineForm.BringToFront();
             machineForm.Select();
+        }
+
+        void PicDeviceInterrupt(object sender, InterruptEventArgs e)
+        {
+            if (CPU.IF)
+            {
+                picDevice.AckInterrupt(e.IRQ);
+                picDevice.Write(0x20, 0x20, 8);
+                CPU.ExecuteInterrupt();
+            }
         }
 
         [DllImport("user32.dll")]

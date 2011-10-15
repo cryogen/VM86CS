@@ -1,20 +1,62 @@
 ﻿using System.Diagnostics;
 using log4net;
+using System.Threading;
+using System;
 
 namespace x86CS.Devices
 {
-    public class PIC8259 : IDevice
+    public class PIC8259 : IDevice, IShutdown
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory)); 
 
         private readonly int[] portsUsed = {0x20, 0x21, 0xa0, 0xa1};
         private readonly PIController[] controllers;
+        private bool running;
+        private Thread controlThread;
+
+        public event EventHandler<InterruptEventArgs> Interrupt;
 
         public PIC8259()
         {
             controllers = new PIController[2];
             controllers[0] = new PIController();
             controllers[1] = new PIController();
+            running = true;
+            controlThread = new Thread(RunController);
+            controlThread.Start();
+        }
+
+        private void OnInterrupt(InterruptEventArgs e)
+        {
+            EventHandler<InterruptEventArgs> handler = Interrupt;
+            if (handler != null)
+                handler(this, e);
+        }
+
+        public void RunController()
+        {
+            while (running)
+            {
+                int runningIRQ = LowestRunningInt();
+                int pendingIRQ = LowestPending();
+                byte irq, vector;
+
+                if (pendingIRQ == -1)
+                    continue;
+
+                if (runningIRQ < 0)
+                {
+                    irq = (byte)pendingIRQ;
+                    if (irq < 8)
+                        vector = (byte)(controllers[0].VectorBase + irq);
+                    else
+                        vector = (byte)(controllers[1].VectorBase + irq);
+
+                    OnInterrupt(new InterruptEventArgs(irq, vector));
+
+                    continue;
+                }
+            }
         }
 
         public int[] PortsUsed
@@ -131,13 +173,16 @@ namespace x86CS.Devices
             else
                 controller.MaskRegister = (byte) value;
         }
+
+        public void Shutdown()
+        {
+            running = false;
+        }
     }
 
     internal class PIController
     {
         private byte requestRegister;
-        
-        private byte dataRegister;
         private byte currentICW;
         private bool expectICW4;
         private byte linkIRQ;

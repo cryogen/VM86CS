@@ -241,4 +241,16 @@ namespace x86CS
 
         public string Text { get; set; }
     }
+
+    public class InterruptEventArgs : EventArgs
+    {
+        public InterruptEventArgs(byte irq, byte vector)
+        {
+            IRQ = irq;
+            Vector = vector;
+        }
+
+        public byte IRQ { get; set; }
+        public byte Vector { get; set; }
+    }
 }
