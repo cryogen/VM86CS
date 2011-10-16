@@ -47,12 +47,12 @@ namespace x86CS
             LogManager.Shutdown();
         }
 
-        void BreakpointsItemDeleted(object sender, IntEventArgs e)
+        void BreakpointsItemDeleted(object sender, UIntEventArgs e)
         {
             machine.ClearBreakpoint(e.Number);
         }
 
-        void BreakpointsItemAdded(object sender, IntEventArgs e)
+        void BreakpointsItemAdded(object sender, UIntEventArgs e)
         {
             machine.SetBreakpoint(e.Number);
         }
@@ -74,12 +74,12 @@ namespace x86CS
 
                 ++timerTicks;
 
-                if(timerTicks % 50000 == 0)
+                if (timerTicks % 50000 == 0)
                 {
                     frequency = 50000 / (stopwatch.Elapsed.TotalSeconds - lastSeconds);
                     lastSeconds = stopwatch.Elapsed.TotalSeconds;
-                    if(Created)
-                        BeginInvoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("n") + "TPS"; }); 
+                    if (Created)
+                        BeginInvoke((MethodInvoker)delegate { tpsLabel.Text = frequency.ToString("n") + "TPS"; });
                 }
 
                 try
@@ -94,7 +94,6 @@ namespace x86CS
 
                 if (machine.CheckBreakpoint())
                 {
-                    machine.Running = false;
                     Invoke((MethodInvoker)(() =>
                                                {
                                                    PrintRegisters();
@@ -103,6 +102,7 @@ namespace x86CS
                                                    stepButton.Enabled = true;
                                                    PrintStack();
                                                }));
+                    machine.Running = false;
                 }
             }
         }
@@ -181,12 +181,18 @@ namespace x86CS
 
         private void StepButtonClick(object sender, EventArgs e)
         {
-            machine.Running = false;
-
-            machine.RunCycle(true);
-            SetCPULabel(machine.CPU.InstructionText);
-            PrintRegisters();
-            PrintStack();
+            Invoke((MethodInvoker)(() =>
+            {
+                stepButton.Enabled = false;
+                machine.Running = false;
+                machine.RunCycle(true);
+                if (!machine.Running)
+                {
+                    SetCPULabel(machine.CPU.InstructionText);
+                    PrintRegisters();
+                    PrintStack();
+                }
+            }));
         }
 
         private void GoButtonClick(object sender, EventArgs e)

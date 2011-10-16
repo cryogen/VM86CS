@@ -22,13 +22,13 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private int opSize = 16;
         private int addressSize = 16;
-        private int opLen;
         private Disassembler disasm;
         private Operand interruptOperand;
 
         public bool Halted { get; private set; }
         public uint CurrentAddr { get; private set; }
         public bool PMode { get; private set; }
+        public int OpLen { get; private set; }
 
         public int InterruptLevel;
 
@@ -739,6 +739,11 @@ namespace x86CS.CPU
             return entry;
         }
 
+        public uint GetSelectorBase(SegmentRegister segment)
+        {
+            return segments[(int)segment].GDTEntry.BaseAddress;
+        }
+
         private void SetSelector(SegmentRegister segment, uint selector)
         {
             if (PMode)
@@ -814,7 +819,7 @@ namespace x86CS.CPU
                 return;
 
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
-            opLen = disasm.Disassemble(CurrentAddr, doStrings);
+            OpLen = disasm.Disassemble(CurrentAddr, doStrings);
             opSize = disasm.OperandSize;
             addressSize = disasm.AddressSize;
         }
@@ -822,7 +827,7 @@ namespace x86CS.CPU
         public void ReFetch()
         {
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
-            opLen = disasm.Disassemble(CurrentAddr, true);
+            OpLen = disasm.Disassemble(CurrentAddr, true);
         }
 
         public void Cycle()
@@ -840,7 +845,7 @@ namespace x86CS.CPU
             if (logging)
                 Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
 
-            EIP += (uint)opLen;
+            EIP += (uint)OpLen;
             disasm.Execute(this, operands);
         }
     }

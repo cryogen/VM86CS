@@ -15,7 +15,8 @@ namespace x86CS
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(Machine));
 
-        private readonly Dictionary<int, int> breakpoints = new Dictionary<int, int>();
+        private readonly Dictionary<uint, uint> breakpoints = new Dictionary<uint, uint>();
+        private readonly Dictionary<uint, uint> tempBreakpoints = new Dictionary<uint, uint>();
         private readonly MachineForm machineForm = new MachineForm();
         private readonly IDevice[] devices;
         private readonly PIC8259 picDevice;
@@ -24,6 +25,7 @@ namespace x86CS
         private readonly Keyboard keyboard;
 
         private Dictionary<ushort, IOEntry> ioPorts;
+        private bool isStepping;
 
         public Floppy FloppyDrive { get; private set; }
         public CPU.CPU CPU { get; private set; }
@@ -65,8 +67,14 @@ namespace x86CS
         {
             if (CPU.IF)
             {
+                uint currentAddr = (uint)(CPU.GetSelectorBase(x86Disasm.SegmentRegister.CS) + CPU.EIP + CPU.OpLen);
                 picDevice.AckInterrupt(e.IRQ);
                 CPU.ExecuteInterrupt(e.Vector);
+                if (isStepping)
+                {
+                    tempBreakpoints.Add(currentAddr, currentAddr);
+                    Running = true;
+                }
             }
         }
 
@@ -197,7 +205,7 @@ namespace x86CS
             SetupSystem();
         }
 
-        public void SetBreakpoint(int addr)
+        public void SetBreakpoint(uint addr)
         {
             if (breakpoints.ContainsKey(addr))
                 return;
@@ -205,7 +213,7 @@ namespace x86CS
             breakpoints.Add(addr, addr);
         }
 
-        public void ClearBreakpoint(int addr)
+        public void ClearBreakpoint(uint addr)
         {
             if (!breakpoints.ContainsKey(addr))
                 return;
@@ -217,7 +225,7 @@ namespace x86CS
         {
             uint cpuAddr = CPU.CurrentAddr;
             
-            return breakpoints.ContainsKey((int)cpuAddr);
+            return breakpoints.ContainsKey(cpuAddr) || tempBreakpoints.ContainsKey(cpuAddr);
         }
 
         public void Start()
@@ -243,11 +251,15 @@ namespace x86CS
             RunCycle(false);
         }
 
-        public void RunCycle(bool logging)
+        public void RunCycle(bool stepping)
         {
-            picDevice.RunController();
-            CPU.Cycle(logging);
-            CPU.Fetch(logging);
+            isStepping = stepping;
+            if (isStepping)
+                tempBreakpoints.Clear();
+            if(picDevice.RunController() && !Running)
+                return;
+            CPU.Cycle(stepping);
+            CPU.Fetch(stepping);
         }
     }
 

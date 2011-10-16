@@ -6,28 +6,28 @@ namespace x86CS
 {
     public partial class Breakpoints : Form
     {
-        public event EventHandler<IntEventArgs> ItemAdded;
-        public event EventHandler<IntEventArgs> ItemDeleted;
+        public event EventHandler<UIntEventArgs> ItemAdded;
+        public event EventHandler<UIntEventArgs> ItemDeleted;
 
         public Breakpoints()
         {
             InitializeComponent();
         }
 
-        private void OnItemAdded(int item)
+        private void OnItemAdded(uint item)
         {
             var intEvent = ItemAdded;
 
             if (intEvent != null)
-                intEvent(this, new IntEventArgs(item));
+                intEvent(this, new UIntEventArgs(item));
         }
 
-        private void OnItemDeleted(int item)
+        private void OnItemDeleted(uint item)
         {
             var intEvent = ItemDeleted;
 
             if (intEvent != null)
-                intEvent(this, new IntEventArgs(item));
+                intEvent(this, new UIntEventArgs(item));
         }
 
         private void AddButtonClick(object sender, EventArgs e)
@@ -43,9 +43,9 @@ namespace x86CS
             item.SubItems.Add(off.ToString("X"));
             breakpointList.Items.Add(item);
 
-            var addr = (seg << 4) + off;
+            uint addr = (seg << 4) + off;
 
-            OnItemAdded((int)addr);
+            OnItemAdded(addr);
         }
 
         private void DeleteButtonClick(object sender, EventArgs e)
@@ -58,7 +58,7 @@ namespace x86CS
             var seg = ushort.Parse(item.Text, NumberStyles.HexNumber);
             var off = ushort.Parse(item.SubItems[1].Text, NumberStyles.HexNumber);
 
-            var addr = (seg << 4) + off;
+            uint addr = (uint)((seg << 4) + off);
 
             breakpointList.Items.Remove(item);
 

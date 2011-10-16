@@ -28,14 +28,14 @@ namespace x86CS.Devices
                 handler(this, e);
         }
 
-        public void RunController()
+        public bool RunController()
         {
             int runningIRQ = LowestRunningInt();
             int pendingIRQ = LowestPending();
             byte irq, vector;
 
             if (pendingIRQ == -1)
-                return;
+                return false;
 
             if (runningIRQ < 0)
             {
@@ -46,7 +46,9 @@ namespace x86CS.Devices
                     vector = (byte)(controllers[1].VectorBase + irq);
 
                 OnInterrupt(new InterruptEventArgs(irq, vector));
+                return true;
             }
+            return false;
         }
 
         public int[] PortsUsed

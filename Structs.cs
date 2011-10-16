@@ -212,14 +212,14 @@ namespace x86CS
         public char Char { get; set; }
     }
 
-    public class IntEventArgs : EventArgs
+    public class UIntEventArgs : EventArgs
     {
-        public IntEventArgs(int num)
+        public UIntEventArgs(uint num)
         {
             Number = num;
         }
 
-        public int Number { get; set; }
+        public uint Number { get; set; }
     }
 
     public class ByteArrayEventArgs : EventArgs
