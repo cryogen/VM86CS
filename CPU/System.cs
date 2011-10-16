@@ -8,5 +8,35 @@ namespace x86CS.CPU
         {
             Halted = true;
         }
+
+        [CPUFunction(OpCode = 0x0f0103)]
+        public void LoadIDT(Operand dest)
+        {
+            if (opSize == 16)
+            {
+                idtRegister.Limit = SegReadWord(dest.Memory.Segment, dest.Memory.Address);
+                idtRegister.Base = SegReadDWord(dest.Memory.Segment, dest.Memory.Address + 2) & 0x00ffffff;
+            }
+            else
+            {
+                idtRegister.Limit = SegReadWord(dest.Memory.Segment, dest.Memory.Address);
+                idtRegister.Base = SegReadDWord(dest.Memory.Segment, dest.Memory.Address + 2);
+            }
+        }
+
+        [CPUFunction(OpCode = 0x0f0102)]
+        public void LoadGDT(Operand dest)
+        {
+            if (opSize == 16)
+            {
+                gdtRegister.Limit = SegReadWord(dest.Memory.Segment, dest.Memory.Address);
+                gdtRegister.Base = SegReadDWord(dest.Memory.Segment, dest.Memory.Address + 2) & 0x00ffffff;
+            }
+            else
+            {
+                gdtRegister.Limit = SegReadWord(dest.Memory.Segment, dest.Memory.Address);
+                gdtRegister.Base = SegReadDWord(dest.Memory.Segment, dest.Memory.Address + 2);
+            }
+        }
     }
 }

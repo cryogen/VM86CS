@@ -495,7 +495,7 @@ namespace x86CS.CPU
 
                     for (int i = 0; i < function.Count; i++)
                     {
-                        disasm.AddOperation((ushort)(function.OpCode + i), methodDelegate, method.GetParameters().Length);
+                        disasm.AddOperation((uint)(function.OpCode + i), methodDelegate, method.GetParameters().Length);
                     }
                 }
             }
@@ -527,6 +527,9 @@ namespace x86CS.CPU
                             break;
                         case RegisterType.SegmentRegister:
                             SetSelector((SegmentRegister)operand.Register.Index, operand.Value);
+                            break;
+                        case RegisterType.ControlRegister:
+                            controlRegisters[operand.Register.Index] = operand.Value;
                             break;
                         default:
                             System.Diagnostics.Debugger.Break();
@@ -570,6 +573,9 @@ namespace x86CS.CPU
                             break;
                         case RegisterType.SegmentRegister:
                             operand.Value = segments[operand.Register.Index].Selector;
+                            break;
+                        case RegisterType.ControlRegister:
+                            operand.Value = controlRegisters[operand.Register.Index];
                             break;
                         default:
                             System.Diagnostics.Debugger.Break();
@@ -846,7 +852,7 @@ namespace x86CS.CPU
                 Logger.Info(String.Format("{0:X}:{1:X} {2}", CS, EIP, disasm.InstructionText));
 
             EIP += (uint)OpLen;
-            disasm.Execute(this, operands);
+            disasm.Execute(operands);
         }
     }
 }

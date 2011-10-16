@@ -10,16 +10,16 @@ namespace x86Disasm
         Address,
         RegMem,
         RegMemGeneral,
+        RegMemMemory,
+        RegMemSegment,
+        RegMemControl,
         Immediate,
         ImmediateSuppressDefault,
         Relative,
-        RegMemMemory,
         Offset,
         Memory,
         Constant,
-        RegMemSegment,
         GeneralRegister,
-        ControlRegister,
         SegmentRegister,
     }
 
@@ -98,5 +98,14 @@ namespace x86Disasm
         FS,
         GS,
         Default
+    }
+
+    public enum ControlRegister
+    {
+        CR0 = 0,
+        CR1,
+        CR2,
+        CR3,
+        CR4
     }
 }

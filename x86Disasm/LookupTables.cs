@@ -404,12 +404,22 @@
                 new Instruction { OpCode=0xff06, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "PUSH", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 } },
                 new Instruction { OpCode=0xff07, Type=InstructionType.Invalid },
             },
+            {
+                new Instruction { OpCode=0x0f0100, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0101, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0102, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="LGDT", Arg1=new Argument { Type=ArgumentType.Offset, Size=16 } },
+                new Instruction { OpCode=0x0f0103, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="LIDT", Arg1=new Argument { Type=ArgumentType.Offset, Size=16 } },
+                new Instruction { OpCode=0x0f0104, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0105, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0106, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0107, Type = InstructionType.Invalid },
+            },
         };
 
         private Instruction[] extendedInstructions = 
         {
             new Instruction { OpCode=0x0f00, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0f01, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0f01, Type=InstructionType.Group, Value=0xe },
             new Instruction { OpCode=0x0f02, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f03, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f04, Type=InstructionType.Invalid },
@@ -440,9 +450,9 @@
             new Instruction { OpCode=0x0f1d, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f1e, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f1f, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0f20, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0f20, Type=InstructionType.DataTransfer, NumberOfArguments=2, Nmumonic="MOV", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=32 }, Arg2=new Argument { Type=ArgumentType.RegMemControl, Size=32 } },
             new Instruction { OpCode=0x0f21, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0f22, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0f22, Type=InstructionType.DataTransfer, NumberOfArguments=2, Nmumonic="MOV", Arg1=new Argument { Type=ArgumentType.RegMemControl, Size=32 }, Arg2=new Argument { Type=ArgumentType.RegMemGeneral, Size=32 } },
             new Instruction { OpCode=0x0f23, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f24, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f25, Type=InstructionType.Invalid },
@@ -722,6 +732,15 @@
             new RegisterOperand { Index=(int)SegmentRegister.DS, Type=RegisterType.SegmentRegister },
             new RegisterOperand { Index=(int)SegmentRegister.FS, Type=RegisterType.SegmentRegister },
             new RegisterOperand { Index=(int)SegmentRegister.GS, Type=RegisterType.SegmentRegister },
+        };
+
+        private RegisterOperand[] registersControl =
+        {
+            new RegisterOperand { Index=(int)ControlRegister.CR0, Type=RegisterType.ControlRegister },
+            new RegisterOperand { Index=(int)ControlRegister.CR1, Type=RegisterType.ControlRegister },
+            new RegisterOperand { Index=(int)ControlRegister.CR2, Type=RegisterType.ControlRegister },
+            new RegisterOperand { Index=(int)ControlRegister.CR3, Type=RegisterType.ControlRegister },
+            new RegisterOperand { Index=(int)ControlRegister.CR4, Type=RegisterType.ControlRegister },
         };
 
         internal static string[] registerStrings8BitLow =

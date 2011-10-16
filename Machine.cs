@@ -148,7 +148,7 @@ namespace x86CS
 
         private void LoadBIOS()
         {
-            FileStream biosStream = File.OpenRead("BIOS-bochs-legacy");
+            FileStream biosStream = File.OpenRead("BIOS-bochs-latest");
             var buffer = new byte[biosStream.Length];
 
             uint startAddr = (uint)(0xfffff - buffer.Length) + 1;

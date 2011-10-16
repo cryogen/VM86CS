@@ -9,6 +9,8 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xb0, Count = 16)]
         [CPUFunction(OpCode = 0x00c6)]
         [CPUFunction(OpCode = 0x00c7)]
+        [CPUFunction(OpCode = 0x0f20)]
+        [CPUFunction(OpCode = 0x0f22)]
         public void Move(Operand dest, Operand source)
         {
             dest.Value = source.Value;

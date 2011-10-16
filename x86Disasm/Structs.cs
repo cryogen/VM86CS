@@ -6,7 +6,7 @@ namespace x86Disasm
 {
     internal struct Instruction
     {
-        public ushort OpCode;
+        public uint OpCode;
         public InstructionType Type;
         public uint Value;
         public int NumberOfArguments;
@@ -29,7 +29,7 @@ namespace x86Disasm
 
     public struct Operation
     {
-        public ushort OpCode;
+        public uint OpCode;
         public Delegate Method;
         public int NumberOfArgs;
     }

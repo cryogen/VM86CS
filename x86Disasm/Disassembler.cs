@@ -8,7 +8,7 @@ namespace x86Disasm
     {
         private ReadCallback readFunction;
         private Operand[] operands;
-        private Dictionary<ushort, Operation> operations;
+        private Dictionary<uint, Operation> operations;
         private Instruction currentInstruction;
         private bool gotRM;
         private byte rmByte;
@@ -34,7 +34,7 @@ namespace x86Disasm
         {
             readFunction = readCallback;
             operands = new Operand[4];
-            operations = new Dictionary<ushort, Operation>();
+            operations = new Dictionary<uint, Operation>();
             OverrideSegment = SegmentRegister.Default;
         }
 
@@ -77,6 +77,17 @@ namespace x86Disasm
             operand.Size = argument.Size;
             operand.Register = registersSegment[index];
             if(buildString)
+                InstructionText += operand.Register;
+        }
+
+        private void ProcessRegMemControl(ref Operand operand, Argument argument, byte rmByte)
+        {
+            byte index = (byte)(rmByte & 0x7);
+
+            operand.Type = OperandType.Register;
+            operand.Size = argument.Size;
+            operand.Register = registersControl[index];
+            if (buildString)
                 InstructionText += operand.Register;
         }
 
@@ -174,6 +185,7 @@ namespace x86Disasm
                 case ArgumentType.RegMemGeneral:
                 case ArgumentType.RegMemMemory:
                 case ArgumentType.RegMemSegment:
+                case ArgumentType.RegMemControl:
                     if (!gotRM)
                     {
                         rmByte = ReadByte(offset++);
@@ -195,6 +207,9 @@ namespace x86Disasm
                             break;
                         case ArgumentType.RegMemSegment:
                             ProcessRegMemSegment(ref operand, argument, (byte)(rmByte >> 3));
+                            break;
+                        case ArgumentType.RegMemControl:
+                            ProcessRegMemControl(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         default:
                             System.Diagnostics.Debugger.Break();
@@ -270,7 +285,7 @@ namespace x86Disasm
             return offset;
         }
 
-        public void AddOperation(ushort opCode, Delegate method, int numArgs)
+        public void AddOperation(uint opCode, Delegate method, int numArgs)
         {
             Operation operation = new Operation { OpCode = opCode, Method=method, NumberOfArgs=numArgs };
 
@@ -285,7 +300,7 @@ namespace x86Disasm
         public int Disassemble(uint addr, bool doStrings)
         {
             uint offset = 0;
-            ushort opCode;
+            uint opCode;
 
             InstructionText = "";
             gotRM = false;
@@ -299,9 +314,6 @@ namespace x86Disasm
             offset++;
 
             System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);
-
-            if (currentInstruction.Type == InstructionType.Invalid)
-                throw new Exception("Invalid operation");
 
             while (currentInstruction.Type == InstructionType.Prefix)
             {
@@ -342,6 +354,19 @@ namespace x86Disasm
             else
                 AddressSize = CodeSize;
 
+            if (currentInstruction.Type == InstructionType.Extended)
+            {
+                byte extended;
+
+                extended = ReadByte(offset++);
+
+                currentInstruction = extendedInstructions[extended];
+
+                opCode = (uint)((opCode << 8) + extended);
+
+                System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);
+            }
+
             if (currentInstruction.Type == InstructionType.Group)
             {
                 byte index;
@@ -353,22 +378,13 @@ namespace x86Disasm
 
                 currentInstruction = groups[currentInstruction.Value, index];
 
-                opCode = (ushort)((opCode << 8) + index);
+                opCode = (uint)((opCode << 8) + index);
 
                 System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);                
             }
-            else if (currentInstruction.Type == InstructionType.Extended)
-            {
-                byte extended;
 
-                extended = ReadByte(offset++);
-
-                currentInstruction = extendedInstructions[extended];
-
-                opCode = (ushort)((opCode << 8) + extended);
-
-                System.Diagnostics.Debug.Assert(opCode == currentInstruction.OpCode);
-            }
+            if (currentInstruction.Type == InstructionType.Invalid)
+                throw new Exception("Invalid operation");
 
             if(buildString)
                 InstructionText += currentInstruction.Nmumonic + " ";
@@ -397,7 +413,7 @@ namespace x86Disasm
             return (int)offset;
         }
 
-        public void Execute(object invoker, params Operand[] operands)
+        public void Execute(params Operand[] operands)
         {
             Operation operation;
 
