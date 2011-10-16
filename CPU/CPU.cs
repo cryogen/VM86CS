@@ -426,6 +426,8 @@ namespace x86CS.CPU
         {
             eFlags = CPUFlags.ZF | CPUFlags.IF;
 
+            PMode = false;
+
             EIP = 0;
             CS = 0;
             EAX = 0;
@@ -434,6 +436,8 @@ namespace x86CS.CPU
             EDX = 0;
             EBP = 0;
             ESP = 0;
+            ESI = 0;
+            EDI = 0;
             DS = 0;
             ES = 0;
             FS = 0;
@@ -441,6 +445,7 @@ namespace x86CS.CPU
 
             Halted = false;
             opSize = addressSize = 16;
+            disasm.CodeSize = 16;
         }
 
         private bool GetFlag(CPUFlags flag)
@@ -550,6 +555,7 @@ namespace x86CS.CPU
             switch (operand.Type)
             {
                 case OperandType.Immediate:
+                case OperandType.Address:
                     return operand;
                 case OperandType.Register:
                     switch (operand.Register.Type)
@@ -733,7 +739,7 @@ namespace x86CS.CPU
 
         private GDTEntry GetSelectorEntry(uint selector)
         {
-            int entrySize = Marshal.SizeOf(typeof(GDTEntry));
+            int entrySize = Marshal.SizeOf(typeof(GDTEntry)) - 4;
             var gdtBytes = new byte[entrySize];
 
             Memory.BlockRead(gdtRegister.Base + selector, gdtBytes, gdtBytes.Length);
@@ -741,6 +747,8 @@ namespace x86CS.CPU
             Marshal.Copy(gdtBytes, 0, p, entrySize);
             var entry = (GDTEntry)Marshal.PtrToStructure(p, typeof(GDTEntry));
             Marshal.FreeHGlobal(p);
+
+            entry.RefreshBase();
 
             return entry;
         }

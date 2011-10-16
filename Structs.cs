@@ -165,6 +165,11 @@ namespace x86CS
         {
             get { return ((limitHighAndFlags2 & 0x80) == 0x80); }
         }
+
+        public void RefreshBase()
+        {
+            baseAddress = (uint)((baseHigh << 24) + (baseLow2 << 16) + baseLow1);
+        }
     }
 
     public struct Segment

@@ -138,11 +138,22 @@ namespace x86Disasm
             switch (argument.Type)
             {
                 case ArgumentType.Address:
-                    operand.Type = OperandType.Immediate;
-                    operand.Value = (uint)(ReadWord(offset) + (ReadWord(offset+2) << 4));
+                    operand.Type = OperandType.Address;
+                    if (OperandSize == 32)
+                    {
+                        operand.Address = (uint)ReadDWord(offset);
+                        offset += 4;
+                        operand.Value = ReadWord(offset);
+                    }
+                    else
+                    {
+                        operand.Address = (uint)ReadWord(offset);
+                        offset += 2;
+                        operand.Value = ReadWord(offset);
+                    }
+                    offset += 2;
                     if(buildString)
-                        InstructionText += operand.Value.ToString("X");
-                    offset += 4;
+                        InstructionText += operand.Value.ToString("X") + ":" + operand.Address.ToString("X");
                     break;
                 case ArgumentType.Immediate:
                     operand.Type = OperandType.Immediate;

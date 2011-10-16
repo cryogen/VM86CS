@@ -256,10 +256,9 @@ namespace x86CS
             isStepping = stepping;
             if (isStepping)
                 tempBreakpoints.Clear();
-            if(picDevice.RunController() && !Running)
-                return;
             CPU.Cycle(stepping);
             CPU.Fetch(stepping);
+            picDevice.RunController();
         }
     }
 

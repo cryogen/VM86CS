@@ -50,7 +50,8 @@ namespace x86Disasm
         None = 0,
         Register,
         Memory,
-        Immediate
+        Immediate,
+        Address
     }
 
     public enum RegisterType

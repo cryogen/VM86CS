@@ -188,6 +188,7 @@ namespace x86CS
                 machine.RunCycle(true);
                 if (!machine.Running)
                 {
+                    stepButton.Enabled = true;
                     SetCPULabel(machine.CPU.InstructionText);
                     PrintRegisters();
                     PrintStack();
@@ -273,6 +274,7 @@ namespace x86CS
             SetCPULabel(machine.CPU.InstructionText);
             PrintRegisters();
             PrintStack();
+            stepButton.Enabled = true;
         }
 
         private void PrintStack()

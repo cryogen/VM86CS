@@ -19,8 +19,8 @@ namespace x86CS.CPU
                 disasm.CodeSize = 16;
             }
 
-            segment = (uint)((dest.Value & 0xffff0000) >> 4);
-            offset = (uint)dest.Value & 0x0000ffff;
+            segment = dest.Value;
+            offset = (uint)dest.Address;
 
             CS = segment;
             if (opSize == 32)

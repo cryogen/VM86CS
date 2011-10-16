@@ -107,7 +107,7 @@
             new Instruction { OpCode=0x0064, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0065, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0066, Type=InstructionType.Prefix, Value=(int)OPPrefix.OperandSize },
-            new Instruction { OpCode=0x0067, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0067, Type=InstructionType.Prefix, Value=(int)OPPrefix.AddressSize },
             new Instruction { OpCode=0x0068, Type=InstructionType.DataTransfer, NumberOfArguments = 1, Nmumonic = "PUSH", Arg1=new Argument { Type = ArgumentType.Immediate, Size = 16 } },
             new Instruction { OpCode=0x0069, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x006a, Type=InstructionType.DataTransfer, NumberOfArguments = 1, Nmumonic = "PUSH", Arg1=new Argument { Type = ArgumentType.Immediate, Size = 8 } },
