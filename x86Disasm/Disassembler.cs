@@ -11,7 +11,9 @@ namespace x86Disasm
         private Dictionary<uint, Operation> operations;
         private Instruction currentInstruction;
         private bool gotRM;
+        private bool gotSIB;
         private byte rmByte;
+        private byte sibByte;
         private bool buildString;
         private uint virtualAddr;
 
@@ -89,6 +91,67 @@ namespace x86Disasm
             operand.Register = registersControl[index];
             if (buildString)
                 InstructionText += operand.Register;
+        }
+
+        private uint ProcessRegMemMemory32(ref Operand operand, Argument argument, byte rmByte, uint offset)
+        {
+            byte mod, rm;
+
+            operand.Type = OperandType.Memory;
+            operand.Size = argument.Size;
+            operand.Memory = regMemMemory32[rmByte & 0x7];
+
+            mod = (byte)((rmByte >> 6) & 0x3);
+            rm = (byte)(rmByte & 0x7);
+
+            if (rm == 4)
+            {
+                byte scale, baseIndex;
+                MemoryOperand memory;
+                
+                if (!gotSIB)
+                {
+                    sibByte = ReadByte(offset++);
+                    gotSIB = true;
+                }
+
+                baseIndex = (byte)(sibByte & 0x3f);
+                scale = (byte)((sibByte >> 6) & 0x3);
+
+                memory = regMemMemorySib[baseIndex];
+                if (scale != 0)
+                    System.Diagnostics.Debugger.Break();
+
+                if ((baseIndex & 7) == 5)
+                    System.Diagnostics.Debugger.Break();
+
+                operand.Memory.Base = memory.Base;
+                operand.Memory.Index = memory.Index;
+                operand.Memory.Segment = memory.Segment;
+            }
+
+            if (mod == 0 && rm == 5)
+            {
+                operand.Memory.Base = 0;
+                operand.Memory.Displacement = (int)ReadDWord(offset);
+                operand.Memory.Segment = SegmentRegister.DS;
+                offset += 4;
+            }
+            else if (mod == 1)
+                operand.Memory.Displacement = (sbyte)ReadByte(offset++);
+            else if (mod == 2)
+            {
+                operand.Memory.Displacement = (int)ReadDWord(offset);
+                offset += 4;
+            }
+
+            if (OverrideSegment != SegmentRegister.Default)
+                operand.Memory.Segment = OverrideSegment;
+
+            if (buildString)
+                InstructionText += operand.Memory;
+
+            return offset;
         }
 
         private uint ProcessRegMemMemory(ref Operand operand, Argument argument, byte rmByte, uint offset)
@@ -208,13 +271,21 @@ namespace x86Disasm
                             if (rmByte >= 0xc0)
                                 ProcessRegMemRegister(ref operand, argument, rmByte);
                             else
-                                offset = ProcessRegMemMemory(ref operand, argument, rmByte, offset);
+                            {
+                                if(CodeSize == 16)
+                                    offset = ProcessRegMemMemory(ref operand, argument, rmByte, offset);
+                                else
+                                    offset = ProcessRegMemMemory32(ref operand, argument, rmByte, offset);
+                            }
                             break;
                         case ArgumentType.RegMemGeneral:
                             ProcessRegMemRegister(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         case ArgumentType.RegMemMemory:
-                            offset = ProcessRegMemMemory(ref operand, argument, rmByte, offset);
+                            if (CodeSize == 16)
+                                offset = ProcessRegMemMemory(ref operand, argument, rmByte, offset);
+                            else
+                                offset = ProcessRegMemMemory32(ref operand, argument, rmByte, offset);
                             break;
                         case ArgumentType.RegMemSegment:
                             ProcessRegMemSegment(ref operand, argument, (byte)(rmByte >> 3));
@@ -260,13 +331,17 @@ namespace x86Disasm
                         else
                             operand.Memory.Segment = OverrideSegment;
                     }
+                    operand.Memory.Index = GeneralRegister.None;
+                    operand.Memory.Size = CodeSize;
 
                     if(buildString)
                         InstructionText += operand.Memory;
                     break;
                 case ArgumentType.Offset:
                     operand.Type = OperandType.Memory;
-                    
+
+                    operand.Memory.Index = GeneralRegister.None;
+                    operand.Memory.Base = GeneralRegister.None;
                     operand.Memory.Displacement = (int)readFunction(offset, OperandSize);
                     offset += 2;
                     if (OverrideSegment == SegmentRegister.Default)
@@ -315,6 +390,7 @@ namespace x86Disasm
 
             InstructionText = "";
             gotRM = false;
+            gotSIB = false;
             virtualAddr = addr;
             SetPrefixes = 0;
             OverrideSegment = SegmentRegister.Default;

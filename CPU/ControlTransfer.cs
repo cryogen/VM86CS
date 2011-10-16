@@ -145,13 +145,27 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0xe8)]
-        [CPUFunction(OpCode = 0xff02)]
         public void Call(Operand dest)
+        {
+            if (opSize == 32)
+            {
+                StackPush(EIP);
+                EIP = (uint)(EIP + dest.SignedValue);
+            }
+            else
+            {
+                StackPush((ushort)EIP);
+                EIP = (ushort)(EIP + dest.SignedValue);
+            }
+        }
+
+        [CPUFunction(OpCode = 0xff02)]
+        public void CallAbsolute(Operand dest)
         {
             if (opSize == 16)
             {
                 StackPush(IP);
-                EIP = (uint)(ushort)(IP + (ushort)dest.Value);
+                EIP = (ushort)dest.Value;
             }
             else
             {

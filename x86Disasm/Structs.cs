@@ -161,6 +161,7 @@ namespace x86Disasm
         public int Scale;
         public SegmentRegister Segment;
         public uint Address;
+        public int Size;
 
         public override string ToString()
         {
@@ -173,13 +174,20 @@ namespace x86Disasm
 
             builder.Append(":[");
 
-            if ((int)Base != 0)
-                builder.Append(Disassembler.registerStrings16Bit[(int)Base]);
+            if (Base != GeneralRegister.None)
+                if(Size == 16)
+                    builder.Append(Disassembler.registerStrings16Bit[(int)Base]);
+                else
+                    builder.Append(Disassembler.registerStrings32Bit[(int)Base]);
 
-            if((int)Index != 0)
+            if(Index != GeneralRegister.None)
             {
-                builder.Append(" + ");
-                builder.Append(Disassembler.registerStrings16Bit[(int)Index]);
+                if(Base != GeneralRegister.None)
+                    builder.Append(" + ");
+                if(Size == 16)
+                    builder.Append(Disassembler.registerStrings16Bit[(int)Index]);
+                else
+                    builder.Append(Disassembler.registerStrings32Bit[(int)Index]);
             }
 
             if (Displacement != 0)
@@ -191,7 +199,7 @@ namespace x86Disasm
                 }
                 else
                 {
-                    if ((int)Base != 0)
+                    if (Base != GeneralRegister.None || Index != GeneralRegister.None)
                         builder.Append("+");
                     builder.Append(Displacement.ToString("X"));
                 }

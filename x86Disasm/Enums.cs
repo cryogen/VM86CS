@@ -72,6 +72,7 @@ namespace x86Disasm
         ESI,
         EDI,
         EIP,
+        None
     }
 
     [Flags]

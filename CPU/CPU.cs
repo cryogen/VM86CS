@@ -589,12 +589,12 @@ namespace x86CS.CPU
                     }
                     break;
                 case OperandType.Memory:
-                    if (operand.Memory.Base != 0)
+                    if (operand.Memory.Base != GeneralRegister.None)
                         operand.Memory.Address = registers[(int)operand.Memory.Base].Word;
                     else
                         operand.Memory.Address = 0;
 
-                    if (operand.Memory.Index != 0)
+                    if (operand.Memory.Index != GeneralRegister.None)
                         operand.Memory.Address += registers[(int)operand.Memory.Index].Word;
 
                     if(operand.Size == 16)
