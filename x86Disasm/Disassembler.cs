@@ -76,7 +76,6 @@ namespace x86Disasm
             byte index = (byte)(rmByte & 0x7);
 
             operand.Type = OperandType.Register;
-            operand.Size = argument.Size;
             operand.Register = registersSegment[index];
             if(buildString)
                 InstructionText += operand.Register;
@@ -87,7 +86,6 @@ namespace x86Disasm
             byte index = (byte)(rmByte & 0x7);
 
             operand.Type = OperandType.Register;
-            operand.Size = argument.Size;
             operand.Register = registersControl[index];
             if (buildString)
                 InstructionText += operand.Register;
@@ -98,7 +96,6 @@ namespace x86Disasm
             byte mod, rm;
 
             operand.Type = OperandType.Memory;
-            operand.Size = argument.Size;
             operand.Memory = regMemMemory32[rmByte & 0x7];
 
             mod = (byte)((rmByte >> 6) & 0x3);
@@ -159,7 +156,6 @@ namespace x86Disasm
             byte mod, rm;
 
             operand.Type = OperandType.Memory;
-            operand.Size = argument.Size;
             operand.Memory = regMemMemory16[rmByte & 0x7];
             
             mod = (byte)((rmByte >> 6) & 0x3);

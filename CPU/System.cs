@@ -9,6 +9,11 @@ namespace x86CS.CPU
             Halted = true;
         }
 
+        [CPUFunction(OpCode = 0x90)]
+        public void Nop()
+        {
+        }
+
         [CPUFunction(OpCode = 0x0f0103)]
         public void LoadIDT(Operand dest)
         {

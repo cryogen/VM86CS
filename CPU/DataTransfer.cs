@@ -17,6 +17,14 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
+        [CPUFunction(OpCode = 0x0fb6)]
+        [CPUFunction(OpCode = 0x0fb7)]
+        public void MoveZeroExtend(Operand dest, Operand source)
+        {
+            dest.Value = source.Value;
+            WriteOperand(dest);
+        }
+
         [CPUFunction(OpCode = 0x86)]
         [CPUFunction(OpCode = 0x87)]
         [CPUFunction(OpCode = 0x91, Count = 7)]

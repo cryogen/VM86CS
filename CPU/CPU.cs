@@ -590,12 +590,22 @@ namespace x86CS.CPU
                     break;
                 case OperandType.Memory:
                     if (operand.Memory.Base != GeneralRegister.None)
-                        operand.Memory.Address = registers[(int)operand.Memory.Base].Word;
+                    {
+                        if(operand.Memory.Size == 16)
+                            operand.Memory.Address = registers[(int)operand.Memory.Base].Word;
+                        else
+                            operand.Memory.Address = registers[(int)operand.Memory.Base].DWord;
+                    }
                     else
                         operand.Memory.Address = 0;
 
                     if (operand.Memory.Index != GeneralRegister.None)
-                        operand.Memory.Address += registers[(int)operand.Memory.Index].Word;
+                    {
+                        if(operand.Memory.Size == 16)
+                            operand.Memory.Address += registers[(int)operand.Memory.Index].Word;
+                        else
+                            operand.Memory.Address += registers[(int)operand.Memory.Index].DWord;
+                    }
 
                     if(operand.Size == 16)
                         operand.Memory.Address = (ushort)(operand.Memory.Address + operand.Memory.Displacement);
@@ -698,13 +708,13 @@ namespace x86CS.CPU
             {
                 if (opSize == 32)
                 {
-                    ret = SegReadWord(SegmentRegister.SS, ESP);
-                    ESP += 2;
+                    ret = SegReadDWord(SegmentRegister.SS, ESP);
+                    ESP += 4;
                 }
                 else
                 {
-                    ret = SegReadDWord(SegmentRegister.SS, ESP);
-                    ESP += 4;
+                    ret = SegReadWord(SegmentRegister.SS, ESP);
+                    ESP += 2;
                 }
             }
             else
