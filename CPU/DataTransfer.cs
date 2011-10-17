@@ -25,6 +25,14 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
+        [CPUFunction(OpCode = 0x0fbe)]
+        [CPUFunction(OpCode = 0x0fbf)]
+        public void MovSignExtend(Operand dest, Operand source)
+        {
+            dest.SignedValue = source.SignedValue;
+            WriteOperand(dest);
+        }
+
         [CPUFunction(OpCode = 0x86)]
         [CPUFunction(OpCode = 0x87)]
         [CPUFunction(OpCode = 0x91, Count = 7)]

@@ -101,11 +101,20 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0xa4)]
+        public void StringMoveByte(Operand dest, Operand source)
+        {
+            DoStringMove(dest, source, 8);
+        }
+
         [CPUFunction(OpCode = 0xa5)]
-        public void StringMove(Operand dest, Operand source)
+        public void StringMoveWord(Operand dest, Operand source)
+        {
+            DoStringMove(dest, source, opSize);
+        }
+
+        private void DoStringMove(Operand dest, Operand source, int size)
         {
             uint count = GetCount();
-            int size = (int)(dest.Size / 8);
 
             while (count > 0)
             {
@@ -126,16 +135,28 @@ namespace x86CS.CPU
                 if (DF)
                 {
                     if (addressSize == 32)
-                        EDI = (uint)(EDI - size);
+                    {
+                        EDI = (uint)(EDI - (size / 8));
+                        ESI = (uint)(ESI - (size / 8));
+                    }
                     else
-                        DI = (ushort)(DI - size);
+                    {
+                        DI = (ushort)(DI - (size / 8));
+                        SI = (ushort)(SI - (size / 8));
+                    }
                 }
                 else
                 {
                     if (addressSize == 32)
-                        EDI = (uint)(EDI + size);
+                    {
+                        EDI = (uint)(EDI + (size / 8));
+                        ESI = (uint)(ESI + (size / 8));
+                    }
                     else
-                        DI = (ushort)(DI + size);
+                    {
+                        DI = (ushort)(DI + (size / 8));
+                        SI = (ushort)(SI + (size / 8));
+                    }
                 }
 
                 count--;

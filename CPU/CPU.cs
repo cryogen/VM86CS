@@ -599,6 +599,9 @@ namespace x86CS.CPU
                     else
                         operand.Memory.Address = 0;
 
+                    if (operand.Memory.Scale != 0)
+                        operand.Memory.Address *= (uint)(1 << operand.Memory.Scale);
+
                     if (operand.Memory.Index != GeneralRegister.None)
                     {
                         if(operand.Memory.Size == 16)
@@ -611,7 +614,9 @@ namespace x86CS.CPU
                         operand.Memory.Address = (ushort)(operand.Memory.Address + operand.Memory.Displacement);
                     else
                         operand.Memory.Address = (uint)(operand.Memory.Address + operand.Memory.Displacement);
-                    operand.Value = SegRead(operand.Memory.Segment, operand.Memory.Address, (int)operand.Size);
+
+                    if(disasm.CurrentOpCode != 0x8d)  // Don't try to read when it's a LEA instruction
+                        operand.Value = SegRead(operand.Memory.Segment, operand.Memory.Address, (int)operand.Size);
                     break;
                 default:
                     System.Diagnostics.Debugger.Break();

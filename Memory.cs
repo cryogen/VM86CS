@@ -18,7 +18,7 @@ namespace x86CS
 
         static Memory()
         {
-            memory = new byte[MemorySize * 32];
+            memory = new byte[MemorySize * 48];
         }
 
         public static void SegBlockWrite(ushort segment, ushort offset, byte[] buffer, int length)

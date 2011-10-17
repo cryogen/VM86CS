@@ -73,6 +73,21 @@ namespace x86Disasm
                         return (int)value;
                 }
             }
+            set
+            {
+                switch (Size)
+                {
+                    case 8:
+                        this.value = (byte)value;
+                        break;
+                    case 16:
+                        this.value = (ushort)value;
+                        break;
+                    default:
+                        this.value = (uint)value;
+                        break;
+                }
+            }
         }
 
         public uint Value
@@ -175,10 +190,15 @@ namespace x86Disasm
             builder.Append(":[");
 
             if (Base != GeneralRegister.None)
-                if(Size == 16)
+            {
+                if (Size == 16)
                     builder.Append(Disassembler.registerStrings16Bit[(int)Base]);
                 else
                     builder.Append(Disassembler.registerStrings32Bit[(int)Base]);
+
+                if (Scale != 0)
+                    builder.Append("*" + (1<<Scale));
+            }
 
             if(Index != GeneralRegister.None)
             {
