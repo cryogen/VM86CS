@@ -253,6 +253,32 @@ namespace x86CS.CPU
             DumpRegisters();
         }
 
+        [CPUFunction(OpCode = 0xe0)]
+        public void LoopNotZero(Operand dest)
+        {
+            uint count;
+
+            if (addressSize == 32)
+                count = ECX;
+            else
+                count = CX;
+
+            count--;
+
+            if (count != 0 && !ZF)
+            {
+                if (opSize == 32)
+                    EIP = (uint)(EIP + dest.SignedValue);
+                else
+                    EIP = (ushort)(EIP + dest.SignedValue);
+            }
+
+            if (addressSize == 32)
+                ECX = count;
+            else
+                CX = (ushort)count;
+        }
+
         [CPUFunction(OpCode = 0xe2)]
         public void Loop(Operand dest)
         {

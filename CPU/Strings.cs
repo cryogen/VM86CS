@@ -58,6 +58,44 @@ namespace x86CS.CPU
             SetCount(count);
         }
 
+        [CPUFunction(OpCode = 0xac)]
+        [CPUFunction(OpCode = 0xad)]
+        public void StringLoad(Operand dest, Operand source)
+        {
+            uint count = GetCount();
+            int size = (int)(dest.Size / 8);
+
+            while (count > 0)
+            {
+                uint addr;
+
+                if (addressSize == 32)
+                    addr = ESI;
+                else
+                    addr = SI;
+
+                dest.Value = source.Value;
+                WriteOperand(dest);
+                if (DF)
+                {
+                    if (addressSize == 32)
+                        ESI = (uint)(ESI - size);
+                    else
+                        SI = (ushort)(SI - size);
+                }
+                else
+                {
+                    if (addressSize == 32)
+                        ESI = (uint)(ESI + size);
+                    else
+                        SI = (ushort)(SI + size);
+                }
+
+                count--;
+            }
+            SetCount(count);
+        }
+
         [CPUFunction(OpCode = 0xae)]
         [CPUFunction(OpCode = 0xaf)]
         public void StringScan(Operand dest, Operand source)

@@ -75,6 +75,18 @@ namespace x86Disasm
         None
     }
 
+    public enum GeneralRegister8Bit
+    {
+        AL = 0,
+        CL,
+        DL,
+        BL,
+        AH,
+        CH,
+        DH,
+        BH
+    }
+
     [Flags]
     public enum OPPrefix
     {

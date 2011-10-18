@@ -345,14 +345,14 @@ namespace x86Disasm
 
                     operand.Memory.Index = GeneralRegister.None;
                     operand.Memory.Base = GeneralRegister.None;
-                    operand.Memory.Displacement = (int)readFunction(offset, OperandSize);
-                    offset += (uint)(OperandSize / 8);
+                    operand.Memory.Displacement = (int)readFunction(offset, AddressSize);
+                    offset += (uint)(AddressSize / 8);
                     if (OverrideSegment == SegmentRegister.Default)
                         operand.Memory.Segment = SegmentRegister.DS;
                     else
                         operand.Memory.Segment = OverrideSegment;
 
-                    operand.Size = (uint)AddressSize;
+                    operand.Size = (uint)OperandSize;
 
                     if(buildString)
                         InstructionText += operand.Memory;

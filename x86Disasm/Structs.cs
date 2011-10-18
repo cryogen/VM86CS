@@ -22,7 +22,6 @@ namespace x86Disasm
         public ArgumentType Type;
         public uint Size;
         public int Value;
-        public bool High;
         public bool SignExtend;
         public bool UsesES;
     }
