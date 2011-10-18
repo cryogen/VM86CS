@@ -80,6 +80,20 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
+        [CPUFunction(OpCode = 0x0f88)]
+        public void JumpIfSigned(Operand dest)
+        {
+            if (SF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x0f89)]
+        public void JumpIfNotSigned(Operand dest)
+        {
+            if (!SF)
+                Jump(dest);
+        }
+
         [CPUFunction(OpCode = 0x74)]
         [CPUFunction(OpCode = 0x0f84)]
         public void JumpIfZero(Operand dest)

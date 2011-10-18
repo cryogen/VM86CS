@@ -128,5 +128,27 @@ namespace x86CS.CPU
             dest.Value = StackPop();
             WriteOperand(dest);
         }
+
+        [CPUFunction(OpCode = 0x0f94)]
+        public void SetZero(Operand dest)
+        {
+            if (ZF)
+                dest.Value = 1;
+            else
+                dest.Value = 0;
+
+            WriteOperand(dest);
+        }
+
+        [CPUFunction(OpCode = 0x0f95)]
+        public void SetNotZero(Operand dest)
+        {
+            if (!ZF)
+                dest.Value = 1;
+            else
+                dest.Value = 0;
+
+            WriteOperand(dest);
+        }
     }
 }

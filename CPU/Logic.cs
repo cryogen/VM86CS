@@ -93,80 +93,33 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
-        private void Or(byte source)
+        [CPUFunction(OpCode = 0xc107)]
+        [CPUFunction(OpCode = 0xd007)]
+        [CPUFunction(OpCode = 0xd207)]
+        [CPUFunction(OpCode = 0xd017)]
+        [CPUFunction(OpCode = 0xd037)]
+        public void ShiftArithRight(Operand dest, Operand source)
         {
-            AL = DoOr(AL, source);
+            byte count = (byte)(source.Value & 0x1f);
+
+            CF = (((dest.SignedValue << count) & 1) == 1);
+            dest.SignedValue = dest.SignedValue >> count;
+
+            if (count == 1)
+                OF = dest.MSB != 0;
+
+            WriteOperand(dest);
         }
 
-        private void Or(ushort source)
+        [CPUFunction(OpCode = 0x0fac)]
+        [CPUFunction(OpCode = 0x0fad)]
+        public void ShiftRightDP(Operand dest, Operand source, Operand count)
         {
-            AX = DoOr(AX, source);
-        }
+            int c = (int)(count.Value % 32);
 
-        private void Or(uint source)
-        {
-            EAX = DoOr(EAX, source);
-        }
+            dest.Value = (source.Value << c) | ((uint)(dest.Value >> c));
 
-        private byte Or(byte dest, byte source)
-        {
-            return DoOr(dest, source);
-        }
-
-        private ushort Or(ushort dest, byte source)
-        {
-            return DoOr(dest, (ushort)(sbyte)source);
-        }
-
-        private uint Or(uint dest, byte source)
-        {
-            return DoOr(dest, (uint)(sbyte)source);
-        }
-
-        private ushort Or(ushort dest, ushort source)
-        {
-            return DoOr(dest, source);
-        }
-
-        private uint Or(uint dest, uint source)
-        {
-            return DoOr(dest, source);
-        }
-
-        private byte DoOr(byte dest, byte source)
-        {
-            var temp = (byte)(source | dest);
-
-          //  SetCPUFlags(temp);
-
-            CF = false;
-            OF = false;
-
-            return temp;
-        }
-
-        private ushort DoOr(ushort dest, ushort source)
-        {
-            var temp = (ushort)(source | dest);
-
-         //   SetCPUFlags(temp);
-
-            CF = false;
-            OF = false;
-
-            return temp;
-        }
-
-        private uint DoOr(uint dest, uint source)
-        {
-            var temp = source | dest;
-
-          //  SetCPUFlags(temp);
-
-            CF = false;
-            OF = false;
-
-            return temp;
+            WriteOperand(dest);
         }
 
         [CPUFunction(OpCode = 0x30, Count=6)]

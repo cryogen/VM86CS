@@ -90,6 +90,7 @@
     <Compile Include="CPU\CPU.cs" />
     <Compile Include="CPU\DataTransfer.cs" />
     <Compile Include="CPU\Decoder.cs" />
+    <Compile Include="CPU\EnterLeave.cs" />
     <Compile Include="CPU\FlagControl.cs" />
     <Compile Include="CPU\InputOutput.cs" />
     <Compile Include="CPU\Logic.cs" />

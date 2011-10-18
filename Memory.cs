@@ -49,28 +49,47 @@ namespace x86CS
         public static uint Read(uint addr, int size)
         {
             uint ret;
+            bool passedMem = false;
+
+            if (addr > (48 * MemorySize))
+                passedMem = true;
 
             switch (size)
             {
                 case 8:
-                    ret = memory[addr];
+                    if (passedMem)
+                        ret = 0xff;
+                    else
+                        ret = memory[addr];
                     break;
                 case 16:
-                    ret = (ushort)(memory[addr] | memory[addr + 1] << 8);
+                    if (passedMem)
+                        ret = 0xffff;
+                    else
+                        ret = (ushort)(memory[addr] | memory[addr + 1] << 8);
                     break;
                 default:
-                    ret = (uint)(memory[addr] | memory[addr + 1] << 8 | memory[addr + 2] << 16 | memory[addr + 3] << 24);
+                    if (passedMem)
+                        ret = 0xffffffff;
+                    else
+                        ret = (uint)(memory[addr] | memory[addr + 1] << 8 | memory[addr + 2] << 16 | memory[addr + 3] << 24);
                     break;
             }
             if(loggingEnabled)
-                Logger.Debug(String.Format("Read {0} address {1:X} value {2:X}", size, addr, ret));
+                Logger.Debug(String.Format("Read {0} address {1:X} value {2:X}{3}", size, addr, ret, passedMem ? " (OverRead)" : ""));
 
             return ret;
         }
 
         public static void Write(uint addr, uint value, int size)
         {
-            if(loggingEnabled)
+            if (addr > (48 * MemorySize))
+            {
+                Logger.Debug(String.Format("Write {0} address {1:X} value {2:X} (OverWrite, ignored)", size, addr, value));
+                return;
+            }
+
+            if (loggingEnabled)
                 Logger.Debug(String.Format("Write {0} address {1:X} value {2:X}", size, addr, value));
 
             switch (size)
