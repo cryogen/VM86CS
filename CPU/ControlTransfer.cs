@@ -9,15 +9,9 @@ namespace x86CS.CPU
             uint segment, offset;
 
             if (PMode == false && ((CR0 & 0x1) == 0x1))
-            {
                 PMode = true;
-                disasm.CodeSize = 32;
-            }
             else if (PMode && ((CR0 & 0x1) == 0))
-            {
                 PMode = false;
-                disasm.CodeSize = 16;
-            }
 
             segment = dest.Value;
             offset = (uint)dest.Address;

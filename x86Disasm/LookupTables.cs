@@ -427,7 +427,7 @@
             new Instruction { OpCode=0x0f06, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f07, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f08, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0f09, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0f09, Type=InstructionType.System, NumberOfArguments=0, Nmumonic="WBINVD" },
             new Instruction { OpCode=0x0f0a, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f0b, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f0c, Type=InstructionType.Invalid },

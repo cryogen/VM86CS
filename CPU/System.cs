@@ -64,5 +64,11 @@ namespace x86CS.CPU
                     break;
             }
         }
+
+        [CPUFunction(OpCode = 0x0f09)]
+        public void WriteBackInvalidate()
+        {
+            // ?!?!?!
+        }
     }
 }

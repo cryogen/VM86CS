@@ -22,6 +22,7 @@ namespace x86CS.CPU
         private readonly GDTEntry realModeEntry;
         private int opSize = 16;
         private int addressSize = 16;
+        private int codeSize = 16;
         private Disassembler disasm;
         private Operand interruptOperand;
 
@@ -401,7 +402,7 @@ namespace x86CS.CPU
             gdtRegister = new TableRegister();
             disasm = new Disassembler(DisassemblerRead);
 
-            disasm.CodeSize = 16;
+            disasm.CodeSize = codeSize;
             ProcessOperations();
             realModeEntry = new GDTEntry
                                 {
@@ -444,8 +445,8 @@ namespace x86CS.CPU
             GS = 0;
 
             Halted = false;
-            opSize = addressSize = 16;
-            disasm.CodeSize = 16;
+            opSize = addressSize = codeSize = 16;
+            disasm.CodeSize = codeSize;
         }
 
         private bool GetFlag(CPUFlags flag)
@@ -779,6 +780,8 @@ namespace x86CS.CPU
             {
                 segments[(int)segment].Selector = selector;
                 segments[(int)segment].GDTEntry = GetSelectorEntry(selector);
+                if (segment == SegmentRegister.CS)
+                    codeSize = segments[(int)segment].GDTEntry.Is32Bit ? 32 : 16;
             }
             else
             {
@@ -848,6 +851,7 @@ namespace x86CS.CPU
                 return;
 
             CurrentAddr = segments[(int)SegmentRegister.CS].GDTEntry.BaseAddress + EIP;
+            disasm.CodeSize = codeSize;
             OpLen = disasm.Disassemble(CurrentAddr, doStrings);
             opSize = disasm.OperandSize;
             addressSize = disasm.AddressSize;
