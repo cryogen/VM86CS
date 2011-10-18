@@ -88,7 +88,7 @@ namespace x86CS.Devices
 
         private void Reset()
         {
-            Logger.Debug("Reset issued");
+            Logger.Info("Reset issued");
             digitalOutput &= ~DORSetting.Reset;
             OnIRQ(new EventArgs());
         }
@@ -104,7 +104,7 @@ namespace x86CS.Devices
             floppyStream.Seek(addr * 512, SeekOrigin.Begin);
             byte[] sector = floppyReader.ReadBytes(512 * numSectors);
 
-            Logger.Debug(String.Format("Reading {0} sectors from sector offset {1}", numSectors, addr));
+            Logger.Info(String.Format("Reading {0} sectors from sector offset {1}", numSectors, addr));
 
             resultCount = 7;
             resultIdx = 0;
@@ -129,7 +129,7 @@ namespace x86CS.Devices
             switch (command)
             {
                 case FloppyCommand.Recalibrate:
-                    Logger.Debug("Recalibrate issued");
+                    Logger.Info("Recalibrate issued");
                     floppyStream.Seek(0, SeekOrigin.Begin);
                     headPosition = 0;
                     currentCyl = 0;
@@ -138,7 +138,7 @@ namespace x86CS.Devices
                     OnIRQ(new EventArgs());
                     break;
                 case FloppyCommand.SenseInterrupt:
-                    Logger.Debug("Sense interrupt isssued");
+                    Logger.Info("Sense interrupt isssued");
                     if (!interruptInProgress)
                         statusZero = 0x80;
                     interruptInProgress = false;

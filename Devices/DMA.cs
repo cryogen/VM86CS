@@ -40,7 +40,7 @@ namespace x86CS.Devices
             ushort length = counts[channel+1];  
             uint fullAddr = (uint)((pages[channel] << 16) + address);
 
-            Logger.Debug(String.Format("Transferring {0} bytes from {1:X}", length + 1, fullAddr));
+            Logger.Info(String.Format("Transferring {0} bytes from {1:X}", length + 1, fullAddr));
 
             Memory.BlockWrite(fullAddr, data, length + 1);
         }

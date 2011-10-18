@@ -159,5 +159,24 @@ namespace x86CS.CPU
             else
                 EAX = (uint)(int)(short)AX;
         }
+
+        [CPUFunction(OpCode = 0x99)]
+        public void ConvertWordToDWord()
+        {
+            if (opSize == 16)
+            {
+                uint ret = (uint)(int)(short)AX;
+
+                AX = (ushort)ret;
+                DX = (ushort)(ret >> 16);
+            }
+            else
+            {
+                ulong ret = (ulong)(long)(int)EAX;
+
+                EAX = (uint)ret;
+                EDX = (uint)(ret >> 32);
+            }
+        }
     }
 }

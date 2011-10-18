@@ -3,7 +3,7 @@ namespace x86CS.CPU
 {
     public partial class CPU
     {
-        [CPUFunction(OpCode=0xea)]
+        [CPUFunction(OpCode = 0xea)]
         public void FarJump(Operand dest)
         {
             uint segment, offset;
@@ -21,6 +21,15 @@ namespace x86CS.CPU
                 EIP = offset;
             else
                 EIP = (ushort)offset;
+        }
+
+        [CPUFunction(OpCode = 0xff05)]
+        public void FarJumpMemory(Operand dest)
+        {
+            dest.Value = SegRead(dest.Memory.Segment, dest.Memory.Address+2, 16);
+            dest.Address = SegRead(dest.Memory.Segment, dest.Memory.Address, (int)dest.Size);
+
+            FarJump(dest);
         }
 
         [CPUFunction(OpCode = 0xeb)]
@@ -152,6 +161,15 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
+        [CPUFunction(OpCode=0xe3)]
+        public void JumpIfCXIsZero(Operand dest)
+        {
+            if (opSize == 16 && CX == 0)
+                Jump(dest);
+            else if (opSize == 32 && ECX == 0)
+                Jump(dest);
+        }
+
         [CPUFunction(OpCode = 0xe8)]
         public void Call(Operand dest)
         {
@@ -182,25 +200,38 @@ namespace x86CS.CPU
             }
         }
 
-        [CPUFunction(OpCode = 0xff03)]
+        [CPUFunction(OpCode = 0x009a)]
         public void CallFar(Operand dest)
         {
+            uint segment, offset;
+
+            segment = dest.Value;
+            offset = (uint)dest.Address;
+
             if (opSize == 16)
             {
                 StackPush(CS);
                 StackPush(IP);
-                CS = (ushort)(dest.Value >> 16);
-                EIP = (ushort)dest.Value;
+                CS = segment;
+                EIP = (ushort)offset;
             }
             else
             {
                 StackPush(CS);
                 StackPush(EIP);
-                CS = (ushort)(dest.Value >> 16);
-                EIP = dest.Value;
+                CS = segment;
+                EIP = offset;
             }
         }
 
+        [CPUFunction(OpCode = 0xff03)]
+        public void CallFarMemory(Operand dest)
+        {
+            dest.Value = SegRead(dest.Memory.Segment, dest.Memory.Address + 2, 16);
+            dest.Address = SegRead(dest.Memory.Segment, dest.Memory.Address, (int)dest.Size);
+
+            CallFar(dest);
+        }
 
         [CPUFunction(OpCode = 0xc3)]
         public void Return()
@@ -213,6 +244,16 @@ namespace x86CS.CPU
             {
                 EIP = StackPop();
             }
+        }
+
+        [CPUFunction(OpCode = 0xc2)]
+        public void Return(Operand dest)
+        {
+            Return();
+            if (opSize == 32)
+                ESP = (uint)(ESP + dest.SignedValue);
+            else
+                SP = (ushort)(SP + dest.SignedValue);
         }
 
         [CPUFunction(OpCode = 0xcb)]
@@ -228,6 +269,16 @@ namespace x86CS.CPU
                 EIP = StackPop();
                 CS = StackPop();
             }
+        }
+
+        [CPUFunction(OpCode = 0xca)]
+        public void FarReturn(Operand dest)
+        {
+            FarReturn();
+            if (opSize == 32)
+                ESP = (uint)(ESP + dest.SignedValue);
+            else
+                SP = (ushort)(SP + dest.SignedValue);
         }
 
         [CPUFunction(OpCode = 0xcd)]

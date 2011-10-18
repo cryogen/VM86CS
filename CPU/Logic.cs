@@ -50,82 +50,10 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
-        [CPUFunction(OpCode = 0xc004)]
-        [CPUFunction(OpCode = 0xc104)]
-        [CPUFunction(OpCode = 0xd004)]
-        [CPUFunction(OpCode = 0xd104)]
-        [CPUFunction(OpCode = 0xd204)]
-        [CPUFunction(OpCode = 0xd304)]
-        public void ShiftLeft(Operand dest, Operand source)
-        {
-            byte count = (byte)(source.Value & 0x1f);
-
-            CF = (((dest.Value << (byte)(dest.Size - count)) & 1) == 1);
-            dest.Value = dest.Value << count;
-
-            if (count == 1)
-            {
-                if (CF && dest.MSB != 0 || !CF && dest.MSB == 0)
-                    OF = true;
-                else
-                    OF = false;
-            }
-
-            WriteOperand(dest);
-        }
-
-        [CPUFunction(OpCode = 0xc005)]
-        [CPUFunction(OpCode = 0xc105)]
-        [CPUFunction(OpCode = 0xd005)]
-        [CPUFunction(OpCode = 0xd105)]
-        [CPUFunction(OpCode = 0xd205)]
-        [CPUFunction(OpCode = 0xd305)]
-        public void ShiftRight(Operand dest, Operand source)
-        {
-            byte count = (byte)(source.Value & 0x1f);
-
-            CF = (((dest.Value << count) & 1) == 1);
-            dest.Value = dest.Value >> count;
-
-            if (count == 1)
-                OF = dest.MSB != 0;
-
-            WriteOperand(dest);
-        }
-
-        [CPUFunction(OpCode = 0xc107)]
-        [CPUFunction(OpCode = 0xd007)]
-        [CPUFunction(OpCode = 0xd207)]
-        [CPUFunction(OpCode = 0xd017)]
-        [CPUFunction(OpCode = 0xd037)]
-        public void ShiftArithRight(Operand dest, Operand source)
-        {
-            byte count = (byte)(source.Value & 0x1f);
-
-            CF = (((dest.SignedValue << count) & 1) == 1);
-            dest.SignedValue = dest.SignedValue >> count;
-
-            if (count == 1)
-                OF = dest.MSB != 0;
-
-            WriteOperand(dest);
-        }
-
-        [CPUFunction(OpCode = 0x0fac)]
-        [CPUFunction(OpCode = 0x0fad)]
-        public void ShiftRightDP(Operand dest, Operand source, Operand count)
-        {
-            int c = (int)(count.Value % 32);
-
-            dest.Value = (source.Value << c) | ((uint)(dest.Value >> c));
-
-            WriteOperand(dest);
-        }
-
         [CPUFunction(OpCode = 0x30, Count=6)]
-        [CPUFunction(OpCode = 0x0680)]
-        [CPUFunction(OpCode = 0x0681)]
-        [CPUFunction(OpCode = 0x0683)]
+        [CPUFunction(OpCode = 0x8006)]
+        [CPUFunction(OpCode = 0x8106)]
+        [CPUFunction(OpCode = 0x8306)]
         public void Xor(Operand dest, Operand source)
         {
             dest.Value = dest.Value ^ source.Value;

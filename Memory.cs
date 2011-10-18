@@ -11,7 +11,7 @@ namespace x86CS
 
         private const uint MemorySize = 0xFFFFF;
         private static readonly byte[] memory;
-        private static bool loggingEnabled = Logger.IsDebugEnabled;
+        public static bool LoggingEnabled = Logger.IsDebugEnabled;
 
         public static bool A20 { get; set; }
         public static byte[] MemoryArray { get { return memory; } }
@@ -30,7 +30,7 @@ namespace x86CS
 
         public static void BlockWrite(uint addr, byte[] buffer, int length)
         {
-            if(loggingEnabled)
+            if(LoggingEnabled)
                 Logger.Debug(String.Format("Block write {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
             Buffer.BlockCopy(buffer, 0, memory, (int)addr, length);
@@ -40,7 +40,7 @@ namespace x86CS
         {
             Buffer.BlockCopy(memory, (int)addr, buffer, 0, length);
 
-            if(loggingEnabled)
+            if(LoggingEnabled)
                 Logger.Debug(String.Format("Block read {0:X} length {1:X} ends {2:X}", addr, length, addr + length));
 
             return buffer.Length;
@@ -76,7 +76,7 @@ namespace x86CS
                     break;
             }
 
-            if(loggingEnabled)
+            if(LoggingEnabled)
                 Logger.Debug(String.Format("Read {0} address {1:X} value {2:X}{3}", size, addr, ret, passedMem ? " (OverRead)" : ""));
 
             return ret;
@@ -86,11 +86,12 @@ namespace x86CS
         {
             if (addr > (48 * MemorySize))
             {
-                Logger.Debug(String.Format("Write {0} address {1:X} value {2:X} (OverWrite, ignored)", size, addr, value));
+                if(LoggingEnabled)
+                    Logger.Debug(String.Format("Write {0} address {1:X} value {2:X} (OverWrite, ignored)", size, addr, value));
                 return;
             }
 
-            if (loggingEnabled)
+            if (LoggingEnabled)
                 Logger.Debug(String.Format("Write {0} address {1:X} value {2:X}", size, addr, value));
 
             switch (size)

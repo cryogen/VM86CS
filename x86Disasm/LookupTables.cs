@@ -400,7 +400,7 @@
                 new Instruction { OpCode=0xff02, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "CALL", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 } },
                 new Instruction { OpCode=0xff03, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "CALL FAR", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=32 } },
                 new Instruction { OpCode=0xff04, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "JMP", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 } },
-                new Instruction { OpCode=0xff05, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "JMP FAR", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=32 } },
+                new Instruction { OpCode=0xff05, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "JMP FAR", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
                 new Instruction { OpCode=0xff06, Type=InstructionType.ControlTransfer, NumberOfArguments = 1, Nmumonic = "PUSH", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 } },
                 new Instruction { OpCode=0xff07, Type=InstructionType.Invalid },
             },

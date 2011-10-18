@@ -92,14 +92,11 @@ namespace x86CS.Devices
                     System.Diagnostics.Debugger.Break();
                     break;
             }
-
-            Logger.Debug(String.Format("Read {0:X} returned {1:X}", addr, ret));
             return ret;
         }
 
         public void Write(ushort addr, uint value, int size)
         {
-            Logger.Debug(String.Format("Write {0:X} value {1:X}", addr, value));
             switch (addr)
             {
                 case 0x3b4:

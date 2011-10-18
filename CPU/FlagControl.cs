@@ -15,6 +15,18 @@ namespace x86CS.CPU
             IF = true;
         }
 
+        [CPUFunction(OpCode = 0xf8)]
+        public void ClearCarryFlag()
+        {
+            CF = false;
+        }
+
+        [CPUFunction(OpCode = 0xf9)]
+        public void SetCarryFlag()
+        {
+            CF = true;
+        }
+
         [CPUFunction(OpCode = 0xfc)]
         public void ClearDirectionFlag()
         {

@@ -652,7 +652,19 @@ namespace x86CS.CPU
 
         private uint DisassemblerRead(uint offset, int size)
         {
-            return Memory.Read(CurrentAddr + offset, size);
+            if (!Memory.LoggingEnabled)
+                return Memory.Read(CurrentAddr + offset, size);
+            else
+            {
+                uint ret;
+                bool log = Memory.LoggingEnabled;
+
+                Memory.LoggingEnabled = false;
+                ret = Memory.Read(CurrentAddr + offset, size);
+                Memory.LoggingEnabled = log;
+
+                return ret;
+            }
         }
 
         private uint GetVirtualAddress(SegmentRegister segment, uint offset)

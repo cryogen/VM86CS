@@ -201,5 +201,73 @@ namespace x86CS.CPU
             }
             SetCount(count);
         }
+
+        [CPUFunction(OpCode = 0xa6)]
+        public void StringCompareByte(Operand dest, Operand source)
+        {
+            DoStringCompare(dest, source, 8);
+        }
+
+        [CPUFunction(OpCode = 0xa7)]
+        public void StringCompareWord(Operand dest, Operand source)
+        {
+            DoStringCompare(dest, source, opSize);
+        }
+
+        private void DoStringCompare(Operand dest, Operand source, int size)
+        {
+            uint count = GetCount();
+
+            while (count > 0)
+            {
+                uint destAddr, sourceAddr;
+
+                if (addressSize == 32)
+                {
+                    destAddr = EDI;
+                    sourceAddr = ESI;
+                }
+                else
+                {
+                    destAddr = DI;
+                    sourceAddr = SI;
+                }
+
+                source.Value = SegRead(disasm.OverrideSegment == SegmentRegister.Default ? SegmentRegister.DS : disasm.OverrideSegment, sourceAddr, (int)source.Size);
+                dest.Value = SegRead(SegmentRegister.ES, destAddr, (int)dest.Size);
+
+                Compare(dest, source);
+
+                if (DF)
+                {
+                    if (addressSize == 32)
+                    {
+                        EDI = (uint)(EDI - (size / 8));
+                        ESI = (uint)(ESI - (size / 8));
+                    }
+                    else
+                    {
+                        DI = (ushort)(DI - (size / 8));
+                        SI = (ushort)(SI - (size / 8));
+                    }
+                }
+                else
+                {
+                    if (addressSize == 32)
+                    {
+                        EDI = (uint)(EDI + (size / 8));
+                        ESI = (uint)(ESI + (size / 8));
+                    }
+                    else
+                    {
+                        DI = (ushort)(DI + (size / 8));
+                        SI = (ushort)(SI + (size / 8));
+                    }
+                }
+
+                count--;
+            }
+            SetCount(count);
+        }
     }
 }
