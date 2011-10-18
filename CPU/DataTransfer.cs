@@ -150,5 +150,14 @@ namespace x86CS.CPU
 
             WriteOperand(dest);
         }
+
+        [CPUFunction(OpCode = 0x98)]
+        public void ConvertByteToWord()
+        {
+            if (opSize == 16)
+                AX = (ushort)(short)(sbyte)AL;
+            else
+                EAX = (uint)(int)(short)AX;
+        }
     }
 }

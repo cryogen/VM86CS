@@ -75,6 +75,7 @@ namespace x86CS
                         ret = (uint)(memory[addr] | memory[addr + 1] << 8 | memory[addr + 2] << 16 | memory[addr + 3] << 24);
                     break;
             }
+
             if(loggingEnabled)
                 Logger.Debug(String.Format("Read {0} address {1:X} value {2:X}{3}", size, addr, ret, passedMem ? " (OverRead)" : ""));
 
