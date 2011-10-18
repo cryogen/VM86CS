@@ -8,7 +8,7 @@ namespace x86CS.Devices
     {
         private const int IrqNumber = 0;
 
-        private readonly int[] portsUsed = { 0x40, 0x41, 0x42, 0x43 };
+        private readonly int[] portsUsed = { 0x40, 0x41, 0x42, 0x43, 0x61 };
         private readonly Counter[] counters;
 
         public event EventHandler IRQ;
@@ -49,9 +49,11 @@ namespace x86CS.Devices
             switch (address)
             {
                 case 0x40:
-                    return 0x000;
+                    return 0x0000;
                 case 0x43:
                     return 0xffff;
+                case 0x61:
+                    return (uint)((counters[0].Count & 1) << 4);
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;
@@ -127,6 +129,11 @@ namespace x86CS.Devices
         }
 
         public bool BCDMode { get; set; }
+
+        public ulong Count
+        {
+            get { return (ulong)counter; }
+        }
 
         public ushort Reload
         {

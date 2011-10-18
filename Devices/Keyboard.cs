@@ -18,7 +18,7 @@ namespace x86CS.Devices
 
     public class Keyboard : IDevice, INeedsIRQ
     {
-        private readonly int[] portsUsed = {0x60, 0x61, 0x64};
+        private readonly int[] portsUsed = {0x60, 0x64};
         private readonly Queue<byte> outputBuffer;
         private byte inputBuffer;
         private byte commandByte;
@@ -125,8 +125,6 @@ namespace x86CS.Devices
                         statusRegister &= ~KeyboardFlags.OutputBufferFull;
                     setCommandByte = false;
                     return ret;
-                case 0x61:
-                    return 0x10;   
                 case 0x64:
                     return (ushort) statusRegister;
                 default:
