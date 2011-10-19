@@ -84,7 +84,7 @@ namespace x86CS
 
                 try
                 {
-                    machine.RunCycle(loggingToolStripMenuItem.Checked);
+                    machine.RunCycle(loggingToolStripMenuItem.Checked, false);
                 }
                 catch (Exception ex)
                 {
@@ -188,7 +188,7 @@ namespace x86CS
                 stepButton.Enabled = false;
                 stepOverButton.Enabled = false;
                 machine.Running = false;
-                machine.RunCycle(true);
+                machine.RunCycle(true, true);
                 if (!machine.Running)
                 {
                     stepButton.Enabled = true;
@@ -202,6 +202,7 @@ namespace x86CS
 
         private void GoButtonClick(object sender, EventArgs e)
         {
+            machine.ClearTempBreakpoints();
             machine.Running = true;
             stepButton.Enabled = false;
             stepOverButton.Enabled = false;

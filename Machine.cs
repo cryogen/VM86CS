@@ -261,12 +261,12 @@ namespace x86CS
 
         public void RunCycle()
         {
-            RunCycle(false);
+            RunCycle(false, false);
         }
 
-        public void RunCycle(bool logging)
+        public void RunCycle(bool logging, bool stepping)
         {
-            isStepping = logging;
+            isStepping = stepping;
             CPU.Cycle(logging);
             CPU.Fetch(logging);
             picDevice.RunController();
