@@ -641,12 +641,6 @@ namespace x86CS.CPU
                 arguments[i] = ProcessOperand(operands[i]);
             }
 
-            if (disasm.NumberOfOperands == 2 && arguments[0].Size > 8 && arguments[1].Size == 8 && arguments[1].Type == OperandType.Immediate)
-            {
-                arguments[1].Size = arguments[0].Size;
-                arguments[1].Value = (uint)(int)(sbyte)arguments[1].Value;
-            }
-
             return arguments;
         }
 
