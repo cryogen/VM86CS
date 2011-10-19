@@ -100,6 +100,7 @@ namespace x86CS
                                                    machine.CPU.ReFetch();
                                                    SetCPULabel(machine.CPU.InstructionText);
                                                    stepButton.Enabled = true;
+                                                   stepOverButton.Enabled = true;
                                                    PrintStack();
                                                }));
                     machine.Running = false;
@@ -184,11 +185,13 @@ namespace x86CS
             Invoke((MethodInvoker)(() =>
             {
                 stepButton.Enabled = false;
+                stepOverButton.Enabled = false;
                 machine.Running = false;
                 machine.RunCycle(true);
                 if (!machine.Running)
                 {
                     stepButton.Enabled = true;
+                    stepOverButton.Enabled = true;
                     SetCPULabel(machine.CPU.InstructionText);
                     PrintRegisters();
                     PrintStack();
@@ -200,6 +203,7 @@ namespace x86CS
         {
             machine.Running = true;
             stepButton.Enabled = false;
+            stepOverButton.Enabled = false;
         }
 
         private void MainFormFormClosed(object sender, FormClosedEventArgs e)
@@ -275,6 +279,7 @@ namespace x86CS
             PrintRegisters();
             PrintStack();
             stepButton.Enabled = true;
+            stepOverButton.Enabled = true;
         }
 
         private void PrintStack()

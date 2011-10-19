@@ -67,7 +67,7 @@ namespace x86CS
         {
             if (CPU.IF)
             {
-                uint currentAddr = (uint)(CPU.GetSelectorBase(x86Disasm.SegmentRegister.CS) + CPU.EIP + CPU.OpLen);
+                uint currentAddr = (uint)(CPU.GetSelectorBase(x86Disasm.SegmentRegister.CS) + CPU.EIP);
                 picDevice.AckInterrupt(e.IRQ);
                 CPU.ExecuteInterrupt(e.Vector);
                 if (isStepping)
@@ -259,7 +259,7 @@ namespace x86CS
             CPU.Cycle(stepping);
             CPU.Fetch(stepping);
             picDevice.RunController();
-            machineForm.Invalidate();
+            //machineForm.Invalidate();
         }
     }
 
