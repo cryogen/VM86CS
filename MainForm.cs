@@ -184,6 +184,7 @@ namespace x86CS
         {
             Invoke((MethodInvoker)(() =>
             {
+                machine.ClearTempBreakpoints();
                 stepButton.Enabled = false;
                 stepOverButton.Enabled = false;
                 machine.Running = false;
@@ -313,6 +314,17 @@ namespace x86CS
                     str = "+" + index.ToString("X2");
                 baseList.Items.Add(str + " " + (Memory.Read(i, stackSize * 8)).ToString("X"));
             }
+        }
+
+        private void stepOverButton_Click(object sender, EventArgs e)
+        {
+            Invoke((MethodInvoker)(() =>
+            {
+                stepOverButton.Enabled = false;
+                stepButton.Enabled = false;
+                machine.ClearTempBreakpoints();
+                machine.StepOver();
+            }));
         }
     }
 }

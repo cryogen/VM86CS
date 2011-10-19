@@ -246,18 +246,29 @@ namespace x86CS
             }
         }
 
+        public void ClearTempBreakpoints()
+        {
+            tempBreakpoints.Clear();
+        }
+
+        public void StepOver()
+        {
+            uint currentAddr = (uint)(CPU.GetSelectorBase(x86Disasm.SegmentRegister.CS) + CPU.EIP + CPU.OpLen);
+
+            tempBreakpoints.Add(currentAddr, currentAddr);
+            Running = true;
+        }
+
         public void RunCycle()
         {
             RunCycle(false);
         }
 
-        public void RunCycle(bool stepping)
+        public void RunCycle(bool logging)
         {
-            isStepping = stepping;
-            if (isStepping)
-                tempBreakpoints.Clear();
-            CPU.Cycle(stepping);
-            CPU.Fetch(stepping);
+            isStepping = logging;
+            CPU.Cycle(logging);
+            CPU.Fetch(logging);
             picDevice.RunController();
             //machineForm.Invalidate();
         }

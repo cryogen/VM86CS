@@ -38,6 +38,7 @@
             this.mountToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.debugToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.breakpointsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.loggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.registersGroup = new System.Windows.Forms.GroupBox();
             this.EBP = new System.Windows.Forms.TextBox();
             this.ebpLabel = new System.Windows.Forms.Label();
@@ -89,23 +90,22 @@
             this.stepButton = new System.Windows.Forms.Button();
             this.goButton = new System.Windows.Forms.Button();
             this.cpuGroup = new System.Windows.Forms.GroupBox();
+            this.stepOverButton = new System.Windows.Forms.Button();
             this.cpuLabel = new System.Windows.Forms.Label();
             this.memoryGroup = new System.Windows.Forms.GroupBox();
+            this.memoryCharList = new System.Windows.Forms.ListBox();
+            this.memoryChar = new System.Windows.Forms.TextBox();
+            this.memoryByte = new System.Windows.Forms.TextBox();
+            this.memoryWord = new System.Windows.Forms.TextBox();
+            this.memoryDWord = new System.Windows.Forms.TextBox();
+            this.memoryList = new System.Windows.Forms.ListBox();
             this.memOffset = new System.Windows.Forms.TextBox();
             this.memoryButton = new System.Windows.Forms.Button();
             this.mainStatus = new System.Windows.Forms.StatusStrip();
             this.tpsLabel = new System.Windows.Forms.ToolStripStatusLabel();
-            this.stepOverButton = new System.Windows.Forms.Button();
-            this.memoryList = new System.Windows.Forms.ListBox();
-            this.memoryDWord = new System.Windows.Forms.TextBox();
-            this.memoryWord = new System.Windows.Forms.TextBox();
-            this.memoryByte = new System.Windows.Forms.TextBox();
-            this.memoryChar = new System.Windows.Forms.TextBox();
-            this.memoryCharList = new System.Windows.Forms.ListBox();
             this.stackGroup = new System.Windows.Forms.GroupBox();
-            this.stackList = new System.Windows.Forms.ListBox();
             this.baseList = new System.Windows.Forms.ListBox();
-            this.loggingToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.stackList = new System.Windows.Forms.ListBox();
             this.mainMenu.SuspendLayout();
             this.registersGroup.SuspendLayout();
             this.segmentGroup.SuspendLayout();
@@ -197,6 +197,13 @@
             this.breakpointsToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
             this.breakpointsToolStripMenuItem.Text = "&Breakpoints";
             this.breakpointsToolStripMenuItem.Click += new System.EventHandler(this.BreakpointsToolStripMenuItemClick);
+            // 
+            // loggingToolStripMenuItem
+            // 
+            this.loggingToolStripMenuItem.CheckOnClick = true;
+            this.loggingToolStripMenuItem.Name = "loggingToolStripMenuItem";
+            this.loggingToolStripMenuItem.Size = new System.Drawing.Size(136, 22);
+            this.loggingToolStripMenuItem.Text = "&Logging";
             // 
             // registersGroup
             // 
@@ -673,6 +680,16 @@
             this.cpuGroup.TabStop = false;
             this.cpuGroup.Text = "CPU";
             // 
+            // stepOverButton
+            // 
+            this.stepOverButton.Location = new System.Drawing.Point(124, 46);
+            this.stepOverButton.Name = "stepOverButton";
+            this.stepOverButton.Size = new System.Drawing.Size(75, 23);
+            this.stepOverButton.TabIndex = 3;
+            this.stepOverButton.Text = "&Step Over";
+            this.stepOverButton.UseVisualStyleBackColor = true;
+            this.stepOverButton.Click += new System.EventHandler(this.stepOverButton_Click);
+            // 
             // cpuLabel
             // 
             this.cpuLabel.AutoSize = true;
@@ -697,6 +714,59 @@
             this.memoryGroup.TabIndex = 6;
             this.memoryGroup.TabStop = false;
             this.memoryGroup.Text = "Memory:";
+            // 
+            // memoryCharList
+            // 
+            this.memoryCharList.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.memoryCharList.FormattingEnabled = true;
+            this.memoryCharList.ItemHeight = 14;
+            this.memoryCharList.Location = new System.Drawing.Point(387, 45);
+            this.memoryCharList.Name = "memoryCharList";
+            this.memoryCharList.Size = new System.Drawing.Size(257, 144);
+            this.memoryCharList.TabIndex = 8;
+            // 
+            // memoryChar
+            // 
+            this.memoryChar.Location = new System.Drawing.Point(319, 20);
+            this.memoryChar.Name = "memoryChar";
+            this.memoryChar.ReadOnly = true;
+            this.memoryChar.Size = new System.Drawing.Size(23, 20);
+            this.memoryChar.TabIndex = 7;
+            // 
+            // memoryByte
+            // 
+            this.memoryByte.Location = new System.Drawing.Point(290, 20);
+            this.memoryByte.Name = "memoryByte";
+            this.memoryByte.ReadOnly = true;
+            this.memoryByte.Size = new System.Drawing.Size(23, 20);
+            this.memoryByte.TabIndex = 6;
+            // 
+            // memoryWord
+            // 
+            this.memoryWord.Location = new System.Drawing.Point(250, 20);
+            this.memoryWord.MaxLength = 4;
+            this.memoryWord.Name = "memoryWord";
+            this.memoryWord.ReadOnly = true;
+            this.memoryWord.Size = new System.Drawing.Size(34, 20);
+            this.memoryWord.TabIndex = 5;
+            // 
+            // memoryDWord
+            // 
+            this.memoryDWord.Location = new System.Drawing.Point(174, 20);
+            this.memoryDWord.Name = "memoryDWord";
+            this.memoryDWord.ReadOnly = true;
+            this.memoryDWord.Size = new System.Drawing.Size(70, 20);
+            this.memoryDWord.TabIndex = 4;
+            // 
+            // memoryList
+            // 
+            this.memoryList.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.memoryList.FormattingEnabled = true;
+            this.memoryList.ItemHeight = 14;
+            this.memoryList.Location = new System.Drawing.Point(4, 45);
+            this.memoryList.Name = "memoryList";
+            this.memoryList.Size = new System.Drawing.Size(380, 144);
+            this.memoryList.TabIndex = 3;
             // 
             // memOffset
             // 
@@ -730,68 +800,6 @@
             this.tpsLabel.Name = "tpsLabel";
             this.tpsLabel.Size = new System.Drawing.Size(0, 17);
             // 
-            // stepOverButton
-            // 
-            this.stepOverButton.Location = new System.Drawing.Point(124, 46);
-            this.stepOverButton.Name = "stepOverButton";
-            this.stepOverButton.Size = new System.Drawing.Size(75, 23);
-            this.stepOverButton.TabIndex = 3;
-            this.stepOverButton.Text = "&Step Over";
-            this.stepOverButton.UseVisualStyleBackColor = true;
-            // 
-            // memoryList
-            // 
-            this.memoryList.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.memoryList.FormattingEnabled = true;
-            this.memoryList.ItemHeight = 14;
-            this.memoryList.Location = new System.Drawing.Point(4, 45);
-            this.memoryList.Name = "memoryList";
-            this.memoryList.Size = new System.Drawing.Size(380, 144);
-            this.memoryList.TabIndex = 3;
-            // 
-            // memoryDWord
-            // 
-            this.memoryDWord.Location = new System.Drawing.Point(174, 20);
-            this.memoryDWord.Name = "memoryDWord";
-            this.memoryDWord.ReadOnly = true;
-            this.memoryDWord.Size = new System.Drawing.Size(70, 20);
-            this.memoryDWord.TabIndex = 4;
-            // 
-            // memoryWord
-            // 
-            this.memoryWord.Location = new System.Drawing.Point(250, 20);
-            this.memoryWord.MaxLength = 4;
-            this.memoryWord.Name = "memoryWord";
-            this.memoryWord.ReadOnly = true;
-            this.memoryWord.Size = new System.Drawing.Size(34, 20);
-            this.memoryWord.TabIndex = 5;
-            // 
-            // memoryByte
-            // 
-            this.memoryByte.Location = new System.Drawing.Point(290, 20);
-            this.memoryByte.Name = "memoryByte";
-            this.memoryByte.ReadOnly = true;
-            this.memoryByte.Size = new System.Drawing.Size(23, 20);
-            this.memoryByte.TabIndex = 6;
-            // 
-            // memoryChar
-            // 
-            this.memoryChar.Location = new System.Drawing.Point(319, 20);
-            this.memoryChar.Name = "memoryChar";
-            this.memoryChar.ReadOnly = true;
-            this.memoryChar.Size = new System.Drawing.Size(23, 20);
-            this.memoryChar.TabIndex = 7;
-            // 
-            // memoryCharList
-            // 
-            this.memoryCharList.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.memoryCharList.FormattingEnabled = true;
-            this.memoryCharList.ItemHeight = 14;
-            this.memoryCharList.Location = new System.Drawing.Point(387, 45);
-            this.memoryCharList.Name = "memoryCharList";
-            this.memoryCharList.Size = new System.Drawing.Size(257, 144);
-            this.memoryCharList.TabIndex = 8;
-            // 
             // stackGroup
             // 
             this.stackGroup.Controls.Add(this.baseList);
@@ -803,16 +811,6 @@
             this.stackGroup.TabStop = false;
             this.stackGroup.Text = "Stack:";
             // 
-            // stackList
-            // 
-            this.stackList.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.stackList.FormattingEnabled = true;
-            this.stackList.ItemHeight = 14;
-            this.stackList.Location = new System.Drawing.Point(6, 16);
-            this.stackList.Name = "stackList";
-            this.stackList.Size = new System.Drawing.Size(108, 186);
-            this.stackList.TabIndex = 0;
-            // 
             // baseList
             // 
             this.baseList.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -823,12 +821,15 @@
             this.baseList.Size = new System.Drawing.Size(108, 186);
             this.baseList.TabIndex = 1;
             // 
-            // loggingToolStripMenuItem
+            // stackList
             // 
-            this.loggingToolStripMenuItem.CheckOnClick = true;
-            this.loggingToolStripMenuItem.Name = "loggingToolStripMenuItem";
-            this.loggingToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
-            this.loggingToolStripMenuItem.Text = "&Logging";
+            this.stackList.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.stackList.FormattingEnabled = true;
+            this.stackList.ItemHeight = 14;
+            this.stackList.Location = new System.Drawing.Point(6, 16);
+            this.stackList.Name = "stackList";
+            this.stackList.Size = new System.Drawing.Size(108, 186);
+            this.stackList.TabIndex = 0;
             // 
             // MainForm
             // 
