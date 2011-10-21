@@ -27,10 +27,22 @@ namespace x86CS.CPU
             CF = true;
         }
 
+        [CPUFunction(OpCode = 0xf5)]
+        public void ComplementCarryFlag()
+        {
+            CF = !CF;
+        }
+
         [CPUFunction(OpCode = 0xfc)]
         public void ClearDirectionFlag()
         {
             DF = false;
+        }
+
+        [CPUFunction(OpCode = 0xfd)]
+        public void SetDirectionFlag()
+        {
+            DF = true;
         }
 
         [CPUFunction(OpCode = 0x9c)]
@@ -50,6 +62,22 @@ namespace x86CS.CPU
         public void PopFlags()
         {
             eFlags = (CPUFlags)StackPop();
+        }
+
+        [CPUFunction(OpCode = 0x9f)]
+        public void LoadFlags()
+        {
+            AH = (byte)eFlags;
+            AH |= 0x2;
+            AH &= 0xd7;
+        }
+
+        [CPUFunction(OpCode = 0x9e)]
+        public void StoreFlags()
+        {
+            eFlags = (CPUFlags)AH;
+            eFlags |= CPUFlags.Spare;
+            eFlags &= ~(CPUFlags.Spare2 | CPUFlags.Spare3);
         }
     }
 }

@@ -352,8 +352,6 @@ namespace x86Disasm
                     else
                         operand.Memory.Segment = OverrideSegment;
 
-                    operand.Size = (uint)OperandSize;
-
                     if(buildString)
                         InstructionText += operand.Memory;
                     break;

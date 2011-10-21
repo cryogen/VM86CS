@@ -83,6 +83,7 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
+        [CPUFunction(OpCode = 0x0078)]
         [CPUFunction(OpCode = 0x0f88)]
         public void JumpIfSigned(Operand dest)
         {
@@ -91,6 +92,7 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0x0f89)]
+        [CPUFunction(OpCode = 0x0079)]
         public void JumpIfNotSigned(Operand dest)
         {
             if (!SF)
@@ -317,6 +319,32 @@ namespace x86CS.CPU
             count--;
 
             if (count != 0 && !ZF)
+            {
+                if (opSize == 32)
+                    EIP = (uint)(EIP + dest.SignedValue);
+                else
+                    EIP = (ushort)(EIP + dest.SignedValue);
+            }
+
+            if (addressSize == 32)
+                ECX = count;
+            else
+                CX = (ushort)count;
+        }
+
+        [CPUFunction(OpCode = 0xe1)]
+        public void LoopZero(Operand dest)
+        {
+            uint count;
+
+            if (addressSize == 32)
+                count = ECX;
+            else
+                count = CX;
+
+            count--;
+
+            if (count != 0 && ZF)
             {
                 if (opSize == 32)
                     EIP = (uint)(EIP + dest.SignedValue);

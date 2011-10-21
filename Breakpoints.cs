@@ -55,8 +55,8 @@ namespace x86CS
 
             var item = breakpointList.SelectedItems[0];
 
-            var seg = ushort.Parse(item.Text, NumberStyles.HexNumber);
-            var off = ushort.Parse(item.SubItems[1].Text, NumberStyles.HexNumber);
+            var seg = uint.Parse(item.Text, NumberStyles.HexNumber);
+            var off = uint.Parse(item.SubItems[1].Text, NumberStyles.HexNumber);
 
             uint addr = (uint)((seg << 4) + off);
 

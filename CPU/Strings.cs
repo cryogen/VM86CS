@@ -266,6 +266,10 @@ namespace x86CS.CPU
                 }
 
                 count--;
+
+                if ((((disasm.SetPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat) && !ZF) || 
+                    ((disasm.SetPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual) && ZF)
+                    break;
             }
             SetCount(count);
         }

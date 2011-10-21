@@ -665,7 +665,10 @@ namespace x86CS.CPU
         {
             Segment seg = segments[(int)segment];
 
-            return seg.GDTEntry.BaseAddress + offset;
+            if (PMode)
+                return seg.GDTEntry.BaseAddress + offset;
+            else
+                return seg.GDTEntry.BaseAddress + (ushort)offset;
         }
 
         private uint SegRead(SegmentRegister segment, uint offset, int size)
