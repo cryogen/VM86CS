@@ -1,4 +1,5 @@
 ﻿using System;
+using x86Disasm;
 
 namespace x86CS.CPU
 {
@@ -22,15 +23,21 @@ namespace x86CS.CPU
             AL &= 0xf;
         }
 
-        private void ASCIIAdjustAfterDivide(byte baseNum)
+        [CPUFunction(OpCode = 0xd5)]
+        public void ASCIIAdjustBeforeDivide(Operand source)
         {
             byte tempAL = AL;
             byte tempAH = AH;
+            Operand tmp = new Operand();
 
-            AL = (byte)((tempAL + (tempAH * baseNum)) & 0xff);
+            tmp.Size = 8;
+
+            AL = (byte)((tempAL + (tempAH * source.Value)) & 0xff);
             AH = 0;
 
-      //      SetCPUFlags(AL);
+            tmp.Value = AL;
+
+            SetCPUFlags(tmp);
         }
 
         private void ASCIIAdjustAfterMultiply(byte baseNum)

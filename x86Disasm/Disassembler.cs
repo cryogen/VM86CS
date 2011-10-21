@@ -246,6 +246,12 @@ namespace x86Disasm
                     if(buildString)
                         InstructionText += operand;
                     break;
+                case ArgumentType.ImmediateSuppressDefault:
+                    operand.Value = readFunction(offset, (int)operand.Size);
+                    operand.Type = OperandType.Immediate;
+                    if (operand.Value != 10)
+                        InstructionText += operand;
+                    break;
                 case ArgumentType.Relative:
                     operand.Type = OperandType.Immediate;
                     operand.Value = readFunction(offset, (int)operand.Size);

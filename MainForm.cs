@@ -202,6 +202,7 @@ namespace x86CS
 
         private void GoButtonClick(object sender, EventArgs e)
         {
+            Memory.LoggingEnabled = loggingToolStripMenuItem.Checked;
             machine.ClearTempBreakpoints();
             machine.Running = true;
             stepButton.Enabled = false;

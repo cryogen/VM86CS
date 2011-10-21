@@ -270,7 +270,7 @@ namespace x86CS
             CPU.Cycle(logging);
             CPU.Fetch(logging);
             picDevice.RunController();
-            //machineForm.Invalidate();
+//            machineForm.Invalidate();
         }
     }
 
