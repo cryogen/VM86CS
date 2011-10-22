@@ -56,6 +56,8 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0x6a)]
         [CPUFunction(OpCode = 0x50, Count=8)]
         [CPUFunction(OpCode = 0xff06)]
+        [CPUFunction(OpCode = 0x0fa0)]
+        [CPUFunction(OpCode = 0x0fa8)]
         public void Push(Operand dest)
         {
             StackPush(dest.Value);
@@ -123,6 +125,8 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0x1f)]
         [CPUFunction(OpCode = 0x58, Count = 8)]
         [CPUFunction(OpCode = 0x8f)]
+        [CPUFunction(OpCode = 0x0fa1)]
+        [CPUFunction(OpCode = 0x0fa9)]
         public void Pop(Operand dest)
         {
             dest.Value = StackPop();
@@ -144,6 +148,28 @@ namespace x86CS.CPU
         public void SetNotZero(Operand dest)
         {
             if (!ZF)
+                dest.Value = 1;
+            else
+                dest.Value = 0;
+
+            WriteOperand(dest);
+        }
+
+        [CPUFunction(OpCode = 0x0f92)]
+        public void SetIfBelow(Operand dest)
+        {
+            if (CF)
+                dest.Value = 1;
+            else
+                dest.Value = 0;
+
+            WriteOperand(dest);
+        }
+
+        [CPUFunction(OpCode = 0x0f93)]
+        public void SetIfNotBelow(Operand dest)
+        {
+            if (!CF)
                 dest.Value = 1;
             else
                 dest.Value = 0;

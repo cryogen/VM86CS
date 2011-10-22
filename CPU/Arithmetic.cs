@@ -282,6 +282,79 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
+        [CPUFunction(OpCode = 0x0faf)]
+        public void SignedMultiply2(Operand dest, Operand source)
+        {
+            long temp;
+            bool setflags = false;
+
+            switch (source.Size)
+            {
+                case 8:
+                    temp = dest.SignedValue * source.SignedValue;
+                    dest.SignedValue = (int)temp;
+                    if (temp > 0xff)
+                        setflags = true;
+                    break;
+                case 16:
+                    temp = dest.SignedValue * source.SignedValue;
+                    dest.SignedValue = (int)temp;
+                    if (temp > 0xffff)
+                        setflags = true;
+                    break;
+                default:
+                    temp = dest.SignedValue * source.SignedValue;
+                    dest.SignedValue = (int)temp;
+                    if (temp > 0xffffffff)
+                        setflags = true;
+                    break;
+            }
+
+            if (setflags)
+            {
+                OF = CF = true;
+            }
+
+            WriteOperand(dest);
+        }
+
+        [CPUFunction(OpCode = 0x69)]
+        [CPUFunction(OpCode = 0x6b)]
+        public void SignedMultiply(Operand dest, Operand source, Operand source2)
+        {
+            long temp;
+            bool setflags = false;
+
+            switch (source.Size)
+            {
+                case 8:
+                    temp = source.SignedValue * source2.SignedValue;
+                    dest.SignedValue = (int)temp;
+                    if (temp > 0xff)
+                        setflags = true;
+                    break;
+                case 16:
+                    temp = source.SignedValue * source2.SignedValue;
+                    dest.SignedValue = (int)temp;
+                    if (temp > 0xffff)
+                        setflags = true;
+                    break;
+                default:
+                    temp = source.SignedValue * source2.SignedValue;
+                    dest.SignedValue = (int)temp;
+                    if (temp > 0xffffffff)
+                        setflags = true;
+                    break;
+            }
+
+            if (setflags)
+            {
+                OF = CF = true;
+            }
+
+            WriteOperand(dest);
+        }
+
         [CPUFunction(OpCode = 0xf602)]
         [CPUFunction(OpCode = 0xf702)]
         public void Not(Operand dest)
