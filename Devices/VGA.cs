@@ -88,6 +88,9 @@ namespace x86CS.Devices
                 case 0x3c5:
                     ret = sequencer[(int)sequencerAddress];
                     break;
+                case 0x3d5:
+                    ret = crtControl[crtControlAddress];
+                    break;
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;

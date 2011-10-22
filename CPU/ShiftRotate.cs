@@ -49,11 +49,12 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
+        [CPUFunction(OpCode = 0xc007)]
         [CPUFunction(OpCode = 0xc107)]
         [CPUFunction(OpCode = 0xd007)]
+        [CPUFunction(OpCode = 0xd107)]
         [CPUFunction(OpCode = 0xd207)]
-        [CPUFunction(OpCode = 0xd017)]
-        [CPUFunction(OpCode = 0xd037)]
+        [CPUFunction(OpCode = 0xd307)]
         public void ShiftArithRight(Operand dest, Operand source)
         {
             byte count = (byte)(source.Value & 0x1f);
@@ -123,16 +124,32 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xd303)]
         public void RotateCarryRight(Operand dest, Operand source)
         {
-            byte count = (byte)(source.Value & 0x1f);
-            ulong val = (ulong)(dest.Value << 1 | (byte)(CF ? 1 : 0));
-            ulong tmp = val;
+            byte tempCount;
+            byte tempCF;
 
-            val = ((tmp >> count) | (tmp << (byte)((dest.Size - count))));
+            switch (dest.Size)
+            {
+                case 8:
+                    tempCount = (byte)((source.Value & 0x1f) % 9);
+                    break;
+                case 16:
+                    tempCount = (byte)((source.Value & 0x1f) % 17);
+                    break;
+                default:
+                    tempCount = (byte)((source.Value & 0x1f));
+                    break;
+            }
 
-            CF = ((val & (ulong)(1 << (byte)(dest.Size))) != 0);
+            if(source.Value == 1)
+                OF = (dest.MSB ^ (CF ? 1 : 0)) != 0;
 
-            dest.Value = (uint)val;
-            dest.Value = dest.Value >> 1;
+            while (tempCount != 0)
+            {
+                tempCF = (byte)(dest.Value & 0x1);
+                dest.Value = (uint)((dest.Value / 2) + ((CF ? 1 : 0) << (int)source.Size));
+                CF = tempCF != 0;
+                tempCount--;
+            }
 
             SetCPUFlags(dest);
             WriteOperand(dest);
@@ -146,17 +163,35 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xd302)]
         public void RotateCarryLeft(Operand dest, Operand source)
         {
-            byte count = (byte)(source.Value & 0x1f);
-            byte s = (byte)((dest.Size - source.Value) & (0x1f));
-            ulong d = dest.Value;
-            ulong tmp;
+            byte tempCount;
+            byte tempCF;
 
-            tmp = (d << (byte)(dest.Size - s)) | (d >> s);
+            switch (dest.Size)
+            {
+                case 8:
+                    tempCount = (byte)((source.Value & 0x1f) % 9);
+                    break;
+                case 16:
+                    tempCount = (byte)((source.Value & 0x1f) % 17);
+                    break;
+                default:
+                    tempCount = (byte)((source.Value & 0x1f));
+                    break;
+            }
 
-            CF = (tmp & (ulong)(1 << (byte)(dest.Size + 1))) != 0;
+            while (tempCount != 0)
+            {
+                tempCF = dest.MSB;
+                dest.Value = (uint)((dest.Value * 2) + (CF ? 1 : 0));
+                CF = tempCF != 0;
+                tempCount--;
+            }
 
-            dest.Value = (uint)tmp;
+            if (source.Value == 1)
+                OF = (dest.MSB ^ (CF ? 1 : 0)) != 0;
+
             SetCPUFlags(dest);
+            WriteOperand(dest);
         }
     }
 }

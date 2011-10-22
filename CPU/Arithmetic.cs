@@ -206,23 +206,26 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xf704)]
         public void UnsignedMultiply(Operand dest, Operand source)
         {
-            ulong temp = dest.Value * source.Value;
+            ulong temp;
             bool setflags = false;
 
             switch (source.Size)
             {
                 case 8:
-                    dest.Value = (byte)temp;
+                    temp = AL * source.Value;
+                    dest.Value = (uint)temp;
                     if ((dest.Value & 0xff00) == 0)
                         setflags = true;
                     break;
                 case 16:
+                    temp = AX * source.Value;
                     dest.Value = (ushort)temp;
                     DX = (ushort)(temp >> 16);
                     if (dest.Value == 0)
                         setflags = true;
                     break;
                 default:
+                    temp = EAX * source.Value;
                     dest.Value = (uint)temp;
                     EDX = (uint)(temp >> 32);
                     if (dest.Value == 0)
@@ -242,24 +245,27 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xf705)]
         public void SignedMultiply(Operand dest, Operand source)
         {
-            ulong temp = dest.Value * source.Value;
+            long temp;
             bool setflags = false;
 
             switch (source.Size)
             {
                 case 8:
-                    dest.Value = (byte)temp;
+                    temp = AL * source.SignedValue;
+                    dest.SignedValue = (int)temp;
                     if ((dest.Value & 0xff00) == 0)
                         setflags = true;
                     break;
                 case 16:
-                    dest.Value = (ushort)temp;
-                    DX = (ushort)(temp >> 16);
+                    temp = (short)AX * source.SignedValue;
+                    dest.SignedValue = (int)temp;
+                    DX = (ushort)(short)(temp >> 16);
                     if (dest.Value == 0)
                         setflags = true;
                     break;
                 default:
-                    dest.Value = (uint)temp;
+                    temp = (int)EAX * source.SignedValue;
+                    dest.SignedValue = (int)temp;
                     EDX = (uint)(temp >> 32);
                     if (dest.Value == 0)
                         setflags = true;
