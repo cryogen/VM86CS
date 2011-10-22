@@ -42,15 +42,17 @@ namespace x86CS.CPU
         public void AddWithCarry(Operand dest, Operand source)
         {
             Operand result = dest;
+            ulong tmp;
 
+            tmp = dest.Value + source.Value;
             if (CF)
-                source.Value++;
+                tmp++;
 
-            result.Value = dest.Value + source.Value;
+            result.Value = (uint)tmp;
             SetCPUFlags(result);
             int overFlow = (int)((dest.Value & source.Value & ~result.Value) | (~dest.Value & ~source.Value & result.Value));
             OF = overFlow < 0;
-            CF = result.Value < dest.Value;
+            CF = result.Value < tmp;
 
             WriteOperand(result);
         }
