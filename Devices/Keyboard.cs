@@ -16,7 +16,7 @@ namespace x86CS.Devices
         ParityError = 0x80
     }
 
-    public class Keyboard : IDevice, INeedsIRQ
+    public class KeyboardDevice : IDevice, INeedsIRQ
     {
         private readonly int[] portsUsed = {0x60, 0x64};
         private readonly Queue<byte> outputBuffer;
@@ -40,7 +40,7 @@ namespace x86CS.Devices
             get { return IrqNumber; }
         }
 
-        public Keyboard()
+        public KeyboardDevice()
         {
             statusRegister |= KeyboardFlags.UnLocked;
             outputBuffer = new Queue<byte>();

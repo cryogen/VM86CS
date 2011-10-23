@@ -5,6 +5,9 @@ using System.Runtime.InteropServices;
 using System;
 using x86CS.Devices;
 using Microsoft.Xna.Framework.Input;
+using System.Linq;
+using System.Collections.Generic;
+
 namespace x86CS.GUI.XNA
 {
     public class XNAUI : UI
@@ -13,13 +16,14 @@ namespace x86CS.GUI.XNA
         private Control renderControl;
         private SpriteBatch sprites;
         private VGA vgaDevice;
+        private KeyboardState oldKeyboardState;
 
         private bool AppStillIdle
         {
             get
             {
                 Message msg;
-                return !PeekMessage(out msg, IntPtr.Zero, 0, 0, 0);
+                return !NativeMethods.PeekMessage(out msg, IntPtr.Zero, 0, 0, 0);
             }
         }
 
@@ -33,6 +37,7 @@ namespace x86CS.GUI.XNA
             UIForm.Controls.Add(panel);
             renderControl = panel;
             vgaDevice = device;
+            oldKeyboardState = Keyboard.GetState();
         }
 
         public override void Init()
@@ -51,9 +56,38 @@ namespace x86CS.GUI.XNA
             }
         }
 
+        private void ProcessInput()
+        {
+            KeyboardState currentState = Keyboard.GetState();
+
+            Microsoft.Xna.Framework.Input.Keys[] pressedKeys = currentState.GetPressedKeys();
+            Microsoft.Xna.Framework.Input.Keys[] oldKeys = oldKeyboardState.GetPressedKeys();
+
+            IEnumerable<Microsoft.Xna.Framework.Input.Keys> nowDown, nowUp;
+
+            nowDown = pressedKeys.Except(oldKeys);
+            nowUp = oldKeys.Except(pressedKeys);
+
+            foreach (Microsoft.Xna.Framework.Input.Keys key in nowDown)
+            {
+                uint scanCode = NativeMethods.MapVirtualKeyEx((uint)key, NativeMethods.MAPVK_VK_TO_VSC, InputLanguage.CurrentInputLanguage.Handle);
+                OnKeyDown(scanCode);
+            }
+
+            foreach (Microsoft.Xna.Framework.Input.Keys key in nowUp)
+            {
+                uint scanCode = NativeMethods.MapVirtualKeyEx((uint)key, NativeMethods.MAPVK_VK_TO_VSC, InputLanguage.CurrentInputLanguage.Handle);
+                OnKeyUp(scanCode);
+            }
+
+            oldKeyboardState = currentState;
+        }
+
         public override void Cycle()
         {
             GraphicsDevice device = graphicsService.GraphicsDevice;
+
+            ProcessInput();
 
             device.Clear(Color.Black);
 
@@ -104,20 +138,5 @@ namespace x86CS.GUI.XNA
 
             device.Present();
         }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct Message
-        {
-            public IntPtr hWnd;
-            public IntPtr msg;
-            public IntPtr wParam;
-            public IntPtr lParam;
-            public uint time;
-            public System.Drawing.Point p;
-        }
-
-        [System.Security.SuppressUnmanagedCodeSecurity]
-        [DllImport("User32.dll", CharSet = CharSet.Auto)]
-        public static extern bool PeekMessage(out Message msg, IntPtr hWnd, uint messageFilterMin, uint messageFilterMax, uint flags);
     }
 }

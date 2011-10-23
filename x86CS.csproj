@@ -111,6 +111,7 @@
     <Compile Include="Devices\PIT8253.cs" />
     <Compile Include="Devices\VGA.cs" />
     <Compile Include="GUI\UI.cs" />
+    <Compile Include="GUI\XNA\Definitions.cs" />
     <Compile Include="GUI\XNA\GraphicsDeviceService.cs" />
     <Compile Include="GUI\XNA\XNAUI.cs" />
     <Compile Include="Machine.cs" />

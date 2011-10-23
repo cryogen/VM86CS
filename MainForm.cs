@@ -28,6 +28,7 @@ namespace x86CS
             uiForm.FormBorderStyle = FormBorderStyle.FixedSingle;
             uiForm.MaximizeBox = false;
             uiForm.StartPosition = FormStartPosition.CenterScreen;
+            uiForm.Text = "C# x86 Emulator";
             timerTicks = 0;
             machine = new Machine(uiForm);
             Application.ApplicationExit += ApplicationApplicationExit;

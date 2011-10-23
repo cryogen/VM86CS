@@ -24,7 +24,7 @@ namespace x86CS
         private readonly PIC8259 picDevice;
         private readonly VGA vgaDevice;
         private readonly DMAController dmaController;
-        private readonly Keyboard keyboard;
+        private readonly KeyboardDevice keyboard;
 
         private Dictionary<ushort, IOEntry> ioPorts;
         private bool isStepping;
@@ -40,8 +40,11 @@ namespace x86CS
             vgaDevice = new VGA();
             FloppyDrive = new Floppy();
             dmaController = new DMAController();
-            keyboard = new Keyboard();
+            keyboard = new KeyboardDevice();
             gui = new XNAUI(uiForm, vgaDevice);
+
+            gui.KeyDown += new EventHandler<UIntEventArgs>(GUIKeyDown);
+            gui.KeyUp += new EventHandler<UIntEventArgs>(GUIKeyUp);
 
             gui.Init();
 
@@ -61,6 +64,16 @@ namespace x86CS
             CPU.IOWrite += CPUIOWrite;
         }
 
+        void GUIKeyUp(object sender, UIntEventArgs e)
+        {
+            keyboard.KeyUp(e.Number);
+        }
+
+        void GUIKeyDown(object sender, UIntEventArgs e)
+        {
+            keyboard.KeyPress(e.Number);
+        }
+
         void PicDeviceInterrupt(object sender, InterruptEventArgs e)
         {
             if (CPU.IF)
@@ -74,22 +87,6 @@ namespace x86CS
                     Running = true;
                 }
             }
-        }
-
-        [DllImport("user32.dll")]
-        static extern uint MapVirtualKey(uint uCode, uint uMapType);
-
-        void MachineFormKeyDown(object sender, KeyEventArgs e)
-        {
-            uint scanCode = MapVirtualKey((uint)e.KeyCode, 0);
-            keyboard.KeyPress(scanCode);
-        }
-
-        void MachineFormKeyUp(object sender, KeyEventArgs e)
-        {
-            uint scanCode = MapVirtualKey((uint)e.KeyCode, 0);
-
-            keyboard.KeyUp(scanCode);
         }
 
         void DMARaised(object sender, ByteArrayEventArgs e)
