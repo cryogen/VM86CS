@@ -341,10 +341,6 @@ namespace x86CS
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            uiForm.Show();
-            this.SendToBack();
-            uiForm.BringToFront();
-            uiForm.Select();
         }
     }
 }

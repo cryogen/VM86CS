@@ -8,6 +8,7 @@ using x86CS.Devices;
 using System.Windows.Forms;
 using x86CS.GUI;
 using x86CS.GUI.XNA;
+using x86CS.GUI.SDL;
 
 namespace x86CS
 {
@@ -34,6 +35,15 @@ namespace x86CS
 
         public bool Running;
 
+        private bool AppStillIdle
+        {
+            get
+            {
+                Message msg;
+                return !NativeMethods.PeekMessage(out msg, IntPtr.Zero, 0, 0, 0);
+            }
+        }
+
         public Machine(Form uiForm)
         {
             picDevice = new PIC8259();
@@ -41,7 +51,10 @@ namespace x86CS
             FloppyDrive = new Floppy();
             dmaController = new DMAController();
             keyboard = new KeyboardDevice();
-            gui = new XNAUI(uiForm, vgaDevice);
+           // gui = new XNAUI(uiForm, vgaDevice);
+            gui = new SDLUI(uiForm, vgaDevice);
+
+            Application.Idle += new System.EventHandler(ApplicationIdle);
 
             gui.KeyDown += new EventHandler<UIntEventArgs>(GUIKeyDown);
             gui.KeyUp += new EventHandler<UIntEventArgs>(GUIKeyUp);
@@ -62,6 +75,14 @@ namespace x86CS
 
             CPU.IORead += CPUIORead;
             CPU.IOWrite += CPUIOWrite;
+        }
+
+        void ApplicationIdle(object sender, System.EventArgs e)
+        {
+            while (AppStillIdle)
+            {
+                gui.Cycle();
+            }
         }
 
         void GUIKeyUp(object sender, UIntEventArgs e)

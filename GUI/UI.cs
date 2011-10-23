@@ -1,5 +1,6 @@
 ﻿using System.Windows.Forms;
 using System;
+using x86CS.Devices;
 namespace x86CS.GUI
 {
     public abstract class UI
@@ -7,8 +8,11 @@ namespace x86CS.GUI
         public event EventHandler<UIntEventArgs> KeyDown;
         public event EventHandler<UIntEventArgs> KeyUp;
 
-        public UI(Form uiForm)
+        protected VGA vgaDevice;
+
+        public UI(Form uiForm, VGA device)
         {
+            vgaDevice = device;
         }
 
         public virtual void OnKeyDown(uint key)

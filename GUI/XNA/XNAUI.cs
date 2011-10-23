@@ -15,20 +15,10 @@ namespace x86CS.GUI.XNA
         private GraphicsDeviceService graphicsService;
         private Control renderControl;
         private SpriteBatch sprites;
-        private VGA vgaDevice;
         private KeyboardState oldKeyboardState;
 
-        private bool AppStillIdle
-        {
-            get
-            {
-                Message msg;
-                return !NativeMethods.PeekMessage(out msg, IntPtr.Zero, 0, 0, 0);
-            }
-        }
-
         public XNAUI(Form UIForm, VGA device)
-            : base(UIForm)
+            : base(UIForm, device)
         {
             Panel panel = new Panel();
 
@@ -36,24 +26,14 @@ namespace x86CS.GUI.XNA
             panel.ClientSize = UIForm.ClientSize;
             UIForm.Controls.Add(panel);
             renderControl = panel;
-            vgaDevice = device;
             oldKeyboardState = Keyboard.GetState();
         }
 
         public override void Init()
         {
-            Application.Idle += new System.EventHandler(ApplicationIdle);
             graphicsService = new GraphicsDeviceService(renderControl);
             graphicsService.CreateDevice();
             sprites = new SpriteBatch(graphicsService.GraphicsDevice);
-        }
-
-        void ApplicationIdle(object sender, System.EventArgs e)
-        {
-            while (AppStillIdle)
-            {
-                Cycle();
-            }
         }
 
         private void ProcessInput()

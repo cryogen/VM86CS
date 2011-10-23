@@ -69,6 +69,7 @@
     </Reference>
     <Reference Include="Microsoft.Xna.Framework, Version=3.0.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=x86" />
     <Reference Include="Microsoft.Xna.Framework.Game, Version=3.0.0.0, Culture=neutral, PublicKeyToken=6d5c3888ef60e27d, processorArchitecture=MSIL" />
+    <Reference Include="SdlDotNet, Version=6.1.0.0, Culture=neutral, PublicKeyToken=26ad4f7e10c61408, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -110,6 +111,7 @@
     <Compile Include="Devices\PIC8259.cs" />
     <Compile Include="Devices\PIT8253.cs" />
     <Compile Include="Devices\VGA.cs" />
+    <Compile Include="GUI\SDL\SDLUI.cs" />
     <Compile Include="GUI\UI.cs" />
     <Compile Include="GUI\XNA\Definitions.cs" />
     <Compile Include="GUI\XNA\GraphicsDeviceService.cs" />
