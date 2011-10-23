@@ -82,7 +82,7 @@ namespace x86CS.GUI.XNA
                 {
                     int x = ((i % 160) / 2) * 8;
 
-                    for (var j = 7; j > 0; j--)
+                    for (var j = 7; j >= 0; j--)
                     {
                         if (((fontBuffer[f] >> j) & 0x1) != 0)
                             data[y * renderControl.Width + x] = foreColour;
