@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using x86CS.GUI;
 using x86CS.GUI.XNA;
 using x86CS.GUI.SDL;
+using x86CS.Properties;
 
 namespace x86CS
 {
@@ -51,8 +52,16 @@ namespace x86CS
             FloppyDrive = new Floppy();
             dmaController = new DMAController();
             keyboard = new KeyboardDevice();
-           // gui = new XNAUI(uiForm, vgaDevice);
-            gui = new SDLUI(uiForm, vgaDevice);
+
+            switch (Settings.Default.graphics.ToUpper())
+            {
+                case "XNA":
+                    gui = new XNAUI(uiForm, vgaDevice);
+                    break;
+                case "SDL":
+                    gui = new SDLUI(uiForm, vgaDevice);
+                    break;
+            }
 
             Application.Idle += new System.EventHandler(ApplicationIdle);
 

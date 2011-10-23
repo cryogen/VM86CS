@@ -27,6 +27,7 @@ namespace x86CS.GUI.XNA
             UIForm.Controls.Add(panel);
             renderControl = panel;
             oldKeyboardState = Keyboard.GetState();
+            UIForm.Show();
         }
 
         public override void Init()

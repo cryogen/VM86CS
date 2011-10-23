@@ -97,7 +97,7 @@ namespace x86CS.Devices
                     ret = crtControl[crtControlAddress];
                     break;
                 default:
-                    System.Diagnostics.Debugger.Break();
+                  //  System.Diagnostics.Debugger.Break();
                     break;
             }
             return ret;
