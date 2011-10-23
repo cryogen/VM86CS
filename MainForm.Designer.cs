@@ -847,6 +847,7 @@
             this.MainMenuStrip = this.mainMenu;
             this.Name = "MainForm";
             this.Text = "x86 CS";
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.MainFormFormClosed);
             this.mainMenu.ResumeLayout(false);
             this.mainMenu.PerformLayout();

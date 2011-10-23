@@ -65,6 +65,11 @@ namespace x86CS.Devices
             crtControl = new byte[0x19];
         }
 
+        public Color GetColour(int index)
+        {
+            return dacPalette[attributeControl[index]];
+        }
+
         public uint Read(ushort addr, int size)
         {
             uint ret = 0;
@@ -152,41 +157,6 @@ namespace x86CS.Devices
                     System.Diagnostics.Debugger.Break();
                     break;
             }
-        }
-
-        public void GDIDraw(Graphics g)
-        {
-            var screenBitmap = new Bitmap(720, 420, PixelFormat.Format24bppRgb);
-
-            var fontBuffer = new byte[0x2000];
-            var displayBuffer = new byte[0xfa0];
-
-            Memory.BlockRead(0xa0000, fontBuffer, fontBuffer.Length);
-            Memory.BlockRead(0xb8000, displayBuffer, displayBuffer.Length);
-
-            for (var i = 0; i < displayBuffer.Length; i += 2)
-            {
-                int currChar = displayBuffer[i];
-                int fontOffset = currChar * 32;
-                byte attribute = displayBuffer[i + 1];
-                int y = i / 160 * 16;
-
-                Color foreColour = dacPalette[attributeControl[attribute & 0xf]];
-                Color backColour = dacPalette[attributeControl[(attribute >> 4) & 0xf]];
-
-                for (var f = fontOffset; f < fontOffset + 16; f++)
-                {
-                    int x = ((i % 160) / 2) * 8;
-
-                    for (var j = 7; j > 0; j--)
-                    {
-                        screenBitmap.SetPixel(x++, y, ((fontBuffer[f] >> j) & 0x1) != 0 ? foreColour : backColour);
-                    }
-                    y++;
-                }
-            }
-
-            g.DrawImage(screenBitmap, 0, 0);
         }
     }
 }

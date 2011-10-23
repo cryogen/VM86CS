@@ -6,6 +6,7 @@ using System.Globalization;
 using log4net;
 using x86CS.Properties;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace x86CS
 {
@@ -17,11 +18,18 @@ namespace x86CS
         private double frequency = 100000.0f;
         private ulong timerTicks;
         private bool running;
+        private Form uiForm;
 
         public MainForm()
         {
+            uiForm = new Form();
+
+            uiForm.Size = new Size(720, 450);
+            uiForm.FormBorderStyle = FormBorderStyle.FixedSingle;
+            uiForm.MaximizeBox = false;
+            uiForm.StartPosition = FormStartPosition.CenterScreen;
             timerTicks = 0;
-            machine = new Machine();
+            machine = new Machine(uiForm);
             Application.ApplicationExit += ApplicationApplicationExit;
 
             breakpoints.ItemAdded += BreakpointsItemAdded;
@@ -207,6 +215,7 @@ namespace x86CS
             machine.Running = true;
             stepButton.Enabled = false;
             stepOverButton.Enabled = false;
+            uiForm.BringToFront();
         }
 
         private void MainFormFormClosed(object sender, FormClosedEventArgs e)
@@ -327,6 +336,14 @@ namespace x86CS
                 machine.ClearTempBreakpoints();
                 machine.StepOver();
             }));
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            uiForm.Show();
+            this.SendToBack();
+            uiForm.BringToFront();
+            uiForm.Select();
         }
     }
 }

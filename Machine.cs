@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 using log4net;
 using x86CS.Devices;
 using System.Windows.Forms;
+using x86CS.GUI;
+using x86CS.GUI.XNA;
 
 namespace x86CS
 {
@@ -17,7 +19,7 @@ namespace x86CS
 
         private readonly Dictionary<uint, uint> breakpoints = new Dictionary<uint, uint>();
         private readonly Dictionary<uint, uint> tempBreakpoints = new Dictionary<uint, uint>();
-        private readonly MachineForm machineForm = new MachineForm();
+        private readonly UI gui;
         private readonly IDevice[] devices;
         private readonly PIC8259 picDevice;
         private readonly VGA vgaDevice;
@@ -32,13 +34,16 @@ namespace x86CS
 
         public bool Running;
 
-        public Machine()
+        public Machine(Form uiForm)
         {
             picDevice = new PIC8259();
             vgaDevice = new VGA();
             FloppyDrive = new Floppy();
             dmaController = new DMAController();
             keyboard = new Keyboard();
+            gui = new XNAUI(uiForm, vgaDevice);
+
+            gui.Init();
 
             devices = new IDevice[]
                           {
@@ -54,13 +59,6 @@ namespace x86CS
 
             CPU.IORead += CPUIORead;
             CPU.IOWrite += CPUIOWrite;
-
-            machineForm.Paint += MachineFormPaint;
-            machineForm.KeyDown += MachineFormKeyDown;
-            machineForm.KeyUp += MachineFormKeyUp;
-            machineForm.Show();
-            machineForm.BringToFront();
-            machineForm.Select();
         }
 
         void PicDeviceInterrupt(object sender, InterruptEventArgs e)
@@ -112,11 +110,6 @@ namespace x86CS
                 return;
 
             picDevice.RequestInterrupt((byte)device.IRQNumber);
-        }
-
-        private void MachineFormPaint(object sender, PaintEventArgs e)
-        {
-           vgaDevice.GDIDraw(e.Graphics);
         }
 
         private void SetupIOEntry(ushort port, ReadCallback read, WriteCallback write)
@@ -270,7 +263,6 @@ namespace x86CS
             CPU.Cycle(logging);
             CPU.Fetch(logging);
             picDevice.RunController();
-//            machineForm.Invalidate();
         }
     }
 
