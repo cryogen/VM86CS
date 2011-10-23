@@ -24,7 +24,7 @@ namespace x86CS
         {
             uiForm = new Form();
 
-            uiForm.Size = new Size(720, 450);
+            uiForm.ClientSize = new Size(640, 400);
             uiForm.FormBorderStyle = FormBorderStyle.FixedSingle;
             uiForm.MaximizeBox = false;
             uiForm.StartPosition = FormStartPosition.CenterScreen;

@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System;
 using x86CS.Devices;
+using Microsoft.Xna.Framework.Input;
 namespace x86CS.GUI.XNA
 {
     public class XNAUI : UI
@@ -27,7 +28,8 @@ namespace x86CS.GUI.XNA
         {
             Panel panel = new Panel();
 
-            panel.Dock = DockStyle.Fill;
+            panel.Location = new System.Drawing.Point(0, 0);
+            panel.ClientSize = UIForm.ClientSize;
             UIForm.Controls.Add(panel);
             renderControl = panel;
             vgaDevice = device;
@@ -55,7 +57,7 @@ namespace x86CS.GUI.XNA
 
             device.Clear(Color.Black);
 
-            Texture2D screenBitmap = new Texture2D(device, renderControl.Width, renderControl.Height, 1, TextureUsage.Linear, SurfaceFormat.Color);
+            Texture2D screenBitmap = new Texture2D(device, renderControl.ClientSize.Width, renderControl.ClientSize.Height, 1, TextureUsage.Linear, SurfaceFormat.Color);
 
             var fontBuffer = new byte[0x2000];
             var displayBuffer = new byte[0xfa0];
@@ -85,9 +87,9 @@ namespace x86CS.GUI.XNA
                     for (var j = 7; j >= 0; j--)
                     {
                         if (((fontBuffer[f] >> j) & 0x1) != 0)
-                            data[y * renderControl.Width + x] = foreColour;
+                            data[y * screenBitmap.Width + x] = foreColour;
                         else
-                            data[y * renderControl.Width + x] = backColour;
+                            data[y * screenBitmap.Width + x] = backColour;
                         x++;
                     }
                     y++;
