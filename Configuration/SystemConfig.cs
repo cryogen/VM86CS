@@ -30,4 +30,11 @@ namespace x86CS.Configuration
             config.Save();
         }
     }
+
+    public enum DriveType
+    {
+        None,
+        HardDisk,
+        CDROM
+    }
 }

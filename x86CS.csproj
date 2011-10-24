@@ -94,6 +94,7 @@
     <Compile Include="ConfigForm.Designer.cs">
       <DependentUpon>ConfigForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Configuration\Disk.cs" />
     <Compile Include="Configuration\Floppy.cs" />
     <Compile Include="Configuration\SystemConfig.cs" />
     <Compile Include="Configuration\MachineConfigSection.cs" />

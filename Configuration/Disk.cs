@@ -2,8 +2,8 @@
 
 namespace x86CS.Configuration
 {
-    [ConfigurationCollection(typeof(FloppyElement), CollectionType=ConfigurationElementCollectionType.BasicMap, AddItemName="Floppy")]
-    public class FloppyElementCollection : ConfigurationElementCollection
+    [ConfigurationCollection(typeof(DiskElement), CollectionType = ConfigurationElementCollectionType.BasicMap, AddItemName = "Disk")]
+    public class DiskElementCollection : ConfigurationElementCollection
     {
         private static ConfigurationPropertyCollection properties;
 
@@ -19,12 +19,12 @@ namespace x86CS.Configuration
 
         protected override string ElementName
         {
-            get { return "Floppy"; }
+            get { return "Disk"; }
         }
 
-        public FloppyElement this[int index]
+        public DiskElement this[int index]
         {
-            get { return base.BaseGet(index) as FloppyElement; }
+            get { return base.BaseGet(index) as DiskElement; }
             set
             {
                 if (base.BaseGet(index) != null)
@@ -35,24 +35,24 @@ namespace x86CS.Configuration
             }
         }
 
-        public new FloppyElement this[string name]
+        public new DiskElement this[string name]
         {
-            get { return base.BaseGet(name) as FloppyElement; }
+            get { return base.BaseGet(name) as DiskElement; }
         }
 
-        static FloppyElementCollection()
+        static DiskElementCollection()
         {
             properties = new ConfigurationPropertyCollection();
         }
-        
+
         protected override ConfigurationElement CreateNewElement()
         {
-            return new FloppyElement();
+            return new DiskElement();
         }
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return ((FloppyElement)element).Id;
+            return ((DiskElement)element).Id;
         }
 
         public override bool IsReadOnly()
@@ -60,7 +60,7 @@ namespace x86CS.Configuration
             return false;
         }
 
-        public void Add(FloppyElement element)
+        public void Add(DiskElement element)
         {
             BaseAdd(element);
         }
@@ -70,7 +70,7 @@ namespace x86CS.Configuration
             BaseClear();
         }
 
-        public void Remove(FloppyElement element)
+        public void Remove(DiskElement element)
         {
             BaseRemove(GetElementKey(element));
         }
@@ -91,17 +91,25 @@ namespace x86CS.Configuration
         }
     }
 
-    public class FloppyElement : ConfigurationElement
+    public class DiskElement : ConfigurationElement
     {
         private static ConfigurationPropertyCollection properties;
         private static ConfigurationProperty id;
         private static ConfigurationProperty image;
+        private static ConfigurationProperty type;
 
-        [ConfigurationProperty("Id", IsKey=true)]
+        [ConfigurationProperty("Id", IsKey = true)]
         public int Id
         {
             get { return (int)base[id]; }
             set { base[id] = value; }
+        }
+
+        [ConfigurationProperty("Type")]
+        public DriveType Type
+        {
+            get { return (DriveType)base[type]; }
+            set { base[type] = value; }
         }
 
         [ConfigurationProperty("Image")]
@@ -116,15 +124,17 @@ namespace x86CS.Configuration
             get { return properties; }
         }
 
-        static FloppyElement()
+        static DiskElement()
         {
             properties = new ConfigurationPropertyCollection();
 
             id = new ConfigurationProperty("Id", typeof(int), null, ConfigurationPropertyOptions.IsKey);
             image = new ConfigurationProperty("Image", typeof(string), null, ConfigurationPropertyOptions.None);
+            type = new ConfigurationProperty("Type", typeof(DriveType), DriveType.None, ConfigurationPropertyOptions.None);
 
             properties.Add(id);
             properties.Add(image);
+            properties.Add(type);
         }
     }
 }
