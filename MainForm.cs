@@ -7,6 +7,7 @@ using log4net;
 using x86CS.Properties;
 using System.Collections.Generic;
 using System.Drawing;
+using x86CS.Configuration;
 
 namespace x86CS
 {
@@ -341,6 +342,13 @@ namespace x86CS
 
         private void MainForm_Load(object sender, EventArgs e)
         {
+        }
+
+        private void configToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            ConfigForm config = new ConfigForm();
+
+            config.ShowDialog();
         }
     }
 }

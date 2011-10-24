@@ -2,14 +2,13 @@
 using System.Runtime.InteropServices;
 using System.IO;
 using log4net;
+using x86CS.Configuration;
 
 namespace x86CS
 {
     public class Memory
     {
         private static readonly ILog Logger = LogManager.GetLogger(typeof(Memory));
-
-        private const uint MemorySize = 0xFFFFF;
         private static readonly byte[] memory;
         public static bool LoggingEnabled = Logger.IsDebugEnabled;
 
@@ -18,7 +17,7 @@ namespace x86CS
 
         static Memory()
         {
-            memory = new byte[MemorySize * 48];
+            memory = new byte[SystemConfig.Machine.MemorySize * 1024 * 1024];
         }
 
         public static void SegBlockWrite(ushort segment, ushort offset, byte[] buffer, int length)
@@ -51,7 +50,7 @@ namespace x86CS
             uint ret;
             bool passedMem = false;
 
-            if (addr > (48 * MemorySize))
+            if (addr > MemoryArray.Length)
                 passedMem = true;
 
             switch (size)
@@ -84,7 +83,7 @@ namespace x86CS
 
         public static void Write(uint addr, uint value, int size)
         {
-            if (addr > (48 * MemorySize))
+            if (addr > MemoryArray.Length)
             {
                 if(LoggingEnabled)
                     Logger.Debug(String.Format("Write {0} address {1:X} value {2:X} (OverWrite, ignored)", size, addr, value));

@@ -1,4 +1,5 @@
 ﻿using System;
+using x86CS.Configuration;
 
 namespace x86CS.Devices
 {
@@ -66,25 +67,37 @@ namespace x86CS.Devices
                         case 0x0f:
                             return 0x00;
                         case 0x14:
-                            return 0x05;  /* Machine config byte */
+                            return 0x05;    /* Machine config byte */
                         case 0x15:
-                            return 0x71;  /* Low byte of 640K memory available */
+                            return 0x71;    /* Low byte of 640K memory available */
                         case 0x16:
-                            return 0x02;  /* High byte of above */
-                        case 0x17:
-                            return 0x00;  /* Low byte of memory up to 64M */
-                        case 0x18:
-                            return 0x80;  /* High byte of above */
+                            return 0x02;    /* High byte of above */
+                        case 0x17:          /* Low byte of memory 1M -> 65M */
+                            if (SystemConfig.Machine.MemorySize > 64)
+                                return 0xff;
+                            else
+                                return (byte)(((SystemConfig.Machine.MemorySize - 1) * 1024));
+                        case 0x18:          /* High byte of above */
+                            if (SystemConfig.Machine.MemorySize > 64)
+                                return 0xff;
+                            else
+                                return (byte)(((SystemConfig.Machine.MemorySize - 1) * 1024) >> 8);
                         case 0x30:
-                            return 0x00;    /* memory above 1M */
-                        case 0x31:
-                            return 0xbc;    /* High byte */
+                            if (SystemConfig.Machine.MemorySize > 64)
+                                return 0xff;
+                            else
+                                return (byte)(((SystemConfig.Machine.MemorySize - 1) * 1024));
+                        case 0x31:          /* High byte of above */
+                            if (SystemConfig.Machine.MemorySize > 64)
+                                return 0xff;
+                            else
+                                return (byte)(((SystemConfig.Machine.MemorySize - 1) * 1024) >> 8);
                         case 0x32:
                             return Util.ToBCD(currTime.Year / 100);
-                        case 0x34:
-                            return 0x00;  /* Low byte of memory up to 4GB */
-                        case 0x35:
-                            return 0x02;  /* High byte */
+                        case 0x34:          /* Low byte of memory 16MB to 4GB */
+                            return (byte)(((SystemConfig.Machine.MemorySize - 16) * 1024 * 1024) >> 16);
+                        case 0x35:          /* High byte */
+                            return (byte)((((SystemConfig.Machine.MemorySize - 16) * 1024 * 1024) >> 16) >> 8);
                         case 0x3d:
                             return 0x21;  /* 1st and 2nd boot devices */
                         case 0x38:
