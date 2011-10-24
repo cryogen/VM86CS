@@ -36,6 +36,8 @@
             this.memoryTrack = new System.Windows.Forms.TrackBar();
             this.diskPage = new System.Windows.Forms.TabPage();
             this.floppyGroup = new System.Windows.Forms.GroupBox();
+            this.secondaryClear = new System.Windows.Forms.Button();
+            this.primaryClear = new System.Windows.Forms.Button();
             this.openSecondary = new System.Windows.Forms.Button();
             this.openPrimary = new System.Windows.Forms.Button();
             this.primaryFloppy = new System.Windows.Forms.TextBox();
@@ -136,6 +138,8 @@
             // 
             // floppyGroup
             // 
+            this.floppyGroup.Controls.Add(this.secondaryClear);
+            this.floppyGroup.Controls.Add(this.primaryClear);
             this.floppyGroup.Controls.Add(this.openSecondary);
             this.floppyGroup.Controls.Add(this.openPrimary);
             this.floppyGroup.Controls.Add(this.primaryFloppy);
@@ -148,6 +152,26 @@
             this.floppyGroup.TabIndex = 3;
             this.floppyGroup.TabStop = false;
             this.floppyGroup.Text = "Floppy Drives:";
+            // 
+            // secondaryClear
+            // 
+            this.secondaryClear.Location = new System.Drawing.Point(362, 45);
+            this.secondaryClear.Name = "secondaryClear";
+            this.secondaryClear.Size = new System.Drawing.Size(30, 23);
+            this.secondaryClear.TabIndex = 9;
+            this.secondaryClear.Text = "X";
+            this.secondaryClear.UseVisualStyleBackColor = true;
+            this.secondaryClear.Click += new System.EventHandler(this.secondaryClear_Click);
+            // 
+            // primaryClear
+            // 
+            this.primaryClear.Location = new System.Drawing.Point(362, 20);
+            this.primaryClear.Name = "primaryClear";
+            this.primaryClear.Size = new System.Drawing.Size(30, 23);
+            this.primaryClear.TabIndex = 8;
+            this.primaryClear.Text = "X";
+            this.primaryClear.UseVisualStyleBackColor = true;
+            this.primaryClear.Click += new System.EventHandler(this.primaryClear_Click);
             // 
             // openSecondary
             // 
@@ -174,7 +198,7 @@
             this.primaryFloppy.Location = new System.Drawing.Point(73, 22);
             this.primaryFloppy.Name = "primaryFloppy";
             this.primaryFloppy.ReadOnly = true;
-            this.primaryFloppy.Size = new System.Drawing.Size(313, 20);
+            this.primaryFloppy.Size = new System.Drawing.Size(284, 20);
             this.primaryFloppy.TabIndex = 4;
             // 
             // secondaryFloppy
@@ -182,7 +206,7 @@
             this.secondaryFloppy.Location = new System.Drawing.Point(73, 47);
             this.secondaryFloppy.Name = "secondaryFloppy";
             this.secondaryFloppy.ReadOnly = true;
-            this.secondaryFloppy.Size = new System.Drawing.Size(313, 20);
+            this.secondaryFloppy.Size = new System.Drawing.Size(284, 20);
             this.secondaryFloppy.TabIndex = 5;
             // 
             // secondaryFloppyLabel
@@ -274,5 +298,7 @@
         private System.Windows.Forms.Label secondaryFloppyLabel;
         private System.Windows.Forms.Label primaryFloppyLabel;
         private System.Windows.Forms.OpenFileDialog imageOpen;
+        private System.Windows.Forms.Button secondaryClear;
+        private System.Windows.Forms.Button primaryClear;
     }
 }

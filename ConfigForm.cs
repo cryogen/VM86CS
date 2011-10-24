@@ -42,13 +42,30 @@ namespace x86CS
         {
             memoryTrack.Value = SystemConfig.Machine.MemorySize;
             memory.Text = memoryTrack.Value.ToString();
+            primaryFloppy.Text = SystemConfig.Machine.Floppies[0].Image;
+            secondaryFloppy.Text = SystemConfig.Machine.Floppies[1].Image;
         }
 
         private void okButton_Click(object sender, EventArgs e)
         {
+            FloppyElement floppy;
+
             DialogResult = DialogResult.OK;
 
             SystemConfig.Machine.MemorySize = memoryTrack.Value;
+            SystemConfig.Machine.Floppies.Clear();
+
+            floppy = new FloppyElement();
+            floppy.Id = 0;
+            floppy.Image = primaryFloppy.Text;
+
+            SystemConfig.Machine.Floppies.Add(floppy);
+
+            floppy = new FloppyElement();
+            floppy.Id = 1;
+            floppy.Image = secondaryFloppy.Text;
+
+            SystemConfig.Machine.Floppies.Add(floppy);
 
             SystemConfig.Save();
         }
@@ -93,5 +110,16 @@ namespace x86CS
 
             memory.Text = memoryTrack.Value.ToString();
         }
+
+        private void primaryClear_Click(object sender, EventArgs e)
+        {
+            primaryFloppy.Text = "";
+        }
+
+        private void secondaryClear_Click(object sender, EventArgs e)
+        {
+            secondaryFloppy.Text = "";
+        }
+
     }
 }

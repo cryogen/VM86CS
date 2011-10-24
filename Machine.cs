@@ -10,6 +10,7 @@ using x86CS.GUI;
 using x86CS.GUI.XNA;
 using x86CS.GUI.SDL;
 using x86CS.Properties;
+using x86CS.Configuration;
 
 namespace x86CS
 {
@@ -52,6 +53,11 @@ namespace x86CS
             FloppyDrive = new Floppy();
             dmaController = new DMAController();
             keyboard = new KeyboardDevice();
+
+            if(SystemConfig.Machine.Floppies.Count > 0)
+            {
+                FloppyDrive.MountImage(SystemConfig.Machine.Floppies[0].Image);
+            }
 
             switch (Settings.Default.graphics.ToUpper())
             {
