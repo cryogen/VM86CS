@@ -273,5 +273,43 @@ namespace x86CS.CPU
             }
             SetCount(count);
         }
+
+        [CPUFunction(OpCode = 0x6c)]
+        [CPUFunction(OpCode = 0x6d)]
+        public void StringIORead(Operand dest, Operand source)
+        {
+            uint count = GetCount();
+            int size = (int)(dest.Size / 8);
+
+            while (count > 0)
+            {
+                uint addr;
+
+                if (addressSize == 32)
+                    addr = EDI;
+                else
+                    addr = DI;
+
+                uint value = IORead((ushort)source.Value, (int)dest.Size);
+                SegWrite(SegmentRegister.ES, addr, value, (int)dest.Size);
+                if (DF)
+                {
+                    if (addressSize == 32)
+                        EDI = (uint)(EDI - size);
+                    else
+                        DI = (ushort)(DI - size);
+                }
+                else
+                {
+                    if (addressSize == 32)
+                        EDI = (uint)(EDI + size);
+                    else
+                        DI = (ushort)(DI + size);
+                }
+
+                count--;
+            }
+            SetCount(count);
+        }
     }
 }
