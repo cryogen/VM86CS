@@ -1,5 +1,7 @@
 ﻿using System;
 using x86CS.Configuration;
+using x86CS.ATADevice;
+using System.Collections.Generic;
 
 namespace x86CS.Devices
 {
@@ -11,18 +13,21 @@ namespace x86CS.Devices
         private byte statusB;
         private byte statusC;
         private byte statusD;
+        private ATA ataDevice;
 
         public int[] PortsUsed
         {
             get { return portsUsed; }
         }
 
-        public CMOS()
+        public CMOS(ATA ata)
         {
             statusA = 0x26; /* default 32.768 divider and default rate selection */
             statusB = 0x02;  /* no DST, 12 hour clock, BCD, all flags cleared */
             statusC = 0x00;
             statusD = 0x80;
+
+            ataDevice = ata;
         }
 
         public uint Read(ushort addr, int size)
@@ -55,7 +60,15 @@ namespace x86CS.Devices
                         case 0x10:
                             return 0x40;  /* 1.44M floppy drive */
                         case 0x12:
-                            return 0x00;
+                            switch (ataDevice.HardDrives.Length)
+                            {
+                                case 1:
+                                    return 0xf0;
+                                case 2:
+                                    return 0xff;
+                                default:
+                                    return 0;
+                            }
                         case 0x0a:
                             return statusA; 
                         case 0x0b:
@@ -82,6 +95,38 @@ namespace x86CS.Devices
                                 return 0xff;
                             else
                                 return (byte)(((SystemConfig.Machine.MemorySize - 1) * 1024) >> 8);
+                        case 0x19:
+                            if (ataDevice.HardDrives.Length == 0)
+                                return 0;
+                            return 47;
+                        case 0x1a:
+                            if (ataDevice.HardDrives.Length < 2)
+                                return 0;
+                            return 47;
+                        case 0x1b:  /* HDD1 - Cylinders Low */
+                            if (ataDevice.HardDrives.Length == 0)
+                                return 0;
+                            return (byte)ataDevice.HardDrives[0].Cylinders;
+                        case 0x1c:  /* HDD1 - Cylinders High */
+                            if (ataDevice.HardDrives.Length == 0)
+                                return 0;
+                            return (byte)(ataDevice.HardDrives[0].Cylinders >> 8);
+                        case 0x1d:  /* HDD1 - Heads */
+                            if (ataDevice.HardDrives.Length == 0)
+                                return 0;
+                            return ataDevice.HardDrives[0].Heads;
+                        case 0x1e:
+                        case 0x1f:  /* HDD Precomp - not used */
+                            return 0;
+                        case 0x20:  /* HDD1 Drive control byte */
+                            return 0x08;
+                        case 0x21:  /* HDD Landing zone - not used */
+                        case 0x22:
+                            return 0;
+                        case 0x23:  /* HDD1 - Sectors */
+                            if (ataDevice.HardDrives.Length == 0)
+                                return 0;
+                            return ataDevice.HardDrives[0].Sectors;
                         case 0x30:
                             if (SystemConfig.Machine.MemorySize > 64)
                                 return 0xff;
@@ -102,6 +147,8 @@ namespace x86CS.Devices
                             return 0x21;  /* 1st and 2nd boot devices */
                         case 0x38:
                             return 0x00;  /* 3rd boot device */
+                        case 0x39:        /* HDD0 translation mode, we're going for LBA */
+                            return 0x1;
                         case 0x5b:
                             return 0x00;
                         case 0x5c:
@@ -109,7 +156,7 @@ namespace x86CS.Devices
                         case 0x5d:
                             return 0x00;
                         default:
-                            //System.Diagnostics.Debugger.Break();
+                            System.Diagnostics.Debugger.Break();
                             break;
                     }
                     break;

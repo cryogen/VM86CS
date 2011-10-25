@@ -82,6 +82,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ATADevice\ATADrive.cs" />
+    <Compile Include="ATADevice\CDROM.cs" />
+    <Compile Include="ATADevice\Enums.cs" />
     <Compile Include="Breakpoints.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -128,6 +131,8 @@
     <Compile Include="GUI\XNA\Definitions.cs" />
     <Compile Include="GUI\XNA\GraphicsDeviceService.cs" />
     <Compile Include="GUI\XNA\XNAUI.cs" />
+    <Compile Include="ATADevice\HardDisk.cs" />
+    <Compile Include="ATADevice\Structs.cs" />
     <Compile Include="Machine.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>

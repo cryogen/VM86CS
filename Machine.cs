@@ -28,6 +28,7 @@ namespace x86CS
         private readonly VGA vgaDevice;
         private readonly DMAController dmaController;
         private readonly KeyboardDevice keyboard;
+        private readonly ATA ataDevice;
 
         private Dictionary<ushort, IOEntry> ioPorts;
         private bool isStepping;
@@ -53,6 +54,7 @@ namespace x86CS
             FloppyDrive = new Floppy();
             dmaController = new DMAController();
             keyboard = new KeyboardDevice();
+            ataDevice = new ATA();
 
             if(SystemConfig.Machine.Floppies.Count > 0)
             {
@@ -78,8 +80,7 @@ namespace x86CS
 
             devices = new IDevice[]
                           {
-                              FloppyDrive, new CMOS(), new Misc(), new PIT8253(), picDevice, keyboard, dmaController,
-                              vgaDevice, new ATA()
+                              FloppyDrive, new CMOS(ataDevice), new Misc(), new PIT8253(), picDevice, keyboard, dmaController, vgaDevice, ataDevice
                           };
 
             CPU = new CPU.CPU();

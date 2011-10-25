@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using System.Runtime.InteropServices;
+using System.Reflection;
 
 namespace x86CS
 {
@@ -66,6 +68,63 @@ namespace x86CS
             var ret = (byte)(((byte)tens << 4) + (byte)ones);
 
             return ret;
+        }
+
+        public static T ByteArrayToStructure<T>(byte[] bytes) where T : struct
+        {
+            GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+
+            T structure = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+            handle.Free();
+
+            return structure;
+        }
+
+        public static T ByteArrayToStructureBigEndian<T>(byte[] bytes) where T : struct
+        {
+            GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+
+            T structure = (T)Marshal.PtrToStructure(handle.AddrOfPinnedObject(), typeof(T));
+            handle.Free();
+            System.Type t = structure.GetType();
+            FieldInfo[] fieldInfo = t.GetFields();
+            foreach (FieldInfo fi in fieldInfo)
+            {
+                if (fi.FieldType == typeof(System.Int16))
+                {
+                    // TODO
+                }
+                else if (fi.FieldType == typeof(System.Int32))
+                {
+                    // TODO
+                }
+                else if (fi.FieldType == typeof(System.Int64))
+                {
+                    // TODO
+                }
+                else if (fi.FieldType == typeof(System.UInt16))
+                {
+                    UInt16 num = (UInt16)fi.GetValue(structure);
+                    byte[] tmp = BitConverter.GetBytes(num);
+                    Array.Reverse(tmp);
+                    fi.SetValueDirect(__makeref(structure), BitConverter.ToUInt16(tmp, 0));
+                }
+                else if (fi.FieldType == typeof(System.UInt32))
+                {
+                    UInt32 num = (UInt32)fi.GetValue(structure);
+                    byte[] tmp = BitConverter.GetBytes(num);
+                    Array.Reverse(tmp);
+                    fi.SetValueDirect(__makeref(structure), BitConverter.ToUInt32(tmp, 0));
+                }
+                else if (fi.FieldType == typeof(System.UInt64))
+                {
+                    UInt64 num = (UInt64)fi.GetValue(structure);
+                    byte[] tmp = BitConverter.GetBytes(num);
+                    Array.Reverse(tmp);
+                    fi.SetValueDirect(__makeref(structure), BitConverter.ToUInt64(tmp, 0));
+                }
+            }
+            return structure;
         }
     }
 }
