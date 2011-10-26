@@ -13,8 +13,11 @@ namespace x86CS.CPU
         {
             byte count = (byte)(source.Value & 0x1f);
             byte msb = (byte)(dest.Size - count);
+            ulong val = dest.Value;
 
-            CF = (((dest.Value) & (1 << count + 1)) == 1);
+            val = val << count;
+
+            CF = ((val & (ulong)(1 << (byte)(dest.Size))) != 0);
             dest.Value = dest.Value << count;
 
             if (count == 1)
