@@ -149,10 +149,10 @@ namespace x86CS
 
         public static void UShortArrayToByte(ushort[] source, ref byte[] dest, int index)
         {
-            for (int i = 0, j = index; j < source.Length; i += 2, j++)
+            for (int i = 0, j = index; i < dest.Length; i += 2, j++)
             {
                 dest[i] = (byte)source[j];
-                dest[i + 1] = (byte)(source[j] << 8);
+                dest[i + 1] = (byte)(source[j] >> 8);
             }
         }
     }

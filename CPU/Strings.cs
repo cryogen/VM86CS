@@ -329,7 +329,7 @@ namespace x86CS.CPU
                     addr = SI;
 
                 uint value = SegRead(source.Memory.Segment, addr, (int)source.Size);
-                IOWrite((ushort)dest.Value, source.Value, (int)source.Size);
+                IOWrite((ushort)dest.Value, value, (int)source.Size);
                 if (DF)
                 {
                     if (addressSize == 32)

@@ -43,7 +43,7 @@ namespace x86CS.ATADevice
         {
             byte[] buffer;
 
-            stream = File.OpenRead(filename);
+            stream = File.Open(filename, FileMode.Open, FileAccess.ReadWrite, FileShare.Read);
             reader = new BinaryReader(stream);
             stream.Seek(-512, SeekOrigin.End);
             buffer = reader.ReadBytes(512);
@@ -103,7 +103,7 @@ namespace x86CS.ATADevice
             return reader.ReadBytes(512);
         }
 
-        public void Read()
+        private void Read()
         {
             int addr = (Cylinder * footer.Heads + (DriveHead & 0x0f)) * footer.SectorsPerCylinder + (SectorNumber - 1);
             sectorBuffer = new ushort[(SectorCount * 512) / 2];
@@ -114,12 +114,61 @@ namespace x86CS.ATADevice
             }
         }
 
-        public void Write()
+        private void WriteSector(long sector, byte[] data)
+        {
+            long blockNumber = sector / (header.BlockSize / 512);
+            uint blockOffset;
+            long sectorInBlock;
+            byte[] bitmap;
+            BinaryWriter writer = new BinaryWriter(stream);
+
+            stream.Seek((long)((long)header.TableOffset + (blockNumber * 4)), SeekOrigin.Begin);
+            blockOffset = Util.SwapByteOrder(reader.ReadUInt32());
+
+            if (blockOffset == 0xffffffff)
+            {
+                // Create new block
+                byte[] oldFooter;
+                byte[] newBlock = new byte[header.BlockSize];
+                byte[] newBitmap = new byte[header.BlockSize / 512 / 8];
+                long offsetPosition;
+
+                stream.Seek(-512, SeekOrigin.End);
+                offsetPosition = stream.Position;
+                oldFooter = reader.ReadBytes(512);
+                stream.Seek(-512, SeekOrigin.End);
+                writer.Write(newBitmap);
+                writer.Write(newBlock);
+                writer.Write(oldFooter);
+
+                stream.Seek((long)((long)header.TableOffset + (blockNumber * 4)), SeekOrigin.Begin);
+                blockOffset = (uint)(offsetPosition / 512);
+                writer.Write(Util.SwapByteOrder(blockOffset));
+            }
+
+            stream.Seek(blockOffset * 512, SeekOrigin.Begin);
+
+            bitmap = reader.ReadBytes((int)(header.BlockSize / 512 / 8));
+            bitmap[sector / 8] |= (byte)(1 << (byte)(7 - (sector % 8)));
+            stream.Seek(blockOffset * 512, SeekOrigin.Begin);
+            writer.Write(bitmap);
+
+            sectorInBlock = sector % (header.BlockSize / 512);
+            stream.Seek(sectorInBlock * 512, SeekOrigin.Current);
+            writer.Write(data);
+        }
+
+        private void Write()
         {
             int addr = (Cylinder * footer.Heads + (DriveHead & 0x0f)) * footer.SectorsPerCylinder + (SectorNumber - 1);
-            byte[] sector = new byte[512];
-            
-            Util.UShortArrayToByte(sectorBuffer, ref sector, 0);
+
+            for (int i = 0; i < SectorCount; i++)
+            {
+                byte[] sector = new byte[512];
+
+                Util.UShortArrayToByte(sectorBuffer, ref sector, i * 256);
+                WriteSector(addr + i, sector);
+            }
         }
 
         public override void FinishCommand()
