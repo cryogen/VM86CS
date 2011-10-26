@@ -149,7 +149,7 @@ namespace x86CS.CPU
             while (tempCount != 0)
             {
                 tempCF = (byte)(dest.Value & 0x1);
-                dest.Value = (uint)((dest.Value / 2) + ((CF ? 1 : 0) << (int)source.Size));
+                dest.Value = (uint)((dest.Value / 2) + ((CF ? 1 : 0) << (int)(dest.Size - 1)));
                 CF = tempCF != 0;
                 tempCount--;
             }
