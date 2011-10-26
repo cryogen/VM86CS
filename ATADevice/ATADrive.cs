@@ -17,6 +17,11 @@ namespace x86CS.ATADevice
         protected ushort[] sectorBuffer;
         protected int bufferIndex;
 
+        public ushort Cylinder
+        {
+            get { return (ushort)((CylinderHigh << 8) + CylinderLow); }
+        }
+
         public ushort SectorBuffer
         {
             get
@@ -28,10 +33,21 @@ namespace x86CS.ATADevice
 
                 return ret;
             }
+            set
+            {
+                sectorBuffer[bufferIndex++] = value;
+
+                if (bufferIndex >= sectorBuffer.Length)
+                {
+                    Status &= ~DeviceStatus.DataRequest;
+                    FinishCommand();
+                }
+            }
         }
 
         public abstract void LoadImage(string filename);
         public abstract void Reset();
         public abstract void RunCommand(byte command);
+        public abstract void FinishCommand();
     }
 }

@@ -126,5 +126,34 @@ namespace x86CS
             }
             return structure;
         }
+
+        public static uint SwapByteOrder(uint source)
+        {
+            uint dest;
+
+            dest = (uint)(((source & 0xff) << 24) | 
+                ((source & 0xff00) << 8) | 
+                ((source & 0xff0000) >> 8) | 
+                ((source & 0xff000000) >> 24));
+
+            return dest;
+        }
+
+        public static void ByteArrayToUShort(byte[] source, ref ushort[] dest, int index)
+        {
+            for (int i = 0, j = index; i < source.Length; i += 2, j++)
+            {
+                dest[j] = (ushort)((source[i + 1] << 8) + source[i]);
+            }
+        }
+
+        public static void UShortArrayToByte(ushort[] source, ref byte[] dest, int index)
+        {
+            for (int i = 0, j = index; j < source.Length; i += 2, j++)
+            {
+                dest[i] = (byte)source[j];
+                dest[i + 1] = (byte)(source[j] << 8);
+            }
+        }
     }
 }

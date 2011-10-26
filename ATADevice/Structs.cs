@@ -30,6 +30,43 @@ namespace x86CS.ATADevice
         public byte[] Reserved;
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 1, CharSet = CharSet.Ansi)]
+    public struct DiskHeader
+    {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+        public byte[] Cookie;
+        public ulong DataOffset;
+        public ulong TableOffset;
+        public uint HeaderVersion;
+        public uint MaxTableEntries;
+        public uint BlockSize;
+        public uint Checksum;
+        public Guid ParentID;
+        public uint ParentTimestamp;
+        public uint Reserved;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 512)]
+        public byte[] ParentUnicodeName;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator1;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator2;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator3;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator4;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator5;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator6;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator7;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 24)]
+        public byte[] ParentLocator8;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 256)]
+        public byte[] Reserved2;
+    }
+
+
     [Flags]
     public enum ImageFeatures : uint
     {

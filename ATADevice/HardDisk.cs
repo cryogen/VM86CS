@@ -7,8 +7,11 @@ namespace x86CS.ATADevice
     public class HardDisk : ATADrive
     {
         private FileStream stream;
+        private BinaryReader reader;
         private Footer footer;
+        private DiskHeader header;
         private ushort[] identifyBuffer;
+        private byte lastCommand;
 
         public ushort Cylinders
         {
@@ -38,13 +41,19 @@ namespace x86CS.ATADevice
 
         public override void LoadImage(string filename)
         {
-            byte[] buffer = new byte[512];
+            byte[] buffer;
 
             stream = File.OpenRead(filename);
+            reader = new BinaryReader(stream);
             stream.Seek(-512, SeekOrigin.End);
-            stream.Read(buffer, 0, 512);
+            buffer = reader.ReadBytes(512);
 
             footer = Util.ByteArrayToStructureBigEndian<Footer>(buffer);
+
+            stream.Seek(512, SeekOrigin.Begin);
+            buffer = reader.ReadBytes(1024);
+
+            header = Util.ByteArrayToStructureBigEndian<DiskHeader>(buffer);
 
             stream.Seek(0, SeekOrigin.Begin);
 
@@ -66,21 +75,89 @@ namespace x86CS.ATADevice
             Status |= DeviceStatus.Busy;
         }
 
-        public override void RunCommand(byte command)
+        private byte[] ReadSector(long sector)
         {
-            switch (command)
+            long blockNumber = sector / (header.BlockSize / 512);
+            uint blockOffset;
+            long sectorInBlock;
+            byte[] bitmap;
+
+            stream.Seek((long)((long)header.TableOffset + (blockNumber * 4)), SeekOrigin.Begin);
+            blockOffset = Util.SwapByteOrder(reader.ReadUInt32());
+
+            if (blockOffset == 0xffffffff)
+                return new byte[512];
+
+            stream.Seek(blockOffset * 512, SeekOrigin.Begin);
+
+            bitmap = reader.ReadBytes((int)(header.BlockSize / 512 / 8));
+            byte bitmapByte = bitmap[sector / 8];
+            byte offset = (byte)(sector % 8);
+
+            if ((bitmapByte & (1 << (7 - offset))) == 0)
+                return new byte[512];
+
+            sectorInBlock = sector % (header.BlockSize / 512);
+            stream.Seek(sectorInBlock * 512, SeekOrigin.Current);
+
+            return reader.ReadBytes(512);
+        }
+
+        public void Read()
+        {
+            int addr = (Cylinder * footer.Heads + (DriveHead & 0x0f)) * footer.SectorsPerCylinder + (SectorNumber - 1);
+            sectorBuffer = new ushort[(SectorCount * 512) / 2];
+
+            for (int i = 0; i < SectorCount; i++)
             {
-                case 0xec:
-                    Status |= DeviceStatus.Busy;
-                    sectorBuffer = identifyBuffer;
-                    Status |= DeviceStatus.DataRequest;
-                    Status &= ~DeviceStatus.Busy;
-                    bufferIndex = 0;
+                Util.ByteArrayToUShort(ReadSector(addr + i), ref sectorBuffer, i * 256);
+            }
+        }
+
+        public void Write()
+        {
+            int addr = (Cylinder * footer.Heads + (DriveHead & 0x0f)) * footer.SectorsPerCylinder + (SectorNumber - 1);
+            byte[] sector = new byte[512];
+            
+            Util.UShortArrayToByte(sectorBuffer, ref sector, 0);
+        }
+
+        public override void FinishCommand()
+        {
+            switch (lastCommand)
+            {
+                case 0x30:
+                    Write();
                     break;
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;
             }
+           
+        }
+
+        public override void RunCommand(byte command)
+        {
+            Status |= DeviceStatus.Busy;
+            switch (command)
+            {
+                case 0x20: // Read sector   
+                    Read();
+                    break;
+                case 0x30: // Write Sector
+                    sectorBuffer = new ushort[(SectorCount * 512) / 2];
+                    break;
+                case 0xec: // Identify
+                    sectorBuffer = identifyBuffer;
+                    break;
+                default:
+                    System.Diagnostics.Debugger.Break();
+                    break;
+            }
+            Status |= DeviceStatus.DataRequest;
+            Status &= ~DeviceStatus.Busy;
+            bufferIndex = 0;
+            lastCommand = command;
         }
     }
 }

@@ -267,7 +267,7 @@ namespace x86CS.CPU
 
                 count--;
 
-                if ((((disasm.SetPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat) && !ZF) || 
+                if ((((disasm.SetPrefixes & OPPrefix.Repeat) == OPPrefix.Repeat) && !ZF) ||
                     ((disasm.SetPrefixes & OPPrefix.RepeatNotEqual) == OPPrefix.RepeatNotEqual) && ZF)
                     break;
             }
@@ -305,6 +305,44 @@ namespace x86CS.CPU
                         EDI = (uint)(EDI + size);
                     else
                         DI = (ushort)(DI + size);
+                }
+
+                count--;
+            }
+            SetCount(count);
+        }
+
+        [CPUFunction(OpCode = 0x6e)]
+        [CPUFunction(OpCode = 0x6f)]
+        public void StringIOWrite(Operand dest, Operand source)
+        {
+            uint count = GetCount();
+            int size = (int)(source.Size / 8);
+
+            while (count > 0)
+            {
+                uint addr;
+
+                if (addressSize == 32)
+                    addr = ESI;
+                else
+                    addr = SI;
+
+                uint value = SegRead(source.Memory.Segment, addr, (int)source.Size);
+                IOWrite((ushort)dest.Value, source.Value, (int)source.Size);
+                if (DF)
+                {
+                    if (addressSize == 32)
+                        ESI = (uint)(ESI - size);
+                    else
+                        SI = (ushort)(SI - size);
+                }
+                else
+                {
+                    if (addressSize == 32)
+                        ESI = (uint)(ESI + size);
+                    else
+                        SI = (ushort)(SI + size);
                 }
 
                 count--;
