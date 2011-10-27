@@ -208,5 +208,10 @@ namespace x86CS.ATADevice
             bufferIndex = 0;
             lastCommand = command;
         }
+
+        public override void FinishRead()
+        {
+            
+        }
     }
 }

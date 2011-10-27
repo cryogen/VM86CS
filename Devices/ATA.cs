@@ -153,6 +153,8 @@ namespace x86CS.Devices
                         return (byte)diskDrives[1].Status;
                     else
                         return 0;
+                case 0x3f6:
+                    return deviceControl[0];
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;

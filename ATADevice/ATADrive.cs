@@ -20,6 +20,7 @@ namespace x86CS.ATADevice
         public ushort Cylinder
         {
             get { return (ushort)((CylinderHigh << 8) + CylinderLow); }
+            set { CylinderLow = (byte)value; CylinderHigh = (byte)(value >> 8); }
         }
 
         public ushort SectorBuffer
@@ -29,8 +30,11 @@ namespace x86CS.ATADevice
                 ushort ret = sectorBuffer[bufferIndex++];
 
                 if (bufferIndex >= sectorBuffer.Length)
+                {
                     Status &= ~DeviceStatus.DataRequest;
-
+                    FinishRead();
+                }
+   
                 return ret;
             }
             set
@@ -49,5 +53,6 @@ namespace x86CS.ATADevice
         public abstract void Reset();
         public abstract void RunCommand(byte command);
         public abstract void FinishCommand();
+        public abstract void FinishRead();
     }
 }

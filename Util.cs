@@ -139,6 +139,15 @@ namespace x86CS
             return dest;
         }
 
+        public static ushort SwapByteOrder(ushort source)
+        {
+            ushort dest;
+
+            dest = (ushort)(((byte)(source << 8)) | ((byte)(source >> 8)));
+
+            return dest;
+        }
+
         public static void ByteArrayToUShort(byte[] source, ref ushort[] dest, int index)
         {
             for (int i = 0, j = index; i < source.Length; i += 2, j++)
