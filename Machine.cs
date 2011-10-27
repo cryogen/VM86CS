@@ -27,10 +27,10 @@ namespace x86CS
         private readonly PIC8259 picDevice;
         private readonly VGA vgaDevice;
         private readonly DMAController dmaController;
-        private readonly KeyboardDevice keyboard;
         private readonly ATA ataDevice;
 
         private Dictionary<ushort, IOEntry> ioPorts;
+        private KeyboardDevice keyboard;
         private bool isStepping;
 
         public Floppy FloppyDrive { get; private set; }
@@ -202,6 +202,7 @@ namespace x86CS
         private void SetupSystem()
         {
             ioPorts = new Dictionary<ushort, IOEntry>();
+//            keyboard = new KeyboardDevice();
 
             LoadBIOS();
             LoadVGABios();
@@ -297,6 +298,7 @@ namespace x86CS
             CPU.Cycle(logging);
             CPU.Fetch(logging);
             picDevice.RunController();
+            keyboard.Cycle();
         }
     }
 

@@ -22,10 +22,10 @@ namespace x86CS.CPU
 
             if (count == 1)
             {
-                if (CF && dest.MSB != 0 || !CF && dest.MSB == 0)
-                    OF = true;
-                else
+                if (CF && dest.MSB || !CF && !dest.MSB)
                     OF = false;
+                else
+                    OF = true;
             }
 
             SetCPUFlags(dest);
@@ -42,11 +42,11 @@ namespace x86CS.CPU
         {
             byte count = (byte)(source.Value & 0x1f);
 
+            if (count == 1)
+                OF = !dest.MSB;
+
             CF = (((dest.Value) & (1 << count - 1)) == 1);
             dest.Value = dest.Value >> count;
-
-            if (count == 1)
-                OF = dest.MSB != 0;
 
             SetCPUFlags(dest);
             WriteOperand(dest);
@@ -66,7 +66,7 @@ namespace x86CS.CPU
             dest.SignedValue = dest.SignedValue >> count;
 
             if (count == 1)
-                OF = dest.MSB != 0;
+                OF = false;
 
             SetCPUFlags(dest);
             WriteOperand(dest);
@@ -91,11 +91,20 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xd300)]
         public void RotateLeft(Operand dest, Operand source)
         {
-            byte s = (byte)((dest.Size - source.Value) & (0x1f));
-            uint d;
+            byte tempCount, tempCF;
 
-            d = (dest.Value << (byte)(dest.Size - s)) | (dest.Value >> s);
-            dest.Value = d;
+            tempCount = (byte)(source.Value % source.Size);
+
+            while (tempCount != 0)
+            {
+                tempCF = (byte)(dest.MSB ? 1 : 0);
+                dest.Value = dest.Value * 2 + tempCF;
+                tempCount--;
+            }
+
+            CF = ((dest.Value & 0x1) == 1);
+            if (source.Value == 1)
+                OF = (dest.MSB ^ CF);
 
             SetCPUFlags(dest);
             WriteOperand(dest);
@@ -109,11 +118,37 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xd301)]
         public void RotateRight(Operand dest, Operand source)
         {
-            byte count = (byte)(source.Value & 0x1f);
-            uint tmp = dest.Value;
+            byte tempCount, tempCF;
 
-            dest.Value = ((tmp >> count) | (tmp << (byte)((dest.Size - count))));
-            CF = dest.MSB != 0;
+            tempCount = (byte)(source.Value % source.Size);
+
+            while (tempCount != 0)
+            {
+                tempCF = (byte)(dest.Value & 0x1);
+                dest.Value = (uint)((dest.Value / 2) + (tempCF << (int)(dest.Size - 1)));
+                tempCount--;
+            }
+
+            CF = dest.MSB;
+            if (source.Value == 1)
+            {
+                bool NSB;
+
+                switch(source.Value)
+                {
+                    case 8:
+                        NSB = ((dest.Value & 0x40) == 0x40);
+                        break;
+                    case 16:
+                        NSB = ((dest.Value & 0x4000) == 0x4000);
+                        break;
+                    default:
+                        NSB = ((dest.Value & 0x40000000) == 0x40000000);
+                        break;
+                }
+
+                OF = dest.MSB ^ NSB;
+            }
 
             SetCPUFlags(dest);
             WriteOperand(dest);
@@ -144,7 +179,7 @@ namespace x86CS.CPU
             }
 
             if(source.Value == 1)
-                OF = (dest.MSB ^ (CF ? 1 : 0)) != 0;
+                OF = dest.MSB ^ CF;
 
             while (tempCount != 0)
             {
@@ -184,14 +219,14 @@ namespace x86CS.CPU
 
             while (tempCount != 0)
             {
-                tempCF = dest.MSB;
+                tempCF = (byte)(dest.MSB ? 1 : 0);
                 dest.Value = (uint)((dest.Value * 2) + (CF ? 1 : 0));
                 CF = tempCF != 0;
                 tempCount--;
             }
 
             if (source.Value == 1)
-                OF = (dest.MSB ^ (CF ? 1 : 0)) != 0;
+                OF = dest.MSB ^ CF;
 
             SetCPUFlags(dest);
             WriteOperand(dest);

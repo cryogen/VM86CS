@@ -131,6 +131,13 @@ namespace x86CS.CPU
                 Jump(dest);
         }
 
+        [CPUFunction(OpCode = 0x7b)]
+        public void JumpIfOddParity(Operand dest)
+        {
+            if (!PF)
+                Jump(dest);
+        }
+
         [CPUFunction(OpCode = 0x7c)]
         [CPUFunction(OpCode = 0x0f8c)]
         public void JumpIfLess(Operand dest)

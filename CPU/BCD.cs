@@ -40,16 +40,22 @@ namespace x86CS.CPU
             SetCPUFlags(tmp);
         }
 
-        private void ASCIIAdjustAfterMultiply(byte baseNum)
+        [CPUFunction(OpCode=0xd4)]
+        public void ASCIIAdjustAfterMultiply(Operand source)
         {
-            if (baseNum == 0)
+            Operand temp = new Operand();
+
+            if (source.Value == 0)
                 throw new Exception("Divide Error");
 
             byte tempAL = AL;
-            AH = (byte)(tempAL / baseNum);
-            AL = (byte)(tempAL % baseNum);
+            AH = (byte)(tempAL / source.Value);
+            AL = (byte)(tempAL % source.Value);
 
-         //   SetCPUFlags(AL);
+            temp.Size = 16;
+            temp.Value = AH;
+
+            SetCPUFlags(temp);
         }
 
         private void ASCIIAdjustAfterSubtract()
@@ -70,8 +76,11 @@ namespace x86CS.CPU
             AL &= 0xf;
         }
 
-        private void DecAdjustAfterAddition()
+        [CPUFunction(OpCode=0x27)]
+        public void DecimalAdjustAfterAddition()
         {
+            Operand tempOp = new Operand();
+
             if (((AL & 0xf) > 9) || AF)
             {
                 bool carry = false;
@@ -95,6 +104,10 @@ namespace x86CS.CPU
             }
             else
                 CF = false;
+
+            tempOp.Size = 8;
+            tempOp.Value = AL;
+            SetCPUFlags(tempOp);
         }
 
         private void DecAdjustAfterSubtract()
