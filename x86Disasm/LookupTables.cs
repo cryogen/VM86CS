@@ -405,6 +405,16 @@
                 new Instruction { OpCode=0xff07, Type=InstructionType.Invalid },
             },
             {
+                new Instruction { OpCode=0x0f0000, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0001, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0002, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="LLDT", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
+                new Instruction { OpCode=0x0f0003, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="LTR", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
+                new Instruction { OpCode=0x0f0004, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0005, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0006, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0007, Type = InstructionType.Invalid },
+            },
+            {
                 new Instruction { OpCode=0x0f0100, Type = InstructionType.Invalid },
                 new Instruction { OpCode=0x0f0101, Type = InstructionType.Invalid },
                 new Instruction { OpCode=0x0f0102, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="LGDT", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
@@ -418,8 +428,8 @@
 
         private Instruction[] extendedInstructions = 
         {
-            new Instruction { OpCode=0x0f00, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0f01, Type=InstructionType.Group, Value=0xe },
+            new Instruction { OpCode=0x0f00, Type=InstructionType.Group, Value=0xe },
+            new Instruction { OpCode=0x0f01, Type=InstructionType.Group, Value=0xf },
             new Instruction { OpCode=0x0f02, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f03, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0f04, Type=InstructionType.Invalid },

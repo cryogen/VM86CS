@@ -57,6 +57,16 @@ namespace x86CS.Devices
                             return Util.ToBCD(currTime.Month);
                         case 0x09:
                             return Util.ToBCD(currTime.Year % 100);
+                        case 0x0a:
+                            return statusA; 
+                        case 0x0b:
+                            return statusB;
+                        case 0x0c:
+                            return statusC;
+                        case 0x0d:
+                            return statusD;
+                        case 0x0f:
+                            return 0x00;
                         case 0x10:
                             return 0x40;  /* 1.44M floppy drive */
                         case 0x12:
@@ -69,16 +79,8 @@ namespace x86CS.Devices
                                 default:
                                     return 0;
                             }
-                        case 0x0a:
-                            return statusA; 
-                        case 0x0b:
-                            return statusB;
-                        case 0x0c:
-                            return statusC;
-                        case 0x0d:
-                            return statusD;
-                        case 0x0f:
-                            return 0x00;
+                        case 0x13: /* typematic rate */
+                            return 0;
                         case 0x14:
                             return 0x05;    /* Machine config byte */
                         case 0x15:

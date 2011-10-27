@@ -92,6 +92,7 @@ namespace x86CS
 
                 try
                 {
+                    Memory.LoggingEnabled = loggingToolStripMenuItem.Checked;
                     machine.RunCycle(loggingToolStripMenuItem.Checked, false);
                 }
                 catch (Exception ex)

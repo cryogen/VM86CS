@@ -44,6 +44,16 @@ namespace x86CS.CPU
             }
         }
 
+        [CPUFunction(OpCode = 0x0f0002)]
+        public void LoadLDT(Operand dest)
+        {
+        }
+
+        [CPUFunction(OpCode = 0x0f0003)]
+        public void LoadTaskRegister(Operand dest)
+        {
+        }
+
         [CPUFunction(OpCode = 0x0f09)]
         public void WriteBackInvalidate()
         {

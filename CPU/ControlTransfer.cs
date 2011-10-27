@@ -132,6 +132,7 @@ namespace x86CS.CPU
         }
 
         [CPUFunction(OpCode = 0x7b)]
+        [CPUFunction(OpCode = 0x0f8b)]
         public void JumpIfOddParity(Operand dest)
         {
             if (!PF)
@@ -298,7 +299,7 @@ namespace x86CS.CPU
             TF = false;
             AC = false;
             StackPush(CS);
-            StackPush(IP);
+            StackPush(EIP);
 
             CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
             EIP = Memory.Read((uint)(dest.Value * 4), 16);
