@@ -120,6 +120,38 @@ namespace x86Disasm
             }
         }
 
+        public int SignedMax
+        {
+            get
+            {
+                switch (Size)
+                {
+                    case 8:
+                        return sbyte.MaxValue;
+                    case 16:
+                        return short.MaxValue;
+                    default:
+                        return int.MaxValue;
+                }
+            }
+        }
+
+        public int SignedMin
+        {
+            get
+            {
+                switch (Size)
+                {
+                    case 8:
+                        return sbyte.MinValue;
+                    case 16:
+                        return short.MinValue;
+                    default:
+                        return int.MinValue;
+                }
+            }
+        }
+
         public override string ToString()
         {
             switch (Size)

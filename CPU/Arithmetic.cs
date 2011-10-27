@@ -13,8 +13,13 @@ namespace x86CS.CPU
 
             result.Value = dest.Value - source.Value;
             SetCPUFlags(result);
-            int overFlow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
-            OF = overFlow < 0;
+
+            if ((source.SignedValue > 0 && dest.SignedValue < dest.SignedMin + source.SignedValue) ||
+                (source.SignedValue < 0 && dest.SignedValue > dest.SignedMax + source.SignedValue))
+                OF = true;
+            else
+                OF = false;
+
             CF = dest.Value < source.Value;
         }
 
@@ -28,10 +33,13 @@ namespace x86CS.CPU
 
             result.Value = dest.Value + source.Value;
             SetCPUFlags(result);
-            int overFlow = (int)((dest.Value & source.Value & ~result.Value) | (~dest.Value & ~source.Value & result.Value));
-            OF = overFlow < 0;
             CF = result.Value < dest.Value;
-
+            if (((source.SignedValue > 0) && (dest.SignedValue > (dest.SignedMax - source.SignedValue))) || 
+                ((source.SignedValue < 0) && (dest.SignedValue < (dest.SignedMin - source.SignedValue))))
+                OF = true;
+            else
+                OF = false;
+            
             WriteOperand(result);
         }
 
@@ -50,8 +58,11 @@ namespace x86CS.CPU
 
             result.Value = (uint)tmp;
             SetCPUFlags(result);
-            int overFlow = (int)((dest.Value & source.Value & ~result.Value) | (~dest.Value & ~source.Value & result.Value));
-            OF = overFlow < 0;
+            if (((source.SignedValue > 0) && (dest.SignedValue > (dest.SignedMax - source.SignedValue))) ||
+                ((source.SignedValue < 0) && (dest.SignedValue < (dest.SignedMin - source.SignedValue))))
+                OF = true;
+            else
+                OF = false;
             CF = result.Value < tmp;
 
             WriteOperand(result);
@@ -82,8 +93,12 @@ namespace x86CS.CPU
 
             result.Value = dest.Value - source.Value;
             SetCPUFlags(result);
-            int overFlow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
-            OF = overFlow < 0;
+
+            if ((source.SignedValue > 0 && dest.SignedValue < dest.SignedMin + source.SignedValue) ||
+                (source.SignedValue < 0 && dest.SignedValue > dest.SignedMax + source.SignedValue))
+                OF = true;
+            else
+                OF = false;
             CF = dest.Value < source.Value;
 
             WriteOperand(result);
@@ -102,8 +117,13 @@ namespace x86CS.CPU
 
             result.Value = dest.Value - source.Value;
             SetCPUFlags(result);
-            int overFlow = (int)((dest.Value & ~source.Value & ~result.Value) | (~dest.Value & source.Value & result.Value));
-            OF = overFlow < 0;
+
+            if ((source.SignedValue > 0 && dest.SignedValue < dest.SignedMin + source.SignedValue) ||
+                (source.SignedValue < 0 && dest.SignedValue > dest.SignedMax + source.SignedValue))
+                OF = true;
+            else
+                OF = false;
+
             CF = dest.Value < source.Value;
 
             WriteOperand(result);
