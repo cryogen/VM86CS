@@ -77,8 +77,10 @@ namespace x86CS.CPU
 
             result.Value++;
             SetCPUFlags(result);
-            int overFlow = (int)((dest.Value & 1 & ~result.Value) | (~dest.Value & ~1 & result.Value));
-            OF = overFlow < 0;
+            if (((1 > 0) && (dest.SignedValue > (dest.SignedMax - 1))))
+                OF = true;
+            else
+                OF = false;
 
             WriteOperand(result);
         }
@@ -111,20 +113,24 @@ namespace x86CS.CPU
         public void SubtractWithBorrow(Operand dest, Operand source)
         {
             Operand result = dest;
-
-            if (CF)
-                source.Value++;
+            bool oldCF = CF;
 
             result.Value = dest.Value - source.Value;
+            if (CF)
+                result.Value--;
+
             SetCPUFlags(result);
+
+            CF = dest.Value < source.Value;
+
+            if (oldCF)
+                source.Value++;
 
             if ((source.SignedValue > 0 && dest.SignedValue < dest.SignedMin + source.SignedValue) ||
                 (source.SignedValue < 0 && dest.SignedValue > dest.SignedMax + source.SignedValue))
                 OF = true;
             else
                 OF = false;
-
-            CF = dest.Value < source.Value;
 
             WriteOperand(result);
         }
@@ -138,8 +144,10 @@ namespace x86CS.CPU
 
             result.Value--;
             SetCPUFlags(result);
-            int overFlow = (int)((dest.Value & ~1 & ~result.Value) | (~dest.Value & 1 & result.Value));
-            OF = overFlow < 0;
+            if ((1 > 0 && dest.SignedValue < dest.SignedMin + 1))
+                OF = true;
+            else
+                OF = false;
 
             WriteOperand(result);
         }
