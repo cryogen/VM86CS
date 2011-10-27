@@ -38,5 +38,14 @@ namespace x86CS.CPU
 
             WriteOperand(dest);
         }
+
+        [CPUFunction(OpCode = 0x0fb2)]
+        public void SegmentLoadSS(Operand dest, Operand source)
+        {
+            SS = (ushort)(source.Value >> 16);
+            dest.Value = source.Value & 0xffff;
+
+            WriteOperand(dest);            
+        }
     }
 }

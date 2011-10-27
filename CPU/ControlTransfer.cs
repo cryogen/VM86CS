@@ -301,8 +301,17 @@ namespace x86CS.CPU
             StackPush(CS);
             StackPush(EIP);
 
-            CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
-            EIP = Memory.Read((uint)(dest.Value * 4), 16);
+            if (PMode)
+            {
+                IDTEntry foo = GetIDTEntry(dest.Value);
+                CS = foo.Selector;
+                EIP = foo.Base;
+            }
+            else
+            {
+                CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
+                EIP = Memory.Read((uint)(dest.Value * 4), 16);
+            }
         }
 
         [CPUFunction(OpCode = 0xcf)]

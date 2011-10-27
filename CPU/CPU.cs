@@ -778,6 +778,20 @@ namespace x86CS.CPU
             return entry;
         }
 
+        private IDTEntry GetIDTEntry(uint selector)
+        {
+            int entrySize = Marshal.SizeOf(typeof(IDTEntry));
+            byte[] idtBytes = new byte[entrySize];
+
+            Memory.BlockRead(idtRegister.Base + selector, idtBytes, idtBytes.Length);
+            IntPtr p = Marshal.AllocHGlobal(entrySize);
+            Marshal.Copy(idtBytes, 0, p, entrySize);
+            var entry = (IDTEntry)Marshal.PtrToStructure(p, typeof(IDTEntry));
+            Marshal.FreeHGlobal(p);
+
+            return entry;
+        }
+
         public uint GetSelectorBase(SegmentRegister segment)
         {
             return segments[(int)segment].GDTEntry.BaseAddress;

@@ -606,7 +606,7 @@
             new Instruction { OpCode=0x0faf, Type=InstructionType.Arithmetic, NumberOfArguments = 2, Nmumonic = "IMUL", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument { Type=ArgumentType.RegMem, Size=16 } },
             new Instruction { OpCode=0x0fb0, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0fb1, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0fb2, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0fb2, Type=InstructionType.SegmentRegister, NumberOfArguments=2, Nmumonic = "LSS", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument { Type=ArgumentType.RegMemMemory, Size=32} },
             new Instruction { OpCode=0x0fb3, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0fb4, Type=InstructionType.SegmentRegister, NumberOfArguments=2, Nmumonic = "LFS", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument { Type=ArgumentType.RegMemMemory, Size=32} },
             new Instruction { OpCode=0x0fb5, Type=InstructionType.SegmentRegister, NumberOfArguments=2, Nmumonic = "LGS", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument { Type=ArgumentType.RegMemMemory, Size=32} },

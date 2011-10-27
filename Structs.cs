@@ -56,6 +56,27 @@ namespace x86CS
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct IDTEntry
+    {
+        private ushort baseLow;
+        private ushort selector;
+        private byte reserved;
+        private byte flags;
+        private ushort baseHigh;
+
+        public uint Base
+        {
+            get { return (uint)((baseHigh << 16) + baseLow); }
+        }
+
+        public ushort Selector
+        {
+            get { return selector; }
+        }
+    }
+
+
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct GDTEntry
     {
         private ushort limitLow;
