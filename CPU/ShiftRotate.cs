@@ -17,7 +17,7 @@ namespace x86CS.CPU
 
             val = val << count;
 
-            CF = ((val & (ulong)(1 << (byte)(dest.Size))) != 0);
+            CF = ((val & (ulong)(1L << (byte)(dest.Size))) != 0);
             dest.Value = dest.Value << count;
 
             if (count == 1)
@@ -45,7 +45,7 @@ namespace x86CS.CPU
             if (count == 1)
                 OF = !dest.MSB;
 
-            CF = (((dest.Value) & (1 << count - 1)) == 1);
+            CF = (((dest.Value) & (1L << count - 1)) == 1);
             dest.Value = dest.Value >> count;
 
             SetCPUFlags(dest);
@@ -62,7 +62,7 @@ namespace x86CS.CPU
         {
             byte count = (byte)(source.Value & 0x1f);
 
-            CF = (((dest.SignedValue) & (1 << count - 1)) == 1);
+            CF = (((dest.SignedValue) & (1L << count - 1)) == 1);
             dest.SignedValue = dest.SignedValue >> count;
 
             if (count == 1)
