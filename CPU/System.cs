@@ -59,5 +59,18 @@ namespace x86CS.CPU
         {
             // ?!?!?!
         }
+
+        [CPUFunction(OpCode = 0x0f0104)]
+        public void StoreMachineStatusWord(Operand dest)
+        {
+            dest.Value = (ushort)CR0;
+            WriteOperand(dest);
+        }
+
+        [CPUFunction(OpCode = 0x0f0106)]
+        public void LoadMachineStatusWord(Operand dest)
+        {
+            CR0 = (CR0 & 0xffff0000) + dest.Value;
+        }
     }
 }
