@@ -248,6 +248,7 @@ namespace x86Disasm
                     break;
                 case ArgumentType.ImmediateSuppressDefault:
                     operand.Value = readFunction(offset, (int)operand.Size);
+                    offset += operand.Size / 8;
                     operand.Type = OperandType.Immediate;
                     if (operand.Value != 10)
                         InstructionText += operand;
