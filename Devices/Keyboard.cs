@@ -19,12 +19,12 @@ namespace x86CS.Devices
     public class KeyboardDevice : IDevice, INeedsIRQ
     {
         private readonly int[] portsUsed = {0x60, 0x64};
-        private readonly Queue<byte> outputBuffer;
         private byte inputBuffer;
         private byte commandByte;
         private KeyboardFlags statusRegister;
         private bool enabled;
         private bool setCommandByte;
+        private Queue<byte> outputBuffer;
 
         private const int IrqNumber = 1;
 
@@ -44,6 +44,12 @@ namespace x86CS.Devices
         {
             statusRegister |= KeyboardFlags.UnLocked;
             outputBuffer = new Queue<byte>();
+        }
+
+        public void Reset()
+        {
+            statusRegister |= KeyboardFlags.UnLocked;
+            outputBuffer.Clear();
         }
 
         public void KeyPress(uint scancode)
@@ -125,6 +131,8 @@ namespace x86CS.Devices
             switch (address)
             {
                 case 0x60:
+                    if (outputBuffer.Count == 0)
+                        return 0;
                     byte ret = setCommandByte ? commandByte : outputBuffer.Dequeue();
 
                     if (outputBuffer.Count == 0)

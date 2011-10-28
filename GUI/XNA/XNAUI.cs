@@ -68,6 +68,13 @@ namespace x86CS.GUI.XNA
         {
             GraphicsDevice device = graphicsService.GraphicsDevice;
 
+            switch (device.GraphicsDeviceStatus)
+            {
+                case GraphicsDeviceStatus.NotReset:
+                    graphicsService.GraphicsDevice.Reset();
+                    break;
+            }
+
             ProcessInput();
 
             device.Clear(Color.Black);
@@ -117,7 +124,13 @@ namespace x86CS.GUI.XNA
             sprites.Draw(screenBitmap, new Vector2(0, 0), Color.White);
             sprites.End();
 
-            device.Present();
+            try
+            {
+                device.Present();
+            }
+            catch (DeviceLostException)
+            {
+            }
         }
     }
 }

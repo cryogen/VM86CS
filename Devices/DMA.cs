@@ -88,6 +88,8 @@ namespace x86CS.Devices
             {
                 case 0x80:
                     return pages[0];
+                case 0xa:
+                    return mask;
                 default:
                     System.Diagnostics.Debugger.Break();
                     break;
