@@ -5,8 +5,8 @@ namespace x86CS.CPU
     {
         private void GetSegmentAndOffset(Operand address, out ushort segment, out uint offset)
         {
-            offset = SegRead(address.Memory.Segment, address.Memory.Address, (int)address.Size);
-            segment = (ushort)SegRead(address.Memory.Segment, address.Memory.Address + (address.Size / 8), 16);
+            offset = SegRead(address.Memory.Segment, address.Memory.Address, (int)address.Memory.Size);
+            segment = (ushort)SegRead(address.Memory.Segment, (uint)(address.Memory.Address + (address.Memory.Size / 8)), 16);
         }
 
         [CPUFunction(OpCode = 0xc4)]

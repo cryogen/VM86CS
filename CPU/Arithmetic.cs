@@ -121,7 +121,10 @@ namespace x86CS.CPU
 
             SetCPUFlags(result);
 
-            CF = dest.Value < source.Value;
+            if (oldCF)
+                CF = dest.Value < (source.Value + 1);
+            else
+                CF = dest.Value < source.Value;
 
             if (oldCF)
                 source.Value++;
