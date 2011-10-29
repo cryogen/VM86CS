@@ -617,7 +617,7 @@
             new Instruction { OpCode=0x0fba, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0fbb, Type=InstructionType.Invalid },
             new Instruction { OpCode=0x0fbc, Type=InstructionType.Invalid },
-            new Instruction { OpCode=0x0fbd, Type=InstructionType.Invalid },
+            new Instruction { OpCode=0x0fbd, Type=InstructionType.BitByte, NumberOfArguments=2, Nmumonic="BSR", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument { Type=ArgumentType.RegMem, Size=16 } },
             new Instruction { OpCode=0x0fbe, Type=InstructionType.DataTransfer, NumberOfArguments=2, Nmumonic="MOVSX", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=16 }, Arg2=new Argument { Type=ArgumentType.RegMem, Size=8 } },
             new Instruction { OpCode=0x0fbf, Type=InstructionType.DataTransfer, NumberOfArguments=2, Nmumonic="MOVSX", Arg1=new Argument { Type=ArgumentType.RegMemGeneral, Size=32 }, Arg2=new Argument { Type=ArgumentType.RegMem, Size=16, IgnorePrefix=true } },
             new Instruction { OpCode=0x0fc0, Type=InstructionType.Invalid },

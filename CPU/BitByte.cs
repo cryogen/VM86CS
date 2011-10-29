@@ -14,5 +14,28 @@ namespace x86CS.CPU
             CF = false;
             OF = false;
         }
+
+        [CPUFunction(OpCode = 0x0fbd)]
+        public void BitScanReverse(Operand dest, Operand source)
+        {
+            uint temp;
+
+            if (source.Value == 0)
+            {
+                ZF = true;
+            }
+            else
+            {
+                ZF = false;
+                temp = dest.Size - 1;
+
+                while ((source.Value & ((1 << (int)temp))) == 0)
+                {
+                    temp--;
+                }
+                dest.Value = temp;
+            }
+            WriteOperand(dest);
+        }
     }
 }

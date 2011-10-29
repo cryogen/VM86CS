@@ -328,7 +328,11 @@ namespace x86CS.CPU
         [CPUFunction(OpCode = 0xcf)]
         public void InterruptReturn()
         {
-            EIP = (ushort)StackPop();
+            if (opSize == 16)
+                EIP = (ushort)StackPop();
+            else
+                EIP = StackPop();
+
             CS = StackPop();
             eFlags = (CPUFlags)StackPop();
             DumpRegisters();
