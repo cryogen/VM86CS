@@ -25,6 +25,7 @@ namespace x86CS.CPU
         private int codeSize = 16;
         private Disassembler disasm;
         private Operand interruptOperand;
+        public bool Logging;
 
         public bool Halted { get; private set; }
         public uint CurrentAddr { get; private set; }
@@ -783,7 +784,7 @@ namespace x86CS.CPU
             int entrySize = Marshal.SizeOf(typeof(IDTEntry));
             byte[] idtBytes = new byte[entrySize];
 
-            Memory.BlockRead(idtRegister.Base + selector, idtBytes, idtBytes.Length);
+            Memory.BlockRead((uint)(idtRegister.Base + (selector * entrySize)), idtBytes, idtBytes.Length);
             IntPtr p = Marshal.AllocHGlobal(entrySize);
             Marshal.Copy(idtBytes, 0, p, entrySize);
             var entry = (IDTEntry)Marshal.PtrToStructure(p, typeof(IDTEntry));
@@ -843,9 +844,12 @@ namespace x86CS.CPU
 
         private void DumpRegisters()
         {
-            Logger.Debug(String.Format("AX {0:X4} BX {1:X4} CX {2:X4} DX {3:X4}", AX, BX, CX, DX));
-            Logger.Debug(String.Format("SI {0:X4} DI {1:X4} SP {2:X4} BP {3:X4}", SI, DI, SP, BP));
-            Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
+            if (Logging)
+            {
+                Logger.Debug(String.Format("AX {0:X4} BX {1:X4} CX {2:X4} DX {3:X4}", AX, BX, CX, DX));
+                Logger.Debug(String.Format("SI {0:X4} DI {1:X4} SP {2:X4} BP {3:X4}", SI, DI, SP, BP));
+                Logger.Debug(String.Format("CS {0:X4} DS {1:X4} ES {2:X4} SS {3:X4}", CS, DS, ES, SS));
+            }
         }
 
         public void ExecuteInterrupt(byte vector)
@@ -895,6 +899,8 @@ namespace x86CS.CPU
         {
             if (Halted)
                 return;
+
+            Logging = logging;
 
             Operand[] operands = ProcessOperands();
 

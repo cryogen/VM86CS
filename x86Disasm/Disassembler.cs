@@ -292,7 +292,7 @@ namespace x86Disasm
                             ProcessRegMemRegister(ref operand, argument, (byte)(rmByte >> 3));
                             break;
                         case ArgumentType.RegMemMemory:
-                            if (CodeSize == 16)
+                            if (AddressSize == 16)
                                 offset = ProcessRegMemMemory(ref operand, argument, rmByte, offset);
                             else
                                 offset = ProcessRegMemMemory32(ref operand, argument, rmByte, offset);

@@ -169,6 +169,8 @@ namespace x86CS.ATADevice
                 Util.UShortArrayToByte(sectorBuffer, ref sector, i * 256);
                 WriteSector(addr + i, sector);
             }
+
+            stream.Flush();
         }
 
         public override void FinishCommand()

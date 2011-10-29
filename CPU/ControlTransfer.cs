@@ -1,4 +1,5 @@
 ﻿using x86Disasm;
+using System;
 namespace x86CS.CPU
 {
     public partial class CPU
@@ -136,6 +137,14 @@ namespace x86CS.CPU
         public void JumpIfOddParity(Operand dest)
         {
             if (!PF)
+                Jump(dest);
+        }
+
+        [CPUFunction(OpCode = 0x7a)]
+        [CPUFunction(OpCode = 0x0f8a)]
+        public void JumpIfEvenParity(Operand dest)
+        {
+            if (PF)
                 Jump(dest);
         }
 
@@ -303,15 +312,17 @@ namespace x86CS.CPU
 
             if (PMode)
             {
-                IDTEntry foo = GetIDTEntry(dest.Value);
-                CS = foo.Selector;
-                EIP = foo.Base;
+                IDTEntry entry = GetIDTEntry(dest.Value);
+                CS = entry.Selector;
+                EIP = entry.Base;
             }
             else
             {
                 CS = Memory.Read((uint)(dest.Value * 4) + 2, 16);
                 EIP = Memory.Read((uint)(dest.Value * 4), 16);
             }
+
+            Logger.Info(String.Format("Interrupt {0:X}, Calling hander {1:X}:{2:X}", dest.Value, CS, EIP));
         }
 
         [CPUFunction(OpCode = 0xcf)]

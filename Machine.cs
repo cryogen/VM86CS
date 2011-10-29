@@ -158,7 +158,8 @@ namespace x86CS
             IOEntry entry;
 
             var ret = (ushort) (!ioPorts.TryGetValue(addr, out entry) ? 0xffff : entry.Read(addr, size));
-            Logger.Info(String.Format("IO Read Port {0:X}, Value {1:X}", addr, ret));
+            if(CPU.Logging)
+                Logger.Info(String.Format("IO Read Port {0:X}, Value {1:X}", addr, ret));
 
             return ret;
         }
@@ -170,7 +171,8 @@ namespace x86CS
             if (ioPorts.TryGetValue(addr, out entry))
                 entry.Write(addr, value, size);
 
-            Logger.Info(String.Format("IO Write Port {0:X}, Value {1:X}", addr, value));
+            if(CPU.Logging)
+                Logger.Info(String.Format("IO Write Port {0:X}, Value {1:X}", addr, value));
         }
 
         private void LoadBIOS()
