@@ -41,12 +41,18 @@ namespace x86CS.CPU
         public void ShiftRight(Operand dest, Operand source)
         {
             byte count = (byte)(source.Value & 0x1f);
+            Operand temp = dest;
 
-            if (count == 1)
-                OF = !dest.MSB;
+            while (count != 0)
+            {
+                CF = ((dest.Value & 0x1) == 0x1);
+                dest.Value /= 2;
 
-            CF = (((dest.Value) & (1L << count - 1)) == 1);
-            dest.Value = dest.Value >> count;
+                count--;
+            }
+
+            if (count == 0)
+                OF = temp.MSB;
 
             SetCPUFlags(dest);
             WriteOperand(dest);
