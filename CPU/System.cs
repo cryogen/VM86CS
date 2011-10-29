@@ -29,6 +29,21 @@ namespace x86CS.CPU
             }
         }
 
+        [CPUFunction(OpCode = 0x0f0101)]
+        public void StoreIDT(Operand dest)
+        {
+            if (opSize == 16)
+            {
+                SegWriteWord(dest.Memory.Segment, dest.Memory.Address, idtRegister.Limit);
+                SegWriteDWord(dest.Memory.Segment, dest.Memory.Address + 2, idtRegister.Base & 0x00ffffff);
+            }
+            else
+            {
+                SegWriteWord(dest.Memory.Segment, dest.Memory.Address, idtRegister.Limit);
+                SegWriteDWord(dest.Memory.Segment, dest.Memory.Address + 2, idtRegister.Base);
+            }
+        }
+
         [CPUFunction(OpCode = 0x0f0102)]
         public void LoadGDT(Operand dest)
         {
@@ -41,6 +56,21 @@ namespace x86CS.CPU
             {
                 gdtRegister.Limit = SegReadWord(dest.Memory.Segment, dest.Memory.Address);
                 gdtRegister.Base = SegReadDWord(dest.Memory.Segment, dest.Memory.Address + 2);
+            }
+        }
+
+        [CPUFunction(OpCode = 0x0f0100)]
+        public void StoreGDT(Operand dest)
+        {
+            if (opSize == 16)
+            {
+                SegWriteWord(dest.Memory.Segment, dest.Memory.Address, gdtRegister.Limit);
+                SegWriteDWord(dest.Memory.Segment, dest.Memory.Address + 2, gdtRegister.Base & 0x00ffffff);
+            }
+            else
+            {
+                SegWriteWord(dest.Memory.Segment, dest.Memory.Address, gdtRegister.Limit);
+                SegWriteDWord(dest.Memory.Segment, dest.Memory.Address + 2, gdtRegister.Base);
             }
         }
 

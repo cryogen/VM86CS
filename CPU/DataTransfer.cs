@@ -177,6 +177,17 @@ namespace x86CS.CPU
             WriteOperand(dest);
         }
 
+        [CPUFunction(OpCode = 0x0f97)]
+        public void SetIfNotBelowOrEqual(Operand dest)
+        {
+            if (!CF && !ZF)
+                dest.Value = 1;
+            else
+                dest.Value = 0;
+
+            WriteOperand(dest);
+        }
+
         [CPUFunction(OpCode = 0x98)]
         public void ConvertByteToWord()
         {

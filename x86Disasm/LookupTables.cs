@@ -415,8 +415,8 @@
                 new Instruction { OpCode=0x0f0007, Type = InstructionType.Invalid },
             },
             {
-                new Instruction { OpCode=0x0f0100, Type = InstructionType.Invalid },
-                new Instruction { OpCode=0x0f0101, Type = InstructionType.Invalid },
+                new Instruction { OpCode=0x0f0100, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="SGDT", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
+                new Instruction { OpCode=0x0f0101, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="SIDT", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
                 new Instruction { OpCode=0x0f0102, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="LGDT", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
                 new Instruction { OpCode=0x0f0103, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="LIDT", Arg1=new Argument { Type=ArgumentType.RegMemMemory, Size=16 } },
                 new Instruction { OpCode=0x0f0104, Type = InstructionType.System, NumberOfArguments=1, Nmumonic="SMSW", Arg1=new Argument { Type=ArgumentType.RegMem, Size=16 } },
