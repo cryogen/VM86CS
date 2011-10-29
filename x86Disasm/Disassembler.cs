@@ -94,6 +94,7 @@ namespace x86Disasm
         private uint ProcessRegMemMemory32(ref Operand operand, Argument argument, byte rmByte, uint offset)
         {
             byte mod, rm, reg;
+            bool needDisp = false;
 
             operand.Type = OperandType.Memory;
             operand.Memory = regMemMemory32[rmByte & 0x7];
@@ -120,7 +121,10 @@ namespace x86Disasm
                 memory.Scale = scale;
 
                 if ((baseIndex & 7) == 5)
+                {
                     memory.Index = GeneralRegister.None;
+                    needDisp = true;
+                }
 
                 operand.Memory.Base = memory.Base;
                 operand.Memory.Index = memory.Index;
@@ -135,11 +139,27 @@ namespace x86Disasm
                 operand.Memory.Segment = SegmentRegister.DS;
                 offset += 4;
             }
-            else if (mod == 0 && reg == 4)
+            else if (rm == 4 && needDisp)
             {
-                operand.Memory.Displacement = (int)ReadDWord(offset);
-                operand.Memory.Segment = SegmentRegister.DS;
-                offset += 4;
+                if (mod == 0)
+                {
+                    operand.Memory.Displacement = (int)ReadDWord(offset);
+                    operand.Memory.Segment = SegmentRegister.DS;
+                    offset += 4;
+                }
+                else if (mod == 1)
+                {
+                    operand.Memory.Displacement = (int)ReadByte(offset++);
+                    operand.Memory.Segment = SegmentRegister.SS;
+                    operand.Memory.Index = GeneralRegister.EBP;
+                }
+                else if (mod == 2)
+                {
+                    operand.Memory.Displacement = (int)ReadDWord(offset);
+                    operand.Memory.Segment = SegmentRegister.SS;
+                    operand.Memory.Index = GeneralRegister.EBP;
+                    offset += 4;
+                }
             }
             else if (mod == 1)
                 operand.Memory.Displacement = (sbyte)ReadByte(offset++);
@@ -196,7 +216,7 @@ namespace x86Disasm
         {
             Operand operand = new Operand();
 
-            if (argument.Size == 16)
+            if (argument.Size == 16 && !argument.IgnorePrefix)
                 operand.Size = (uint)OperandSize;
             else
                 operand.Size = argument.Size;

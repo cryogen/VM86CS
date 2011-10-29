@@ -24,6 +24,7 @@ namespace x86Disasm
         public int Value;
         public bool SignExtend;
         public bool UsesES;
+        public bool IgnorePrefix;
     }
 
     public struct Operation

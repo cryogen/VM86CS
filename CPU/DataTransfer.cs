@@ -68,7 +68,7 @@ namespace x86CS.CPU
         {
             uint oldESP = ESP;
 
-            if (opSize == 32)
+            if (opSize == 16)
             {
                 StackPush(AX);
                 StackPush(CX);
