@@ -17,11 +17,27 @@ namespace x86CS.ATADevice
         {
             identifyBuffer = new ushort[256];
 
-            identifyBuffer[0] = 0x8580;
-            Util.ByteArrayToUShort(Encoding.ASCII.GetBytes("123456789012345678"), ref identifyBuffer, 23);
-            Util.ByteArrayToUShort(Encoding.ASCII.GetBytes("x86 CS CDROM                            "), ref identifyBuffer, 27);
-            identifyBuffer[49] = 0x30;
-            identifyBuffer[62] = 0x0001; // Mode 0 active and supported
+            identifyBuffer[0] = 0x85c0;
+            Util.ByteArrayToUShort(Encoding.ASCII.GetBytes("12345678901234567890"), identifyBuffer, 10, true);
+            Util.ByteArrayToUShort(Encoding.ASCII.GetBytes("x86 CS CDROM                            "), identifyBuffer, 27, true);
+            identifyBuffer[49] = 0x0300;
+            identifyBuffer[50] = 0x4000;
+            identifyBuffer[53] = 0x0003;
+            identifyBuffer[63] = 0x0103;
+            identifyBuffer[64] = 0x0001;
+            identifyBuffer[65] = 0x00b4;
+            identifyBuffer[66] = 0x00b4;
+            identifyBuffer[67] = 0x012c; 
+            identifyBuffer[68] = 0x00b4;
+            identifyBuffer[71] = 0x001e;
+            identifyBuffer[72] = 0x001e;
+            identifyBuffer[80] = 0x007e;
+            identifyBuffer[82] = 0x4010;
+            identifyBuffer[83] = 0x4000;
+            identifyBuffer[84] = 0x4000;
+            identifyBuffer[85] = 0x4010;
+            identifyBuffer[86] = 0x4000;
+            identifyBuffer[87] = 0x4000;
         }
 
         public override void LoadImage(string filename)
@@ -36,7 +52,7 @@ namespace x86CS.ATADevice
             SectorCount = 1;
             CylinderLow = 0x14;
             CylinderHigh = 0xeb;
-            Status |= DeviceStatus.Busy;
+            Status = DeviceStatus.Busy | DeviceStatus.SeekComplete;
         }
 
         public override void RunCommand(byte command)
@@ -106,7 +122,7 @@ namespace x86CS.ATADevice
             Array.Copy(capac, capacityData, 4);
             Array.Copy(trackSize, 0, capacityData, 4, 4);
 
-            Util.ByteArrayToUShort(capacityData, ref sectorBuffer, 0);
+            Util.ByteArrayToUShort(capacityData, sectorBuffer, 0);
 
             Status |= DeviceStatus.DataRequest;
             bufferIndex = 0;
@@ -119,7 +135,7 @@ namespace x86CS.ATADevice
             ushort length;
             byte[] sectorBytes = new byte[sectorBuffer.Length * 2];
 
-            Util.UShortArrayToByte(sectorBuffer, ref sectorBytes, 0);
+            Util.UShortArrayToByte(sectorBuffer, sectorBytes, 0);
 
             lba = Util.SwapByteOrder(BitConverter.ToUInt32(sectorBytes, 2));
             length = Util.SwapByteOrder(BitConverter.ToUInt16(sectorBytes, 7));
@@ -130,7 +146,7 @@ namespace x86CS.ATADevice
             isoStream.Seek(lba * 2048, SeekOrigin.Begin);
             isoStream.Read(sectorBytes, 0, length * 2048);
 
-            Util.ByteArrayToUShort(sectorBytes, ref sectorBuffer, 0);
+            Util.ByteArrayToUShort(sectorBytes, sectorBuffer, 0);
             bufferIndex = 0;
             Status |= DeviceStatus.DataRequest;
             Cylinder = (ushort)sectorBytes.Length;

@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Runtime.InteropServices;
 using System;
+using System.Text;
 
 namespace x86CS.ATADevice
 {
@@ -34,9 +35,32 @@ namespace x86CS.ATADevice
 
             identifyBuffer[0] = 0x40; // Fixed drive
             identifyBuffer[5] = 512; // Bytes per sector
+            Util.ByteArrayToUShort(Encoding.ASCII.GetBytes("12345678901234567890"), identifyBuffer, 10, true);
+            Util.ByteArrayToUShort(Encoding.ASCII.GetBytes("x86 CS Virtual Hard Drive             "), identifyBuffer, 27, true);
+
+            identifyBuffer[47] = 0x0010; // Max number of sectors
             identifyBuffer[48] = 0x0; // double word i/o supported (disable for now)
             identifyBuffer[49] = 0x0300; // LBA and DMA supported
-            identifyBuffer[62] = 0x0001; // Mode 0 active and supported
+            identifyBuffer[51] = 0x0200; // Timing mode
+            identifyBuffer[52] = 0x0200; // Timing mode
+            identifyBuffer[53] = 0x0007;
+            identifyBuffer[63] = 0x0007;
+            identifyBuffer[65] = 0x0078;
+            identifyBuffer[66] = 0x0078;
+            identifyBuffer[67] = 0x0078;
+            identifyBuffer[68] = 0x0078;
+            identifyBuffer[80] = 0x007e; // ATA 6
+            identifyBuffer[82] = 0x4000;
+            identifyBuffer[83] = 0x7400;
+            identifyBuffer[84] = 0x4000; 
+            identifyBuffer[85] = 0x4000;
+            identifyBuffer[86] = 0x7400;
+            identifyBuffer[87] = 0x4000;
+            identifyBuffer[88] = 0x003f;
+            identifyBuffer[93] = 0x6001;
+            identifyBuffer[100] = 0x9c90;
+            identifyBuffer[101] = 0x000f;
+            identifyBuffer[102] = 0x0000;
         }
 
         public override void LoadImage(string filename)
@@ -72,7 +96,7 @@ namespace x86CS.ATADevice
             SectorCount = 1;
             CylinderLow = 0;
             CylinderHigh = 0;
-            Status |= DeviceStatus.Busy;
+            Status |= DeviceStatus.Busy | DeviceStatus.SeekComplete;
         }
 
         private byte[] ReadSector(long sector)
@@ -110,7 +134,7 @@ namespace x86CS.ATADevice
 
             for (int i = 0; i < SectorCount; i++)
             {
-                Util.ByteArrayToUShort(ReadSector(addr + i), ref sectorBuffer, i * 256);
+                Util.ByteArrayToUShort(ReadSector(addr + i), sectorBuffer, i * 256);
             }
         }
 
@@ -166,7 +190,7 @@ namespace x86CS.ATADevice
             {
                 byte[] sector = new byte[512];
 
-                Util.UShortArrayToByte(sectorBuffer, ref sector, i * 256);
+                Util.UShortArrayToByte(sectorBuffer, sector, i * 256);
                 WriteSector(addr + i, sector);
             }
 

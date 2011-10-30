@@ -148,15 +148,23 @@ namespace x86CS
             return dest;
         }
 
-        public static void ByteArrayToUShort(byte[] source, ref ushort[] dest, int index)
+        public static void ByteArrayToUShort(byte[] source, ushort[] dest, int index, bool bswap)
         {
             for (int i = 0, j = index; i < source.Length; i += 2, j++)
             {
-                dest[j] = (ushort)((source[i + 1] << 8) + source[i]);
+                if(bswap)
+                    dest[j] = (ushort)((source[i] << 8) + source[i + 1]);
+                else
+                    dest[j] = (ushort)((source[i + 1] << 8) + source[i]);
             }
         }
 
-        public static void UShortArrayToByte(ushort[] source, ref byte[] dest, int index)
+        public static void ByteArrayToUShort(byte[] source, ushort[] dest, int index)
+        {
+            Util.ByteArrayToUShort(source, dest, index, false);
+        }
+
+        public static void UShortArrayToByte(ushort[] source, byte[] dest, int index)
         {
             for (int i = 0, j = index; i < dest.Length; i += 2, j++)
             {
