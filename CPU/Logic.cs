@@ -7,18 +7,7 @@ namespace x86CS.CPU
     {
         private void SetCPUFlags(Operand operand)
         {
-            switch (operand.Size)
-            {
-                case 8:
-                    SF = ((operand.Value & 0x80) == 0x80);
-                    break;
-                case 16:
-                    SF = ((operand.Value & 0x8000) == 0x8000);
-                    break;
-                default:
-                    SF = ((operand.Value & 0x80000000) == 0x80000000);
-                    break;
-            }
+            SF = operand.MSB;
 
             ZF = operand.Value == 0;
             PF = (((((byte)operand.Value * 0x0101010101010101UL) & 0x8040201008040201UL) % 0x1FF) & 1) == 0;
