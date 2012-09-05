@@ -17,10 +17,10 @@ namespace x86CS.GUI.XNA
 
         #region IGraphicsDeviceService Members
 
-        public event EventHandler DeviceCreated;
-        public event EventHandler DeviceDisposing;
-        public event EventHandler DeviceReset;
-        public event EventHandler DeviceResetting;
+        public event EventHandler<EventArgs> DeviceCreated;
+        public event EventHandler<EventArgs> DeviceDisposing;
+        public event EventHandler<EventArgs> DeviceReset;
+        public event EventHandler<EventArgs> DeviceResetting;
 
         public GraphicsDevice GraphicsDevice
         {
@@ -40,12 +40,11 @@ namespace x86CS.GUI.XNA
         {
             PresentationParameters pp = new PresentationParameters();
             pp.IsFullScreen = false;
-            pp.BackBufferCount = 1;
             pp.BackBufferHeight = this.m_renderControl.Height;
             pp.BackBufferWidth = this.m_renderControl.Width;
+            pp.DeviceWindowHandle = this.m_renderControl.Handle;
 
-            this.m_graphicsDevice = new GraphicsDevice(GraphicsAdapter.DefaultAdapter, DeviceType.Hardware,
-                                                       this.m_renderControl.Handle, pp);
+            this.m_graphicsDevice = new GraphicsDevice(GraphicsAdapter.DefaultAdapter, GraphicsProfile.HiDef, pp);
         }
 
         public void EndDraw()

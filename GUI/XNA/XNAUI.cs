@@ -79,7 +79,7 @@ namespace x86CS.GUI.XNA
 
             device.Clear(Color.Black);
 
-            Texture2D screenBitmap = new Texture2D(device, renderControl.ClientSize.Width, renderControl.ClientSize.Height, 1, TextureUsage.Linear, SurfaceFormat.Color);
+            Texture2D screenBitmap = new Texture2D(device, renderControl.ClientSize.Width, renderControl.ClientSize.Height, false, SurfaceFormat.Color);
 
             var fontBuffer = new byte[0x2000];
             var displayBuffer = new byte[0xfa0];

@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "x86CS", "x86CS.csproj", "{E19AF389-5B99-4AEC-AB7F-689770A476E6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "x86Disasm", "x86Disasm\x86Disasm.csproj", "{280D1B38-0694-4281-B8E3-2F14F371901D}"
