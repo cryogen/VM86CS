@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.IO;
+using log4net;
 
 namespace x86CS.ATADevice
 {
@@ -12,6 +13,7 @@ namespace x86CS.ATADevice
         private ushort[] identifyBuffer;
         private byte lastCommand;
         private FileStream isoStream;
+        private static readonly ILog Logger = LogManager.GetLogger(typeof(CDROM));
 
         public CDROM()
         {
@@ -131,24 +133,26 @@ namespace x86CS.ATADevice
 
         private void Read10()
         {
-            uint lba;
-            ushort length;
-            byte[] sectorBytes = new byte[sectorBuffer.Length * 2];
+          uint lba;
+          ushort length;
+          byte[] sectorBytes = new byte[sectorBuffer.Length * 2];
 
-            Util.UShortArrayToByte(sectorBuffer, sectorBytes, 0);
+          Util.UShortArrayToByte(sectorBuffer, sectorBytes, 0);
 
-            lba = Util.SwapByteOrder(BitConverter.ToUInt32(sectorBytes, 2));
-            length = Util.SwapByteOrder(BitConverter.ToUInt16(sectorBytes, 7));
+          lba = Util.SwapByteOrder(BitConverter.ToUInt32(sectorBytes, 2));
+          length = Util.SwapByteOrder(BitConverter.ToUInt16(sectorBytes, 7));
 
-            sectorBytes = new byte[2048 * length];
-            sectorBuffer = new ushort[sectorBytes.Length / 2];
+          sectorBytes = new byte[2048 * length];
+          sectorBuffer = new ushort[sectorBytes.Length / 2];
 
-            isoStream.Seek(lba * 2048, SeekOrigin.Begin);
-            isoStream.Read(sectorBytes, 0, length * 2048);
+          isoStream.Seek(lba * 2048, SeekOrigin.Begin);
+          isoStream.Read(sectorBytes, 0, length * 2048);
 
-            Util.ByteArrayToUShort(sectorBytes, sectorBuffer, 0);
-            bufferIndex = 0;
-            Status |= DeviceStatus.DataRequest;
+          Util.ByteArrayToUShort(sectorBytes, sectorBuffer, 0);
+          bufferIndex = 0;
+          Status |= DeviceStatus.DataRequest;
+
+          if (Cylinder > sectorBytes.Length)
             Cylinder = (ushort)sectorBytes.Length;
         }
 
